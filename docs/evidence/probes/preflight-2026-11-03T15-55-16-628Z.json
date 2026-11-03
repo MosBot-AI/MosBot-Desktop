@@ -1,0 +1,52 @@
+{
+  "generatedAt": "2026-11-03T15:55:16.633Z",
+  "target": "http://192.168.2.171:9119",
+  "providers": [
+    {
+      "name": "basic",
+      "displayName": "Username & Password",
+      "supportsPassword": true
+    }
+  ],
+  "preflight": {
+    "generatedAt": 1793721316624,
+    "target": "http://192.168.2.171:9119",
+    "rows": [
+      {
+        "id": "health",
+        "title": "REST 探活 /api/health",
+        "status": "pass",
+        "detail": "version 0.22.5 · commit bf0203a794 · auth_required=true",
+        "required": true
+      },
+      {
+        "id": "status",
+        "title": "部署状态 /api/status",
+        "status": "pass",
+        "detail": "version 0.22.5 · overall ok · gateway_running=true · keys 31",
+        "required": true
+      },
+      {
+        "id": "auth_gate",
+        "title": "鉴权形态与 native PKCE 能力",
+        "status": "pass",
+        "detail": "auth_required=true · auth_flows=cookie,native_pkce · providers=basic",
+        "required": true
+      },
+      {
+        "id": "prefix",
+        "title": "URL 前缀 / 反代",
+        "status": "pass",
+        "detail": "basePath=(none) · install_id=present · 已在当前基路径完成探活",
+        "required": true
+      },
+      {
+        "id": "providers",
+        "title": "登录提供方 /api/auth/providers",
+        "status": "pass",
+        "detail": "basic(password)",
+        "required": true
+      }
+    ]
+  }
+}

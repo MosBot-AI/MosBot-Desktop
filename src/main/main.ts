@@ -1,5 +1,9 @@
-import { app, BrowserWindow, nativeTheme, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, nativeTheme, safeStorage, session, shell } from 'electron';
 import path from 'node:path';
+import { createAuthManager } from './dashboard/auth';
+import { createTrustedSenderCheck, registerDashboardIpc } from './dashboard/ipc';
+import { createDashboardService } from './dashboard/service';
+import type { TransportFetch } from './dashboard/transport';
 
 const isMac = process.platform === 'darwin';
 const CHAT_SURFACE_LIGHT = '#fbfaf8';
@@ -95,7 +99,54 @@ function createMainWindow(): void {
 
 app.setName('MosBot');
 
+/**
+ * Electron's Chromium network stack (not Node's) performs Dashboard REST calls,
+ * so the deployment's proxy, certificate and URL-prefix behaviour is exercised.
+ */
+function createSessionFetch(): TransportFetch {
+  return async (url, init) => {
+    const request: RequestInit = {
+      method: init.method,
+      headers: init.headers,
+      redirect: init.redirect,
+      signal: init.signal,
+    };
+    if (init.body !== undefined) {
+      request.body = init.body;
+    }
+    const response = await session.defaultSession.fetch(url, request);
+    return {
+      ok: response.ok,
+      status: response.status,
+      statusText: response.statusText,
+      text: () => response.text(),
+    };
+  };
+}
+
+function registerDashboard(): void {
+  const fetchImpl = createSessionFetch();
+  const auth = createAuthManager({
+    fetchImpl,
+    openExternal: async (url) => {
+      await shell.openExternal(url);
+    },
+    safeStorage,
+    credentialsPath: path.join(app.getPath('userData'), 'dashboard-credentials.json'),
+  });
+  const service = createDashboardService({ auth, fetchImpl });
+  registerDashboardIpc({
+    ipcMain,
+    service,
+    isTrustedEvent: createTrustedSenderCheck(() => mainWindow?.webContents ?? null),
+  });
+  app.on('before-quit', () => {
+    auth.cancelLogin();
+  });
+}
+
 void app.whenReady().then(() => {
+  registerDashboard();
   createMainWindow();
 
   app.on('activate', () => {

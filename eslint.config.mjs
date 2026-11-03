@@ -30,9 +30,11 @@ export default tseslint.config(
     },
   },
   {
+    // Playwright scripts embed browser-side `page.evaluate` bodies, so both
+    // Node and browser globals are legitimate here.
     files: ['scripts/**/*.mjs', '*.config.js'],
     languageOptions: {
-      globals: { ...globals.node },
+      globals: { ...globals.node, ...globals.browser },
       sourceType: 'module',
     },
     rules: {

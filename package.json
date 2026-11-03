@@ -27,11 +27,13 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "assets:sync": "node scripts/sync-brand-assets.mjs"
+    "assets:sync": "node scripts/sync-brand-assets.mjs",
+    "test:integration": "electron-forge package && node scripts/probe-dashboard.mjs"
   },
   "dependencies": {
     "react": "19.3.1",
-    "react-dom": "19.3.1"
+    "react-dom": "19.3.1",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@electron-forge/cli": "8.0.1",
