@@ -75,6 +75,16 @@ export interface LiveRequest {
   readonly payload: Readonly<Record<string, unknown>>;
 }
 
+export interface LiveTool {
+  readonly id: string;
+  readonly name: string;
+  readonly phase: 'start' | 'progress' | 'complete';
+}
+
+export type LiveSegment =
+  | { readonly kind: 'text'; readonly text: string }
+  | { readonly kind: 'tools'; readonly tools: readonly LiveTool[] };
+
 export interface LiveChatState {
   readonly profile: string | null;
   readonly phase: 'idle' | 'sending' | 'streaming' | 'stopped' | 'error';
@@ -83,6 +93,7 @@ export interface LiveChatState {
   readonly userAt: number;
   readonly botText: string;
   readonly error: string | null;
+  readonly segments: readonly LiveSegment[];
   readonly requests: readonly LiveRequest[];
   readonly receipts: Readonly<Record<string, string>>;
   readonly runtimeSessionId: string | null;
@@ -174,6 +185,7 @@ export type AppAction =
   | { type: 'live-user'; profile: string; text: string; at: number }
   | { type: 'live-phase'; phase: LiveChatState['phase'] }
   | { type: 'live-delta'; text: string }
+  | { type: 'live-tool'; phase: LiveTool['phase']; name: string }
   | {
       type: 'live-complete';
       status: 'complete' | 'error' | 'interrupted';
@@ -368,6 +380,7 @@ export function createInitialState(seed: FixtureSeed, bootstrap: Bootstrap): App
       userAt: 0,
       botText: '',
       error: null,
+      segments: [],
       requests: [],
       receipts: {},
       runtimeSessionId: null,
@@ -785,6 +798,7 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
           userAt: 0,
           botText: '',
           error: null,
+          segments: [],
           requests: [],
           receipts: {},
           runtimeSessionId: null,
@@ -811,27 +825,73 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
           userAt: action.at,
           botText: '',
           error: null,
+          segments: [],
           phase: 'sending',
         },
       };
     case 'live-phase':
       return { ...state, live: { ...state.live, phase: action.phase } };
-    case 'live-delta':
+    case 'live-delta': {
+      const segments = state.live.segments.slice();
+      const last = segments[segments.length - 1];
+      if (last !== undefined && last.kind === 'text') {
+        segments[segments.length - 1] = { kind: 'text', text: last.text + action.text };
+      } else {
+        segments.push({ kind: 'text', text: action.text });
+      }
       return {
         ...state,
         live: {
           ...state.live,
+          segments,
           botText: state.live.botText + action.text,
           phase: 'streaming',
         },
       };
+    }
+    case 'live-tool': {
+      const segments = state.live.segments.slice();
+      // One work record per turn: later tool events join the existing segment
+      // even when text was streamed between them.
+      let toolsIndex = -1;
+      for (let index = segments.length - 1; index >= 0; index -= 1) {
+        if (segments[index]?.kind === 'tools') {
+          toolsIndex = index;
+          break;
+        }
+      }
+      const tool: LiveTool = {
+        id: `tool-${action.name}-${segments.length}`,
+        name: action.name,
+        phase: action.phase,
+      };
+      const existing = toolsIndex === -1 ? undefined : segments[toolsIndex];
+      if (existing !== undefined && existing.kind === 'tools') {
+        const found = existing.tools.findIndex((entry) => entry.name === action.name);
+        const tools =
+          found === -1
+            ? [...existing.tools, tool]
+            : existing.tools.map((entry, index) =>
+                index === found ? { ...entry, phase: action.phase } : entry,
+              );
+        segments[toolsIndex] = { kind: 'tools', tools };
+      } else {
+        segments.push({ kind: 'tools', tools: [tool] });
+      }
+      return { ...state, live: { ...state.live, segments } };
+    }
     case 'live-complete': {
       const finalText =
         state.live.botText === '' && action.text !== '' ? action.text : state.live.botText;
+      const segments =
+        state.live.segments.length === 0 && finalText !== ''
+          ? ([{ kind: 'text', text: finalText }] as LiveSegment[])
+          : state.live.segments;
       return {
         ...state,
         live: {
           ...state.live,
+          segments,
           botText: finalText,
           phase:
             action.status === 'interrupted'
@@ -1140,15 +1200,32 @@ export function selectChatMessages(state: AppState, botId: string): ChatMessage[
       at: state.live.userAt,
     });
   }
-  if (state.live.botText !== '' || state.live.phase === 'streaming') {
+  state.live.segments.forEach((segment, index) => {
+    if (segment.kind === 'text') {
+      if (segment.text !== '') {
+        live.push({
+          id: `live-text-${index}`,
+          role: 'bot',
+          kind: 'text',
+          text: segment.text,
+          at: state.live.userAt,
+        });
+      }
+      return;
+    }
     live.push({
-      id: 'live-bot',
+      id: `live-work-${index}`,
       role: 'bot',
-      kind: 'text',
-      text: state.live.botText,
+      kind: 'work',
+      title: '',
+      steps: segment.tools.map((tool) => ({
+        id: tool.id,
+        label: tool.name === '' ? 'tool' : tool.name,
+        detail: '',
+      })),
       at: state.live.userAt,
     });
-  }
+  });
   for (const request of state.live.requests) {
     const message = liveRequestMessage(request, state);
     if (message !== null) {
@@ -1199,7 +1276,7 @@ export function chatEventAction(event: DashboardChatEvent): AppAction | null {
     case 'error':
       return { type: 'live-error', message: event.message };
     case 'tool':
-      return null;
+      return { type: 'live-tool', phase: event.phase, name: event.name };
     default:
       return null;
   }

@@ -28,8 +28,9 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
   连接摘要；登录成功后记住凭据（刷新令牌进 safeStorage，上次地址进非密钥设置），后续启动无需
   重复输入。令牌不会进入 renderer。
 - 真实聊天纵切：连接后向真实 Bot Chat 提交 prompt，流式 delta 合并进单个 Bot 气泡，停止按钮中断
-  当前回合；审批/澄清请求以内联卡片呈现并按 request id 回执；socket 断开按退避重连并 resume 原
-  会话；未连接时保持 fixture 演示。
+  当前回合；审批/澄清请求以内联卡片呈现并按 request id 回执；同一轮工具事件合并为一个可展开
+  「工作记录」；客户端声明 `server_requests`（测试部署返回 16 个方法）；socket 断开按退避重连并
+  resume 原会话；未连接时保持 fixture 演示。
 - Gateway WebSocket 客户端（`ws`）：一次性 ticket 握手、`gateway.ready` 首帧、zod 校验的 JSON-RPC 请求响应、类型化服务端事件，以及 ticket 复用/过期拒绝检查。已在测试部署验证：`profiles.list`、`client.capabilities` 与精确 Bot Chat 查询通过；复用与过期 ticket 被拒绝。
 
 ### 变更

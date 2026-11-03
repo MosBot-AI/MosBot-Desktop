@@ -29,6 +29,8 @@ export interface ChatState {
   readonly profile: string | null;
   readonly storedSessionId: string | null;
   readonly runtimeSessionId: string | null;
+  readonly approvalMode: string | null;
+  readonly serverRequests: readonly string[];
   readonly connection: 'connected' | 'reconnecting' | 'disconnected';
 }
 
@@ -77,6 +79,8 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
   let profile: string | null = null;
   let storedSessionId: string | null = null;
   let runtimeSessionId: string | null = null;
+  let approvalMode: string | null = null;
+  let serverRequests: string[] = [];
   let connection: ChatState['connection'] = 'disconnected';
   let closing = false;
   let reconnectAttempt = 0;
@@ -165,10 +169,19 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
     emit({ type: 'request', request: payload });
   };
 
-  const attachClient = (rpc: RpcClient): void => {
+  const attachClient = async (rpc: RpcClient): Promise<void> => {
     client = rpc;
-    // Best effort: older gateways may not know the method.
-    void rpc.call('client.capabilities', { server_requests: true }, emptySchema);
+    const capabilities = await rpc.call(
+      'client.capabilities',
+      { server_requests: true },
+      emptySchema,
+    );
+    if (capabilities.ok) {
+      const methods = asRecord(capabilities.data)?.['server_requests'];
+      if (Array.isArray(methods)) {
+        serverRequests = methods.filter((method): method is string => typeof method === 'string');
+      }
+    }
   };
 
   const resumeSession = async (rpc: RpcClient): Promise<Result<ChatOpenResult>> => {
@@ -196,6 +209,7 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
         const record = asRecord(resumed.data);
         runtimeSessionId = str(record?.['session_id']) || null;
         storedSessionId = str(record?.['session_key']) || storedSessionId;
+        approvalMode = str(asRecord(record?.['info'])?.['approval_mode']) || approvalMode;
         return {
           ok: true,
           data: { profile, storedSessionId, runtimeSessionId },
@@ -221,6 +235,7 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
     const record = asRecord(created.data);
     runtimeSessionId = str(record?.['session_id']) || null;
     storedSessionId = str(record?.['stored_session_id']) || null;
+    approvalMode = str(asRecord(record?.['info'])?.['approval_mode']) || approvalMode;
     if (runtimeSessionId === null) {
       return {
         ok: false,
@@ -267,7 +282,7 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
       setConnection('disconnected', result.error.message);
       return result as Result<ChatOpenResult>;
     }
-    attachClient(result.data);
+    await attachClient(result.data);
     const opened = await resumeSession(result.data);
     if (!opened.ok) {
       result.data.close();
@@ -402,11 +417,20 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
       profile = null;
       storedSessionId = null;
       runtimeSessionId = null;
+      approvalMode = null;
+      serverRequests = [];
       connection = 'disconnected';
     },
 
     state() {
-      return { profile, storedSessionId, runtimeSessionId, connection };
+      return {
+        profile,
+        storedSessionId,
+        runtimeSessionId,
+        approvalMode,
+        serverRequests,
+        connection,
+      };
     },
   };
 }

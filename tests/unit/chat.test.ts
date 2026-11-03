@@ -260,6 +260,21 @@ describe('live transcript', () => {
     expect(state.live.phase).toBe('idle');
   });
 
+  it('groups tool events into one collapsible work record inside the turn', () => {
+    let state = remoteState();
+    state = reduceAppState(state, { type: 'live-user', profile: 'default', text: 'run it', at: 1 });
+    state = reduceAppState(state, { type: 'live-tool', phase: 'start', name: 'shell' });
+    state = reduceAppState(state, { type: 'live-delta', text: 'Running' });
+    state = reduceAppState(state, { type: 'live-tool', phase: 'complete', name: 'shell' });
+    const messages = selectChatMessages(state, 'default');
+    expect(messages.map((message) => message.kind)).toEqual(['text', 'work', 'text']);
+    const work = messages[1];
+    expect(work?.kind).toBe('work');
+    if (work?.kind === 'work') {
+      expect(work.steps.map((step) => step.label)).toEqual(['shell']);
+    }
+  });
+
   it('maps approval requests to cards and folds them into receipts', () => {
     let state = remoteState();
     state = reduceAppState(state, {
@@ -332,6 +347,10 @@ describe('live transcript', () => {
     expect(
       chatEventAction({ type: 'turn-complete', status: 'interrupted', text: '', error: null }),
     ).toEqual({ type: 'live-complete', status: 'interrupted', text: '', error: null });
-    expect(chatEventAction({ type: 'tool', phase: 'start', name: 'shell' })).toBeNull();
+    expect(chatEventAction({ type: 'tool', phase: 'start', name: 'shell' })).toEqual({
+      type: 'live-tool',
+      phase: 'start',
+      name: 'shell',
+    });
   });
 });

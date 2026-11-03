@@ -33,7 +33,8 @@ export function WorkRecord({ title, steps }: WorkRecordProps): ReactElement {
         <IconChevronDown size={12} className={open ? styles.chevronOpen : styles.chevronClosed} />
         <span className={styles.workTitle}>{t('chat.work.title')}</span>
         <span className={styles.workMeta}>
-          {title} · {t('chat.work.steps', { count: steps.length })}
+          {title === '' ? null : `${title} · `}
+          {t('chat.work.steps', { count: steps.length })}
         </span>
       </button>
       {open ? (

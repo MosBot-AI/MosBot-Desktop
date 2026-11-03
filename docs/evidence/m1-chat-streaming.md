@@ -10,16 +10,18 @@
 ## 实现
 
 - 主进程 `ChatManager`：常驻 Gateway 连接（一次性 ticket）、`session.resume`/`session.create` + 标题认领、
-  `prompt.submit`、`session.interrupt`、`client.capabilities {server_requests:true}`；把
-  `message.start|delta|interim|complete`、`tool.*`、`error`、`request.cancel` 归一化为渲染事件，
-  并通过 IPC 单向下发。
+  `prompt.submit`、`session.interrupt`、`client.capabilities {server_requests:true}`（实测返回 16 个
+  服务端请求方法，含 approval/clarify）；把 `message.start|delta|interim|complete`、`tool.*`、`error`、
+  `request.cancel` 归一化为渲染事件，并通过 IPC 单向下发。
 - 服务端请求：`approval`（choices: once/session/always/deny）与 `clarify`（questions/choices）
   以聊天内卡片呈现；回答经同一连接按 request id 回执。无法渲染的其它提示类型自动返回空值，
   避免代理端悬挂。
 - 断线：socket 关闭后按 1/2/4/8/15 s 退避重连并 `session.resume` 同一持久会话，渲染层显示
   「连接中断，正在恢复…」；重连成功恢复实时增量。
 - 渲染层：发送后本地乐观用户气泡 → 流式增量合并进单个 Bot 气泡 → 终态落定；发送中/流式中显示
-  「停止」；审批/澄清卡处理后折为回执；连接异常显示横幅；`tool.*` 事件当前忽略（工作记录归组在后续卡片）。
+  「停止」；审批/澄清卡处理后折为回执；连接异常显示横幅。
+- 工作记录：同一轮的 `tool.start/generating/complete` 合并为一个可展开「工作记录」（即使中间夹了
+  文本段也归并到同一条），避免逐条工具噪声打断正文；单测覆盖分组顺序与去重。
 
 ## 验证
 
@@ -33,7 +35,7 @@
 
 ## 待办
 
-- 真实审批/澄清触发与跨端回执（需要构造会请求审批的真实命令）。
+- 真实审批/澄清触发与跨端回执：需要一条会触发人工审批的命令（当前部署自动放行）；条件具备时补证。
 - 断线回放（`session.events.since`）与后台长回复恢复。
 - 工作记录（tool.* 归组）、Markdown 完整渲染（M1 后续）。
 - 用户实际操作验收：在应用内发送一条消息并观察流式与停止。

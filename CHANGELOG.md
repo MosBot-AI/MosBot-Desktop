@@ -65,7 +65,9 @@ until the release repository exists.
 - Live chat over the gateway: prompts are submitted to the real Bot Chat, streamed
   deltas merge into one Bot bubble, Stop interrupts the turn, approval and clarify
   requests render as inline cards answered by request id, and a closed socket
-  reconnects with backoff and resumes the stored session. Fixture windows keep the
+  reconnects with backoff and resumes the stored session. Tool events from one turn
+  collapse into a single expandable work log, and the client advertises
+  `server_requests` (16 methods on the test deployment). Fixture windows keep the
   offline demo.
 - Gateway WebSocket client (`ws`): one-time ticket handshake, `gateway.ready` first
   frame, JSON-RPC request/response with zod validation, typed server events, and

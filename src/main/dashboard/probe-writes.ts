@@ -837,6 +837,104 @@ export async function runChatProbe(deps: WriteProbeDeps): Promise<Result<ProbeRe
           : 'stop was not sent',
       ),
     );
+
+    const chatState = chat.state();
+    const approvalMode = chatState.approvalMode;
+    rows.push(
+      row(
+        'chat_server_requests',
+        'server_requests 能力声明',
+        chatState.serverRequests.includes('approval') &&
+          chatState.serverRequests.includes('clarify')
+          ? 'pass'
+          : 'unverified',
+        `methods=${chatState.serverRequests.length} · approval=${chatState.serverRequests.includes('approval')} · clarify=${chatState.serverRequests.includes('clarify')}`,
+      ),
+    );
+    rows.push(
+      row(
+        'chat_approval_mode',
+        '会话审批模式',
+        approvalMode === null ? 'unverified' : 'pass',
+        approvalMode === null
+          ? 'resume/create did not report approval_mode'
+          : `approval_mode=${approvalMode}`,
+      ),
+    );
+
+    // Approval path: ask for a shell command; the gateway should raise a server
+    // request that the client answers with choice=once.
+    events.length = 0;
+    const approvalSend = await chat.send(
+      '请用 shell 工具运行命令 echo mosbot-approval-probe，并把输出告诉我。',
+    );
+    const sawApproval = await waitFor(
+      () => events.some((event) => event.type === 'request' && event.request.method === 'approval'),
+      90_000,
+    );
+    const toolEvents = events.filter((event) => event.type === 'tool');
+    rows.push(
+      row(
+        'chat_approval_tools',
+        '审批触发前的工具事件',
+        toolEvents.length > 0 ? 'pass' : 'unverified',
+        toolEvents.length === 0
+          ? 'no tool events (agent may have answered without running a command)'
+          : `tool events=${toolEvents.length} · names=${toolEvents
+              .map((event) => (event.type === 'tool' ? event.name : ''))
+              .filter((name) => name !== '')
+              .slice(0, 3)
+              .join(',')}`,
+      ),
+    );
+    const approvalEvent = events.find(
+      (event) => event.type === 'request' && event.request.method === 'approval',
+    );
+    let answered = false;
+    if (approvalEvent?.type === 'request') {
+      const answer = await chat.answer(approvalEvent.request.id, { choice: 'once' });
+      answered = answer.ok;
+    }
+    const approvalCompleted = await waitFor(
+      () => events.some((event) => event.type === 'turn-complete'),
+      120_000,
+    );
+    const approvalCompleteEvent = events.find((event) => event.type === 'turn-complete');
+    rows.push(
+      row(
+        'chat_approval_request',
+        '审批请求 approval',
+        sawApproval ? 'pass' : approvalMode === 'manual' ? 'fail' : 'unverified',
+        sawApproval
+          ? `request raised · choices=${String(
+              (approvalEvent?.type === 'request'
+                ? (approvalEvent.request.payload['choices'] as unknown[])
+                : []
+              )?.length ?? 0,
+            )}`
+          : approvalSend.ok
+            ? `no approval request within 90s · approval_mode=${approvalMode ?? 'unknown'}（smart/yolo 会自动放行）`
+            : errorDetail(approvalSend.error),
+      ),
+    );
+    rows.push(
+      row(
+        'chat_approval_answer',
+        '审批回执',
+        answered ? 'pass' : 'unverified',
+        answered ? 'answered choice=once' : 'no request to answer',
+      ),
+    );
+    rows.push(
+      row(
+        'chat_approval_turn',
+        '审批后回合终态',
+        approvalCompleted ? 'pass' : 'unverified',
+        approvalCompleteEvent?.type === 'turn-complete'
+          ? `status=${approvalCompleteEvent.status}`
+          : 'no terminal event within 120s',
+      ),
+    );
   } finally {
     chat?.close();
     if (profileCreated) {
