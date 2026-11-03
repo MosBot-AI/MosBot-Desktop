@@ -3,6 +3,7 @@ import { DASHBOARD_CHANNELS } from '../../shared/bridge';
 import {
   protocolError,
   type ConnectionSnapshot,
+  type DashboardSettings,
   type DashboardStatus,
   type PreflightResult,
   type ProbeReport,
@@ -91,6 +92,17 @@ export function registerDashboardIpc(options: {
   handle<ProbeReport>(DASHBOARD_CHANNELS.probeKanbanWrite, () => service.probeKanbanWrite());
   handle<ProbeReport>(DASHBOARD_CHANNELS.signOut, () => service.signOut());
   handle<DashboardStatus>(DASHBOARD_CHANNELS.status, () => service.status());
+  handle<void>(DASHBOARD_CHANNELS.cancelLogin, () => service.cancelLogin());
+  handle<DashboardSettings>(DASHBOARD_CHANNELS.settings, () => service.settings());
+  handle<void>(DASHBOARD_CHANNELS.saveAddress, (address) => {
+    if (address !== null && !isBoundedString(address, MAX_ADDRESS_LENGTH)) {
+      return {
+        ok: false,
+        error: protocolError('invalid_url', 'Enter the Dashboard address.'),
+      };
+    }
+    return service.saveAddress(typeof address === 'string' ? address : null);
+  });
 }
 
 /** Only the app's own main frame may call the bridge. */

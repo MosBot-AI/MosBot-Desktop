@@ -28,7 +28,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "assets:sync": "node scripts/sync-brand-assets.mjs",
-    "test:integration": "electron-forge package && node scripts/probe-dashboard.mjs"
+    "test:integration": "electron-forge package && node scripts/probe-dashboard.mjs",
+    "screenshot:connected": "node scripts/capture-connected.mjs"
   },
   "dependencies": {
     "react": "19.3.1",

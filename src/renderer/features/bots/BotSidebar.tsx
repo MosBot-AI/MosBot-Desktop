@@ -11,6 +11,7 @@ import {
   useAppState,
   useDispatch,
 } from '../../app/store';
+import { TEST_DASHBOARD_URL } from '../../../shared/protocol';
 import { BrandWordmark } from '../../components/BrandWordmark';
 import {
   IconChevronDown,
@@ -43,6 +44,11 @@ export function BotSidebar(): ReactElement {
   const unresolved = selectUnresolvedCount(state);
   const unreadTotal = selectUnreadTotal(state);
   const pendingBotId = selectPendingBotId(state);
+  const connectionUi = state.connectionUi;
+  const connectedName =
+    connectionUi.snapshot?.connected === true
+      ? (connectionUi.snapshot.displayName ?? connectionUi.snapshot.userId ?? '')
+      : null;
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   const selectBot = (botId: string): void => {
@@ -201,6 +207,23 @@ export function BotSidebar(): ReactElement {
         {state.footerMenuOpen ? (
           <div className={styles.menu} role="dialog" aria-label={t('sidebar.menu.label')}>
             <div className={styles.menuSection}>
+              <span className={styles.menuLabel}>{t('sidebar.menu.dashboard')}</span>
+              <button
+                type="button"
+                className={styles.connectionItem}
+                onClick={() => {
+                  dispatch({
+                    type: 'connection-open',
+                    address: state.connectionUi.address || TEST_DASHBOARD_URL,
+                  });
+                }}
+              >
+                {connectedName === null
+                  ? t('connection.menuItem')
+                  : t('connection.menuConnected', { name: connectedName })}
+              </button>
+            </div>
+            <div className={styles.menuSection}>
               <span className={styles.menuLabel}>{t('sidebar.menu.appearance')}</span>
               <div
                 className={styles.segmented}
@@ -287,6 +310,7 @@ export function BotSidebar(): ReactElement {
         ) : null}
 
         <button
+          id="sidebar-connection"
           type="button"
           className={styles.footerButton}
           aria-expanded={state.footerMenuOpen}
@@ -298,9 +322,19 @@ export function BotSidebar(): ReactElement {
           <span className={styles.footerTop}>
             <BrandWordmark height={15} />
             <span className={styles.footerConnection}>
-              <span className={styles.connectionDot} data-status={state.connection.status} />
-              <span className={styles.connectionLabel} title={state.connection.accountLabel}>
-                {state.connection.accountLabel}
+              <span
+                className={styles.connectionDot}
+                data-status={connectedName === null ? state.connection.status : 'connected'}
+              />
+              <span
+                className={styles.connectionLabel}
+                title={
+                  connectedName === null
+                    ? state.connection.accountLabel
+                    : `${connectedName} · ${connectionUi.snapshot?.displayUrl ?? ''}`
+                }
+              >
+                {connectedName === null ? state.connection.accountLabel : connectedName}
               </span>
             </span>
           </span>

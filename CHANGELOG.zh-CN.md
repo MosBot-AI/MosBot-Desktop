@@ -24,6 +24,9 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
 - M0b 协议基础：Dashboard 地址策略（其余一律 https，仅保留一个精确的明文测试 origin）；基于 Electron 网络栈、zod 校验的 REST 传输（超时、响应大小上限、禁止跟随重定向）；RFC 8252 PKCE 登录与 loopback 回调 + state 校验；safeStorage 加密的刷新令牌凭据库（access token 只存内存）；仅接受应用自身顶层 frame 的 Dashboard IPC 桥。
 - M0b 探针：可重跑的 `pnpm test:integration`，打包应用后先做无凭据 REST 探活，再经系统浏览器登录，随后跑已登录探针与本地注销检查；能力矩阵见 `docs/evidence/capabilities.md`。
 - safeStorage 凭据库支持静默恢复登录（`dashboard.restore`），后续运行与应用启动无需重复输入密码；探针支持 preflight / restore / login / ws / all 模式，默认保留会话。
+- 首次连接界面与静默恢复：底栏显示真实账号；弹层负责地址预检、登录方式选择、浏览器交接与
+  连接摘要；登录成功后记住凭据（刷新令牌进 safeStorage，上次地址进非密钥设置），后续启动无需
+  重复输入。令牌不会进入 renderer。
 - Gateway WebSocket 客户端（`ws`）：一次性 ticket 握手、`gateway.ready` 首帧、zod 校验的 JSON-RPC 请求响应、类型化服务端事件，以及 ticket 复用/过期拒绝检查。已在测试部署验证：`profiles.list`、`client.capabilities` 与精确 Bot Chat 查询通过；复用与过期 ticket 被拒绝。
 
 ### 变更

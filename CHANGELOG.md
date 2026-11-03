@@ -57,6 +57,11 @@ until the release repository exists.
 - Silent sign-in restore from the safeStorage vault (`dashboard.restore`) so later
   runs and app launches need no repeated password entry; probe modes for preflight,
   restore, login, WS and all, with the session kept by default.
+- First-connection surface and silent restore: the footer shows the real account,
+  a dialog handles address preflight, provider choice, browser handoff and the
+  connected summary, and a successful sign-in is remembered (refresh token in
+  safeStorage, last address in non-secret settings) so later launches restore
+  without retyping. Tokens never reach the renderer.
 - Gateway WebSocket client (`ws`): one-time ticket handshake, `gateway.ready` first
   frame, JSON-RPC request/response with zod validation, typed server events, and
   ticket replay/expiry rejection checks. Verified against the test deployment:

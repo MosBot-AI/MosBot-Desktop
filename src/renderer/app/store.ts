@@ -15,6 +15,7 @@ import type {
   ThemePreference,
 } from '../../shared/domain';
 import { botColorSwatches, normalizeColor } from '../../shared/color';
+import type { AuthProviderInfo, ConnectionSnapshot, ProtocolError } from '../../shared/protocol';
 import { createFixtureSeed, type FixtureSeed } from './fixtures';
 
 export interface InspectorState {
@@ -39,6 +40,18 @@ export interface CreateState {
   readonly shape: BotShape;
   readonly color: string;
   readonly error: CreateError;
+}
+
+export type ConnectionStage =
+  'idle' | 'checking' | 'choose-provider' | 'awaiting-browser' | 'connected';
+
+export interface ConnectionUiState {
+  readonly open: boolean;
+  readonly stage: ConnectionStage;
+  readonly address: string;
+  readonly providers: readonly AuthProviderInfo[];
+  readonly error: ProtocolError | null;
+  readonly snapshot: ConnectionSnapshot | null;
 }
 
 export interface PendingReply {
@@ -66,6 +79,7 @@ export interface AppState {
   readonly footerMenuOpen: boolean;
   readonly pinnedMenuOpen: boolean;
   readonly pendingReply: PendingReply | null;
+  readonly connectionUi: ConnectionUiState;
 }
 
 export type AppAction =
@@ -99,7 +113,14 @@ export type AppAction =
   | { type: 'set-language'; language: Language }
   | { type: 'set-reduce-motion'; reduceMotion: boolean }
   | { type: 'set-footer-menu'; open: boolean }
-  | { type: 'set-pinned-menu'; open: boolean };
+  | { type: 'set-pinned-menu'; open: boolean }
+  | { type: 'connection-open'; address: string }
+  | { type: 'connection-close' }
+  | { type: 'connection-address'; address: string }
+  | { type: 'connection-stage'; stage: ConnectionStage }
+  | { type: 'connection-providers'; providers: readonly AuthProviderInfo[] }
+  | { type: 'connection-error'; error: ProtocolError | null }
+  | { type: 'connection-snapshot'; snapshot: ConnectionSnapshot | null };
 
 export interface Bootstrap {
   readonly resolvedTheme: ResolvedTheme;
@@ -259,6 +280,14 @@ export function createInitialState(seed: FixtureSeed, bootstrap: Bootstrap): App
     footerMenuOpen: false,
     pinnedMenuOpen: false,
     pendingReply: null,
+    connectionUi: {
+      open: false,
+      stage: 'idle',
+      address: '',
+      providers: [],
+      error: null,
+      snapshot: null,
+    },
   };
 }
 
@@ -578,6 +607,47 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
       return { ...state, language: action.language };
     case 'set-reduce-motion':
       return { ...state, reduceMotion: action.reduceMotion };
+    case 'connection-open':
+      return {
+        ...state,
+        connectionUi: {
+          ...state.connectionUi,
+          open: true,
+          address: state.connectionUi.address === '' ? action.address : state.connectionUi.address,
+          stage: state.connectionUi.snapshot?.connected === true ? 'connected' : 'idle',
+          error: null,
+        },
+        footerMenuOpen: false,
+        pinnedMenuOpen: false,
+      };
+    case 'connection-close':
+      return {
+        ...state,
+        connectionUi: { ...state.connectionUi, open: false, stage: 'idle', error: null },
+      };
+    case 'connection-address':
+      return {
+        ...state,
+        connectionUi: { ...state.connectionUi, address: action.address, error: null },
+      };
+    case 'connection-stage':
+      return { ...state, connectionUi: { ...state.connectionUi, stage: action.stage } };
+    case 'connection-providers':
+      return {
+        ...state,
+        connectionUi: { ...state.connectionUi, providers: action.providers },
+      };
+    case 'connection-error':
+      return { ...state, connectionUi: { ...state.connectionUi, error: action.error } };
+    case 'connection-snapshot':
+      return {
+        ...state,
+        connectionUi: {
+          ...state.connectionUi,
+          snapshot: action.snapshot,
+          stage: action.snapshot?.connected === true ? 'connected' : 'idle',
+        },
+      };
     case 'set-footer-menu':
       return state.footerMenuOpen === action.open && !state.pinnedMenuOpen
         ? state

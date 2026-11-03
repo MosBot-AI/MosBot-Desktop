@@ -81,6 +81,7 @@ export function createAuthManager(deps: AuthDeps): AuthManager {
   let me: AuthMePayload | null = null;
   let activeReceiver: LoopbackReceiver | null = null;
   let refreshing: Promise<Result<AuthSession>> | null = null;
+  let restoring: Promise<Result<AuthSession | null>> | null = null;
 
   const transportFor = (at: DashboardTarget) => ({
     fetchImpl: deps.fetchImpl,
@@ -314,22 +315,30 @@ export function createAuthManager(deps: AuthDeps): AuthManager {
       }
     },
 
-    async restore(at) {
-      target = at;
-      me = null;
-      tokens = null;
-      const stored = vault.load(at.displayUrl);
-      if (!stored.ok) {
-        return stored as Result<AuthSession | null>;
+    restore(at) {
+      if (restoring !== null) {
+        return restoring;
       }
-      if (stored.data === null) {
-        return { ok: true, data: null };
-      }
-      const refreshed = await performRefresh();
-      if (!refreshed.ok) {
-        return { ok: false, error: refreshed.error };
-      }
-      return { ok: true, data: refreshed.data };
+      restoring = (async (): Promise<Result<AuthSession | null>> => {
+        target = at;
+        me = null;
+        tokens = null;
+        const stored = vault.load(at.displayUrl);
+        if (!stored.ok) {
+          return stored as Result<AuthSession | null>;
+        }
+        if (stored.data === null) {
+          return { ok: true, data: null };
+        }
+        const refreshed = await performRefresh();
+        if (!refreshed.ok) {
+          return { ok: false, error: refreshed.error };
+        }
+        return { ok: true, data: refreshed.data };
+      })().finally(() => {
+        restoring = null;
+      });
+      return restoring;
     },
 
     refresh() {

@@ -116,6 +116,11 @@ async function main() {
   console.log('captured 11-hover-preview.png');
   await page.mouse.move(1, 1);
 
+  await page.getByRole('button', { name: '外观与语言' }).click();
+  await page.getByRole('button', { name: '连接 Dashboard…' }).click();
+  await shot('12-connection');
+  await page.keyboard.press('Escape');
+
   await application.close();
 }
 

@@ -57,6 +57,13 @@
 | 未打开 Bot 的审批发现、跨端回执、通知        | 未验证 | 主 Agent | M0b/M0c |
 | 电脑状态、唤醒、预览、非抢占接管、租约       | 未验证 | 主 Agent | M0b/M0c |
 
+## 客户端接入状态（2026-11-04）
+
+- 登录界面与静默恢复已实现：首次连接弹层（地址 → 预检 → 选择登录方式 → 系统浏览器 → 连接摘要）、
+  左下账号状态、注销；启动时用 safeStorage 中的刷新令牌静默恢复，不重复输入。
+- 证据：`docs/evidence/m1-first-connection.md`、`docs/evidence/screens/m1/`；离线表单/错误路径有 E2E。
+- 名单/聊天仍使用 fixture；真实 `profiles.list` 与 Bot Chat 流式接入属于 M1 后续工作。
+
 ## 已登录证据说明
 
 - 凭据：刷新令牌经 Electron safeStorage（Keychain）加密存于应用 userData 的

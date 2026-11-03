@@ -224,6 +224,12 @@ export interface PreflightResult {
   readonly health: HealthPayload;
 }
 
+/** Non-secret connection preferences persisted by the main process. */
+export interface DashboardSettings {
+  readonly version: 1;
+  readonly lastAddress: string | null;
+}
+
 /** What the details panel may know about the connection. */
 export interface DashboardStatus {
   readonly connection: ConnectionSnapshot;

@@ -291,6 +291,20 @@
   letter-spacing: 0.04em;
 }
 
+.connectionItem {
+  height: 30px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  color: var(--text-primary);
+  font-size: var(--text-xs);
+  text-align: left;
+}
+
+.connectionItem:hover {
+  background: var(--surface-hover);
+}
+
 .segmented {
   display: flex;
   gap: 2px;

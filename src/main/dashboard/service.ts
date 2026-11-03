@@ -1,5 +1,6 @@
 import type {
   ConnectionSnapshot,
+  DashboardSettings,
   DashboardStatus,
   PreflightResult,
   ProtocolError,
@@ -30,6 +31,11 @@ export interface DashboardService {
   probeKanbanWrite(): Promise<Result<ProbeReport>>;
   /** Local sign-out plus what it verified. */
   signOut(): Result<ProbeReport>;
+  /** Aborts a pending browser sign-in. */
+  cancelLogin(): Result<void>;
+  /** Non-secret connection preferences. */
+  settings(): Result<DashboardSettings>;
+  saveAddress(address: string | null): Result<void>;
   status(): Promise<Result<DashboardStatus>>;
 }
 
@@ -39,6 +45,10 @@ export interface DashboardServiceDeps {
   readonly requestTimeoutMs?: number;
   readonly now?: () => number;
   readonly ticketExpiryCheck?: boolean;
+  readonly settings?: {
+    read(): DashboardSettings;
+    writeLastAddress(address: string | null): void;
+  };
 }
 
 function toProtocolError(error: unknown): ProtocolError {
@@ -155,6 +165,27 @@ export function createDashboardService(deps: DashboardServiceDeps): DashboardSer
 
     async status() {
       return { ok: true, data: { connection: deps.auth.current(), lastProbe: null } };
+    },
+
+    cancelLogin() {
+      deps.auth.cancelLogin();
+      return { ok: true, data: undefined };
+    },
+
+    settings() {
+      return { ok: true, data: deps.settings?.read() ?? { version: 1, lastAddress: null } };
+    },
+
+    saveAddress(address) {
+      if (address !== null) {
+        try {
+          parseDashboardTarget(address);
+        } catch (error) {
+          return { ok: false, error: toProtocolError(error) };
+        }
+      }
+      deps.settings?.writeLastAddress(address);
+      return { ok: true, data: undefined };
     },
   };
 }

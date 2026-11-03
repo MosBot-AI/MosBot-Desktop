@@ -135,6 +135,24 @@ test.describe('M0a design slice', () => {
     await page.getByRole('button', { name: '简体中文' }).click();
     await page.getByRole('button', { name: '浅色' }).click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    await page.keyboard.press('Escape');
+  });
+
+  test('opens the connection dialog, validates the address and restores focus', async () => {
+    const page = app.page;
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: '外观与语言' }).click();
+    await page.getByRole('button', { name: '连接 Dashboard…' }).click();
+    const dialog = page.getByRole('dialog', { name: '连接 Dashboard' });
+    await expect(dialog).toBeVisible();
+    const address = page.locator('#connection-address');
+    await expect(address).toBeFocused();
+    await address.fill('not a url');
+    await dialog.getByRole('button', { name: '连接', exact: true }).click();
+    await expect(page.getByRole('alert')).toContainText('地址不是有效的 URL');
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+    await expect(page.locator('#sidebar-connection')).toBeFocused();
   });
 
   test('uses the overlay details panel and the empty chat in a narrow window', async () => {

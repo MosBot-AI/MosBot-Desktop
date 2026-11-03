@@ -7,9 +7,12 @@ live in a separate Hermes workbench you open when you need them.
 **Status:** M0a design slice plus the M0b protocol foundation. The window, roster,
 chat, details column, search and create-Bot dialog run on deterministic fixtures.
 The Dashboard client (address policy, Electron-network REST transport, RFC 8252
-PKCE sign-in, safeStorage credential vault, IPC bridge) is implemented and its
-read-only preflight passes against the test deployment (v0.22.5); sign-in still
-needs one browser login. No signed installer or upgrade path exists yet. See
+PKCE sign-in, safeStorage credential vault, IPC bridge) is implemented, verified
+against the test deployment (v0.22.5) including a real browser sign-in, refresh
+rotation, the gateway WebSocket contract and dedicated-object write probes. The
+first-connection dialog stores the sign-in securely and restores it silently on
+the next launch. The roster and chat still use fixtures; no signed installer or
+upgrade path exists yet. See
 [`docs/evidence/m0a-design-slice.md`](docs/evidence/m0a-design-slice.md) and
 [`docs/evidence/capabilities.md`](docs/evidence/capabilities.md).
 

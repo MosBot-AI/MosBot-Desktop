@@ -4,6 +4,8 @@ import { LOCALE_TAGS } from './app/i18n';
 import { useAppState, useDispatch } from './app/store';
 import { BotSidebar } from './features/bots/BotSidebar';
 import { ChatView } from './features/chat/ChatView';
+import { ConnectionDialog } from './features/connection/ConnectionDialog';
+import { restoreConnectionOnStartup } from './features/connection/useConnection';
 import { CreateBotDialog } from './features/create/CreateBotDialog';
 import { InspectorPanel } from './features/inspector/InspectorPanel';
 import { SearchOverlay } from './features/search/SearchOverlay';
@@ -89,6 +91,11 @@ export function App(): ReactElement {
     };
   }, [wakingProfileId, dispatch]);
 
+  // Silently restore a saved Dashboard sign-in; nothing prompts for a password.
+  useEffect(() => {
+    void restoreConnectionOnStartup(dispatch);
+  }, [dispatch]);
+
   useEffect(() => {
     const media = window.matchMedia('(max-width: 968px)');
     const apply = (): void => {
@@ -124,6 +131,7 @@ export function App(): ReactElement {
       </div>
       <SearchOverlay />
       <CreateBotDialog />
+      <ConnectionDialog />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import path from 'node:path';
 import { createAuthManager } from './dashboard/auth';
 import { createTrustedSenderCheck, registerDashboardIpc } from './dashboard/ipc';
 import { createDashboardService } from './dashboard/service';
+import { createSettingsStore } from './dashboard/settings';
 import type { TransportFetch } from './dashboard/transport';
 
 const isMac = process.platform === 'darwin';
@@ -148,9 +149,13 @@ function registerDashboard(): void {
     credentialsPath: path.join(app.getPath('userData'), 'dashboard-credentials.json'),
     ...(timeoutMs === undefined ? {} : { loopbackTimeoutMs: timeoutMs }),
   });
+  const settings = createSettingsStore(
+    path.join(app.getPath('userData'), 'dashboard-settings.json'),
+  );
   const service = createDashboardService({
     auth,
     fetchImpl,
+    settings,
     ticketExpiryCheck: process.env['MOSBOT_PROBE_TICKET_EXPIRY'] === '1',
   });
   registerDashboardIpc({

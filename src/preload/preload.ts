@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 import { DASHBOARD_CHANNELS, type MosBotBridge } from '../shared/bridge';
 import type {
   ConnectionSnapshot,
+  DashboardSettings,
   DashboardStatus,
   PreflightResult,
   ProbeReport,
@@ -43,6 +44,15 @@ const bridge: MosBotBridge = {
     },
     probeWorkbench(): Promise<Result<ProbeReport>> {
       return ipcRenderer.invoke(DASHBOARD_CHANNELS.probeWorkbench) as Promise<Result<ProbeReport>>;
+    },
+    cancelLogin(): Promise<Result<void>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.cancelLogin) as Promise<Result<void>>;
+    },
+    settings(): Promise<Result<DashboardSettings>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.settings) as Promise<Result<DashboardSettings>>;
+    },
+    saveAddress(address: string | null): Promise<Result<void>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.saveAddress, address) as Promise<Result<void>>;
     },
     probeNewBot(): Promise<Result<ProbeReport>> {
       return ipcRenderer.invoke(DASHBOARD_CHANNELS.probeNewBot) as Promise<Result<ProbeReport>>;
