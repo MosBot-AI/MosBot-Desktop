@@ -1,0 +1,11 @@
+node_modules/
+out/
+.vite/
+.tmp/
+test-results/
+playwright-report/
+docs/plans/
+docs/scratch/
+docs/evidence/screens/
+pnpm-lock.yaml
+src/renderer/assets/brand/artwork.ts

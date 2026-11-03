@@ -1,0 +1,6 @@
+.wordmark {
+  display: block;
+  flex: none;
+  color: var(--text-primary);
+  user-select: none;
+}

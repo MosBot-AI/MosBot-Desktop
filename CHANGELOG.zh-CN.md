@@ -1,0 +1,35 @@
+# 更新日志
+
+MosBot Desktop 的所有重要变更记录在此。格式遵循
+[Keep a Changelog 1.1.0](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循
+[语义化版本 2.0.0](https://semver.org/lang/zh-CN/spec/v2.0.0.html)。源码改动、已构建产物与已安装/已发布版本分开列出，避免把源码改动误读为可安装版本。
+
+仓库尚未建立远程地址；对比链接暂用本文件锚点，发布仓库建立后替换为 comparison link。
+
+## [Unreleased]
+
+### 新增
+
+- Electron Forge + Vite + React 19 + TypeScript（strict）基线：沙箱化、上下文隔离的主窗口（1000 × 760，最小 720 × 500），禁止外部导航、无 remote 模块、生产环境严格 CSP，以及窄接口 preload 桥。
+- Bot 优先界面的设计系统：暖中性底色、MosBot 品牌绿、4/8/12/16/24 间距、10–14 px 圆角、浅色与深色 token、动态效果降低时的行为。
+- 带类型的中英文 message keys 与一致性测试；语言跟随系统，底栏可切换并保留草稿、滚动与运行状态。
+- 左栏名单：搜索与新建入口、待处理请求提示、三列共六格的常用头像、「全部置顶」浮层、可收折分区与数量、未读角标、状态点，以及底部的 MosBot 连接入口。
+- 会话栏：居中名牌（点击打开详情）、用户/Bot 气泡、合并且可展开的工作记录、审批与澄清卡（处理后折为回执）、已停止状态、最小而安全的文本渲染（段落、列表、代码块、行内代码），以及支持中文输入法、Enter 发送、Shift+Enter 换行、发送/停止的输入条。
+- 确定性的脱敏界面样例：两个分区、六个置顶位、超长中文名、空对话、长回复、离线 Bot、待审批请求与休眠电脑；另有仅样例使用的回复与唤醒节奏。
+- 按需详情栏（详情/资料库/电脑，可拖拽宽度、窄窗口覆盖态）、键盘可用的搜索浮层，以及实时预览的新建 Bot 弹层。
+- 从 MosBot@3c118c4 复制的品牌资产与 provenance 记录、`pnpm assets:sync` 命令，以及从移动端移植的程序化 BotFace 几何。
+- 工具链：`pnpm dev`、`pnpm package`、`pnpm typecheck`、`pnpm test`、`pnpm test:e2e`、`pnpm lint`、`pnpm format`、Playwright Electron 冒烟测试与证据截屏。
+
+### 说明
+
+- 本条仅为源码改动：尚无签名安装包、升级路径与真实 Dashboard 连接。M0a 用样例数据做界面评审，M0b/M1 再切换到 `192.168.2.171:9119` 真实服务。
+- 截图中的聊天内容全部为脱敏样例数据。
+
+## [0.1.0] - 2026-11-03
+
+### 新增
+
+- M0a 设计切片基线（当前内容见 Unreleased）。
+
+[Unreleased]: ./CHANGELOG.md#unreleased
+[0.1.0]: ./CHANGELOG.md#010---2026-11-03

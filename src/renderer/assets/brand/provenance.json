@@ -1,0 +1,36 @@
+{
+  "pinnedSha": "3c118c4",
+  "command": "pnpm assets:sync",
+  "assets": [
+    {
+      "file": "app-icon.png",
+      "source": "MosBot@3c118c4:AppScope/resources/base/media/app_icon.png",
+      "sha256": "fa19a944f69ead977b32363037ebb42f9dbc3a6e67153b524cec50590043a4ab"
+    },
+    {
+      "file": "empty-chat.svg",
+      "source": "MosBot@3c118c4:entry/src/main/resources/base/media/empty_chat_bubbles.svg",
+      "sha256": "ea196588b9f431a9b96b850f1a7dc4aca4cd685ee1174d41bc3e41bec97c5eb5"
+    },
+    {
+      "file": "wordmark-letters.svg",
+      "source": "MosBot@3c118c4:entry/src/main/resources/base/media/mosbot_wordmark_letters.svg",
+      "sha256": "cfe0d99d0717e7a50427f894b2b818502ee8878d8bb5a4bc1e499e25fdb8934d"
+    },
+    {
+      "file": "wordmark-eyes.svg",
+      "source": "MosBot@3c118c4:entry/src/main/resources/base/media/mosbot_wordmark_eyes.svg",
+      "sha256": "448698941c958b987bc33a2ef13a3a23874062391b0ef7edb0c5fa6afcc64a07"
+    },
+    {
+      "file": "hermes-desktop-bots-LICENSE",
+      "source": "MosBot@3c118c4:licenses/hermes-desktop-bots-LICENSE",
+      "sha256": "5f79d321c17de8ef6e5f34967dc5b484afebeeefd87180890d9741941f6b815f"
+    },
+    {
+      "file": "MosBot-LICENSE",
+      "source": "MosBot@3c118c4:LICENSE",
+      "sha256": "d8f2695e7abd3653b185cd327855311f817042a88f92b472135f5f8e88aa5114"
+    }
+  ]
+}

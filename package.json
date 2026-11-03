@@ -1,0 +1,56 @@
+{
+  "name": "mosbot-desktop",
+  "productName": "MosBot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MosBot Desktop — Electron workbench for Hermes Agent bots",
+  "license": "UNLICENSED",
+  "author": {
+    "name": "MosBot"
+  },
+  "main": ".vite/build/main.cjs",
+  "packageManager": "pnpm@11.28.5",
+  "engines": {
+    "node": ">=24.0.0",
+    "pnpm": ">=11.0.0"
+  },
+  "scripts": {
+    "dev": "electron-forge start",
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.node.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "electron-forge package && playwright test",
+    "screenshot": "electron-forge package && node scripts/capture-screens.mjs",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "assets:sync": "node scripts/sync-brand-assets.mjs"
+  },
+  "dependencies": {
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "8.0.1",
+    "@electron-forge/plugin-vite": "8.0.1",
+    "@eslint/js": "9.39.5",
+    "@playwright/test": "1.64.1",
+    "@types/node": "26.6.6",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "electron": "45.2.1",
+    "eslint": "9.39.5",
+    "globals": "17.13.0",
+    "playwright": "1.64.1",
+    "pnpm": "11.28.5",
+    "prettier": "3.9.10",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.72.1",
+    "vite": "8.3.5",
+    "vitest": "5.0.5"
+  }
+}

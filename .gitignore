@@ -1,0 +1,82 @@
+# ---------------------------------------------------------------------------
+# MosBot Desktop
+# Toolchain: Node 24 + pnpm workspaces, electron-vite (main/preload/renderer),
+# electron-builder, Playwright and Vitest. Keep this file in sync when the
+# build or packaging configuration changes.
+# ---------------------------------------------------------------------------
+
+# Secrets and local overrides -------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.mobileprovision
+certs/
+
+# Node.js and pnpm ------------------------------------------------------------
+node_modules/
+.pnpm-store/
+.pnpm-debug.log*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build and packaging output --------------------------------------------------
+# electron-vite writes each process bundle to out/; electron-builder writes
+# installers and unpacked apps to dist/.
+out/
+dist/
+release/
+build/icon.iconset/
+*.tsbuildinfo
+.eslintcache
+*.tgz
+
+# Caches and scratch space ----------------------------------------------------
+.electron-cache/
+.vite/
+.tmp/
+docs/evidence/tmp/
+
+# Tests and coverage ----------------------------------------------------------
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Logs and crash artifacts ----------------------------------------------------
+*.log
+logs/
+*.crash
+*.heapsnapshot
+
+# Operating system files ------------------------------------------------------
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Editor and IDE files --------------------------------------------------------
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# User defined files  --------------------------------------------------------
+debug/
+release/
+build/icon.iconset/
+promo/
+certs/
+scratch/
+# Keep docs/plans versioned; ignore only legacy root-level plans.
+/plans/

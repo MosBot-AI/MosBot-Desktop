@@ -1,0 +1,7 @@
+# Electron Forge's packager expects a hoisted node_modules layout and reads
+# the package-manager version through the local pnpm devDependency.
+nodeLinker: hoisted
+
+onlyBuiltDependencies:
+  - electron
+  - esbuild

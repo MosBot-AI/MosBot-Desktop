@@ -1,0 +1,164 @@
+/*
+ * MosBot design tokens. Spacing, radii, type and sizes come from
+ * docs/plans/01-bot-experience.md (4/8/12/16/24, 10–14 px radii, 48 px rows).
+ * Light and dark derive from the same hierarchy: a quiet warm neutral shell, a
+ * slightly brighter chat, one step of lift for selection, 1 px hairlines.
+ */
+:root {
+  color-scheme: light;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
+  /* Type */
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, monospace;
+  --text-2xs: 11px;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 15px;
+  --text-lg: 16px;
+  --text-xl: 18px;
+  --text-display: 22px;
+  --leading-tight: 1.3;
+  --leading-normal: 1.5;
+
+  /* Layout */
+  --titlebar-height: 38px;
+  --sidebar-width: 288px;
+  --sidebar-min: 264px;
+  --sidebar-max: 340px;
+  --inspector-default-width: 360px;
+  --inspector-min-width: 320px;
+  --inspector-max-width: 440px;
+  --chat-max-width: 720px;
+  --row-height: 48px;
+  --pinned-face-size: 52px;
+  --row-face-size: 34px;
+  --nameplate-face-size: 22px;
+  --detail-face-size: 76px;
+
+  /* Motion: only for confirming an action */
+  --duration-press: 120ms;
+  --duration-panel: 200ms;
+  --easing-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  /* Layers */
+  --z-inspector: 40;
+  --z-popover: 80;
+  --z-overlay: 100;
+  --z-dialog: 120;
+}
+
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
+  --surface-app: #eff0ee;
+  --surface-sidebar: #f3f2ef;
+  --surface-chat: #fbfaf8;
+  --surface-raised: #ffffff;
+  --surface-sunken: #e9e8e4;
+  --surface-hover: #eae9e5;
+  --surface-selected: #e2e1dc;
+  --surface-overlay: rgba(24, 23, 20, 0.32);
+  --surface-face-wash: rgba(24, 23, 20, 0.04);
+  --surface-code: #f1f0ec;
+
+  --text-primary: #1d1c19;
+  --text-secondary: #6b675f;
+  --text-tertiary: #918c83;
+  --text-inverse: #ffffff;
+  --text-on-accent: #171a12;
+
+  --border-subtle: #e2e0da;
+  --border-strong: #cfccc4;
+  --border-focus: #7f9a3f;
+
+  --accent-brand: #afe17b;
+  --accent-brand-pressed: #9cd265;
+  --accent-brand-ink: #171a12;
+  --accent-link: #4f7327;
+  --accent-danger: #c2453f;
+  --accent-warning: #b7791f;
+  --accent-working: #3f8f5f;
+  --accent-unread: #3d7ae0;
+
+  --bubble-bot: #efeeea;
+  --bubble-bot-text: #26241f;
+  --bubble-user-text: #ffffff;
+
+  --shadow-popover: 0 8px 28px rgba(28, 26, 22, 0.14), 0 1px 3px rgba(28, 26, 22, 0.08);
+  --shadow-composer: 0 1px 2px rgba(28, 26, 22, 0.06), 0 4px 16px rgba(28, 26, 22, 0.05);
+  --shadow-nameplate: 0 1px 2px rgba(28, 26, 22, 0.07);
+  --backdrop-blur: blur(18px) saturate(160%);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --surface-app: #121312;
+  --surface-sidebar: #17181a;
+  --surface-chat: #1b1c1e;
+  --surface-raised: #232426;
+  --surface-sunken: #101112;
+  --surface-hover: #202124;
+  --surface-selected: #2a2b2e;
+  --surface-overlay: rgba(5, 5, 6, 0.55);
+  --surface-face-wash: rgba(255, 255, 255, 0.05);
+  --surface-code: #141516;
+
+  --text-primary: #f1efea;
+  --text-secondary: #a8a49c;
+  --text-tertiary: #7d7973;
+  --text-inverse: #14150f;
+  --text-on-accent: #171a12;
+
+  --border-subtle: #2b2c2f;
+  --border-strong: #3a3b3f;
+  --border-focus: #a8d275;
+
+  --accent-brand: #afe17b;
+  --accent-brand-pressed: #c3ec97;
+  --accent-brand-ink: #171a12;
+  --accent-link: #b5dd86;
+  --accent-danger: #e2685f;
+  --accent-warning: #e0a53c;
+  --accent-working: #58b57e;
+  --accent-unread: #6d9df0;
+
+  --bubble-bot: #26272a;
+  --bubble-bot-text: #eceae5;
+  --bubble-user-text: #14150f;
+
+  --shadow-popover: 0 10px 32px rgba(0, 0, 0, 0.55), 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-composer: 0 1px 2px rgba(0, 0, 0, 0.35), 0 6px 20px rgba(0, 0, 0, 0.28);
+  --shadow-nameplate: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-press: 0ms;
+    --duration-panel: 0ms;
+  }
+}
+
+[data-reduce-motion="true"] {
+  --duration-press: 0ms;
+  --duration-panel: 0ms;
+}
