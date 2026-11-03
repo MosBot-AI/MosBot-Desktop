@@ -21,8 +21,15 @@ const PREFLIGHT_ONLY = MODE === 'preflight';
 const RESTORE_ONLY = MODE === 'restore';
 const FORCE_LOGIN = MODE === 'login';
 const WS_ONLY = MODE === 'ws';
+const WORKBENCH_ONLY = MODE === 'workbench';
+const NEWBOT_ONLY = MODE === 'newbot';
+const KANBAN_ONLY = MODE === 'kanban';
+const WRITES_ONLY = MODE === 'writes';
 const RUN_WS_PROBE = WS_ONLY || MODE === 'all';
-const RUN_AUTH_PROBE = !WS_ONLY;
+const RUN_WORKBENCH_PROBE = WORKBENCH_ONLY || MODE === 'all';
+const RUN_NEWBOT_PROBE = NEWBOT_ONLY || WRITES_ONLY;
+const RUN_KANBAN_PROBE = KANBAN_ONLY || WRITES_ONLY;
+const RUN_AUTH_PROBE = !WS_ONLY && !WORKBENCH_ONLY && !NEWBOT_ONLY && !KANBAN_ONLY && !WRITES_ONLY;
 const SIGN_OUT = process.env.MOSBOT_PROBE_SIGN_OUT === '1';
 const APP = path.resolve(
   'out',
@@ -195,6 +202,44 @@ async function main() {
     printRows('第 2 步 · WS 与名单', webSocket.data.rows);
   }
 
+  let workbench = null;
+  if (RUN_WORKBENCH_PROBE) {
+    workbench = await page.evaluate(() => window.mosbot.dashboard.probeWorkbench());
+    if (!workbench.ok) {
+      console.error(
+        `\nWorkbench probe failed: [${workbench.error.code}] ${workbench.error.message}`,
+      );
+      await application.close();
+      process.exitCode = 6;
+      return;
+    }
+    printRows('第 4 步 · 工作台只读', workbench.data.rows);
+  }
+
+  let newBot = null;
+  if (RUN_NEWBOT_PROBE) {
+    newBot = await page.evaluate(() => window.mosbot.dashboard.probeNewBot());
+    if (!newBot.ok) {
+      console.error(`\nNew-Bot probe failed: [${newBot.error.code}] ${newBot.error.message}`);
+      await application.close();
+      process.exitCode = 7;
+      return;
+    }
+    printRows('第 3 步 · 新建 Bot（专用对象，自动清理）', newBot.data.rows);
+  }
+
+  let kanban = null;
+  if (RUN_KANBAN_PROBE) {
+    kanban = await page.evaluate(() => window.mosbot.dashboard.probeKanbanWrite());
+    if (!kanban.ok) {
+      console.error(`\nKanban probe failed: [${kanban.error.code}] ${kanban.error.message}`);
+      await application.close();
+      process.exitCode = 8;
+      return;
+    }
+    printRows('第 4 步 · Kanban 写入（专用对象，自动清理）', kanban.data.rows);
+  }
+
   // Keep the session by default so later runs restore silently; explicit
   // sign-out is a separate, deliberate check.
   let signOut = null;
@@ -227,6 +272,9 @@ async function main() {
         preflight: preflight.data.report,
         authenticated: authenticated === null ? null : authenticated.data,
         webSocket: webSocket === null ? null : webSocket.data,
+        workbench: workbench === null ? null : workbench.data,
+        newBot: newBot === null ? null : newBot.data,
+        kanban: kanban === null ? null : kanban.data,
         signOut: signOut !== null && signOut.ok ? signOut.data : null,
       },
       null,

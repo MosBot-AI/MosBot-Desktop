@@ -6,7 +6,7 @@
 - 记录时间：2026-11-03
 - 探针：`MOSBOT_DASHBOARD_URL=http://192.168.2.171:9119 npm run test:integration`（无凭据部分可用 `MOSBOT_PROBE_MODE=preflight` 单独重跑）
 - 说明：本文件只记录脱敏字段形状、状态与结论；令牌、票据、凭据、真实会话正文、账号身份值不进入证据。
-- 状态：**第 1、2 步已验证**（2026-11-04 用户在系统浏览器完成一次 basic 登录，凭据经 safeStorage 保存并可静默恢复）；第 3–6 步未验证
+- 状态：**第 1、2、3 步与第 4 步的读路径/写路径已验证**（2026-11-04 用户在系统浏览器完成一次 basic 登录，凭据经 safeStorage 保存并可静默恢复）；第 5、6 步未验证；第 4 步的部分写入（模型配置）已在专用 profile 上验证
 
 ## 部署实测摘要（只读）
 
@@ -64,8 +64,11 @@
   （`.tmp/userdata-probe`），因此与日常应用互不影响。
 - 会话保持：探针默认**不注销**，后续运行先静默恢复再刷新；只有设置
   `MOSBOT_PROBE_SIGN_OUT=1` 时才验证注销并清除凭据。
-- 重复运行：`MOSBOT_PROBE_MODE=restore` 只恢复 + 跑第 1 步；`MOSBOT_PROBE_MODE=ws` 恢复后跑
-  第 2 步；`MOSBOT_PROBE_MODE=all` 全跑；`MOSBOT_PROBE_TICKET_EXPIRY=1` 额外等待 31 s 复验过期。
+- 重复运行：`MOSBOT_PROBE_MODE=restore` 只恢复 + 跑第 1 步；`ws` 跑第 2 步；`workbench` 跑第 4 步
+  读路径；`newbot` / `kanban` / `writes` 跑第 3、4 步写入（专用对象自动清理）；`all` 跑只读全量；
+  `MOSBOT_PROBE_TICKET_EXPIRY=1` 额外等待 31 s 复验过期。
+- 部署源码对照：本机 `~/.hermes/hermes-agent` 正好是部署 commit `bf0203a794`，第 3/4 步的请求
+  形状按它核对；本地基线 `c419cf7c86` 更新，差异在 M0c 记录。
 
 ## 关闭条件
 

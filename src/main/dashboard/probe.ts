@@ -4,6 +4,7 @@ import type { AuthManager } from './auth';
 import { attemptGatewayConnection, connectGateway, gatewayUrl, type GatewayReady } from './rpc';
 import {
   clientCapabilitiesSchema,
+  emptySchema,
   healthSchema,
   meSchema,
   profilesListSchema,
@@ -13,6 +14,7 @@ import {
   statusSchema,
   wsTicketSchema,
 } from './schemas';
+import { runKanbanWriteProbe, runNewBotProbe } from './probe-writes';
 import { requestJson, type TransportFetch } from './transport';
 
 const MASK_VISIBLE = 4;
@@ -54,6 +56,9 @@ export interface ProbeService {
   runPreflight(target: DashboardTarget): Promise<Result<ProbeReport>>;
   runAuthenticated(): Promise<Result<ProbeReport>>;
   runWebSocket(): Promise<Result<ProbeReport>>;
+  runWorkbench(): Promise<Result<ProbeReport>>;
+  runNewBot(): Promise<Result<ProbeReport>>;
+  runKanbanWrite(): Promise<Result<ProbeReport>>;
   /** Signs out locally and reports what survived the sign-out. */
   runSignOut(): CapabilityRow[];
 }
@@ -66,6 +71,21 @@ function row(
   required = true,
 ): CapabilityRow {
   return { id, title, status, detail, required };
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function arrayField(record: Record<string, unknown> | null, key: string): unknown[] | null {
+  const value = record?.[key];
+  return Array.isArray(value) ? value : null;
+}
+
+function keysOf(value: unknown): string[] {
+  return asRecord(value) === null ? [] : Object.keys(asRecord(value) ?? {});
 }
 
 export function createProbeService(deps: ProbeDeps): ProbeService {
@@ -412,6 +432,25 @@ export function createProbeService(deps: ProbeDeps): ProbeService {
           }
         }
 
+        if (defaultProfile !== null) {
+          const display = await client.call(
+            'display.status',
+            { profile: defaultProfile },
+            emptySchema,
+          );
+          const displayRecord = asRecord(display.ok ? display.data : null);
+          rows.push(
+            row(
+              'display_status',
+              '电脑状态读取 display.status',
+              display.ok ? 'pass' : 'not-supported',
+              display.ok
+                ? `keys=${displayRecord === null ? '—' : Object.keys(displayRecord).slice(0, 8).join(',')}`
+                : display.error.message,
+            ),
+          );
+        }
+
         // A consumed ticket must be rejected when replayed.
         const freshTicket = await requestJson(transport, {
           method: 'POST',
@@ -487,6 +526,231 @@ export function createProbeService(deps: ProbeDeps): ProbeService {
         client.close();
       }
       return { ok: true, data: { generatedAt: now(), target: target.displayUrl, rows } };
+    },
+
+    async runWorkbench() {
+      const target = deps.auth.target();
+      if (target === null || !deps.auth.current().connected) {
+        return {
+          ok: false,
+          error: protocolError(
+            'unauthorized',
+            'Sign in to the Dashboard before running this probe.',
+          ),
+        };
+      }
+      const transport = transportFor(target);
+      const rows: CapabilityRow[] = [];
+      const get = async (path: string): Promise<Result<unknown>> =>
+        requestJson(transport, { method: 'GET', path, authenticated: true, schema: emptySchema });
+
+      const activePayload = await get('/api/profiles/active');
+      const activeRecord = asRecord(activePayload.ok ? activePayload.data : null);
+      const activeProfile =
+        typeof activeRecord?.['active'] === 'string' ? (activeRecord['active'] as string) : '';
+      rows.push(
+        row(
+          'profiles_active',
+          '当前 profile 读取 /api/profiles/active',
+          activePayload.ok ? 'pass' : 'fail',
+          activePayload.ok
+            ? `active=${activeProfile === '' ? '(none)' : maskId(activeProfile)} · current=${typeof activeRecord?.['current'] === 'string' ? maskId(activeRecord['current'] as string) : '(none)'}`
+            : activePayload.error.message,
+        ),
+      );
+
+      const profiles = await get('/api/profiles');
+      const profileRows = arrayField(asRecord(profiles.ok ? profiles.data : null), 'profiles');
+      rows.push(
+        row(
+          'profiles_rest',
+          'Profile 列表 /api/profiles',
+          profiles.ok && profileRows !== null ? 'pass' : profiles.ok ? 'fail' : 'fail',
+          profiles.ok
+            ? `profiles=${profileRows?.length ?? '—'} · row_keys=${profileRows?.[0] === undefined ? '—' : keysOf(profileRows[0]).join(',')}`
+            : profiles.error.message,
+        ),
+      );
+
+      const profileQuery =
+        activeProfile === '' ? '' : `?profile=${encodeURIComponent(activeProfile)}`;
+      const model = await get(`/api/model/info${profileQuery}`);
+      const modelRecord = asRecord(model.ok ? model.data : null);
+      rows.push(
+        row(
+          'model_read',
+          '模型配置读取 /api/model/info',
+          model.ok ? 'pass' : 'fail',
+          model.ok
+            ? `provider=${String(modelRecord?.['provider'] ?? '(none)')} · model=${String(modelRecord?.['model'] ?? '(none)')} · effective_context_length=${String(modelRecord?.['effective_context_length'] ?? '—')}`
+            : model.error.message,
+        ),
+      );
+
+      const sessions = await get(
+        `/api/sessions?order=recent&limit=5&offset=0${profileQuery === '' ? '' : `&profile=${encodeURIComponent(activeProfile)}`}`,
+      );
+      const sessionsRecord = asRecord(sessions.ok ? sessions.data : null);
+      const sessionRows = arrayField(sessionsRecord, 'sessions');
+      const firstSessionId =
+        sessionRows !== null &&
+        asRecord(sessionRows[0]) !== null &&
+        typeof asRecord(sessionRows[0])?.['id'] === 'string'
+          ? (asRecord(sessionRows[0])?.['id'] as string)
+          : null;
+      rows.push(
+        row(
+          'sessions_page',
+          'Sessions 分页 /api/sessions',
+          sessions.ok && sessionRows !== null ? 'pass' : 'fail',
+          sessions.ok
+            ? `returned=${sessionRows?.length ?? '—'} · total=${String(sessionsRecord?.['total'] ?? '—')} · page_keys=${sessionsRecord === null ? '—' : Object.keys(sessionsRecord).join(',')}`
+            : sessions.error.message,
+        ),
+      );
+
+      const secondPage = await get(
+        `/api/sessions?order=recent&limit=5&offset=5${profileQuery === '' ? '' : `&profile=${encodeURIComponent(activeProfile)}`}`,
+      );
+      const secondRows = arrayField(asRecord(secondPage.ok ? secondPage.data : null), 'sessions');
+      const secondIds = (secondRows ?? [])
+        .map((entry) => asRecord(entry)?.['id'])
+        .filter((id): id is string => typeof id === 'string');
+      const firstIds = (sessionRows ?? [])
+        .map((entry) => asRecord(entry)?.['id'])
+        .filter((id): id is string => typeof id === 'string');
+      const overlap = secondIds.filter((id) => firstIds.includes(id)).length;
+      rows.push(
+        row(
+          'sessions_offset',
+          'Sessions 偏移不重复',
+          secondPage.ok && secondRows !== null ? (overlap === 0 ? 'pass' : 'fail') : 'fail',
+          secondPage.ok
+            ? `page2=${secondRows?.length ?? '—'} · overlap=${overlap}`
+            : secondPage.error.message,
+        ),
+      );
+
+      const search = await get(
+        `/api/sessions/search?q=Bot&limit=5${profileQuery === '' ? '' : `&profile=${encodeURIComponent(activeProfile)}`}`,
+      );
+      const searchRows = arrayField(asRecord(search.ok ? search.data : null), 'results');
+      rows.push(
+        row(
+          'session_search',
+          'Sessions 搜索 /api/sessions/search',
+          search.ok ? 'pass' : 'fail',
+          search.ok ? `results=${searchRows?.length ?? '—'}` : search.error.message,
+        ),
+      );
+
+      if (firstSessionId === null) {
+        rows.push(
+          row(
+            'messages_page',
+            '历史消息分页 /api/sessions/{id}/messages',
+            'unverified',
+            '没有可用会话',
+          ),
+        );
+      } else {
+        const messages = await get(
+          `/api/sessions/${encodeURIComponent(firstSessionId)}/messages?limit=5&order=latest&inline_images=false${profileQuery === '' ? '' : `&profile=${encodeURIComponent(activeProfile)}`}`,
+        );
+        const messagesRecord = asRecord(messages.ok ? messages.data : null);
+        const messageRows = arrayField(messagesRecord, 'messages');
+        const pagination = asRecord(messagesRecord?.['pagination']);
+        const sampleKeys = messageRows?.[0] === undefined ? [] : keysOf(messageRows[0]);
+        rows.push(
+          row(
+            'messages_page',
+            '历史消息分页 /api/sessions/{id}/messages',
+            messages.ok && messageRows !== null ? 'pass' : 'fail',
+            messages.ok
+              ? `messages=${messageRows?.length ?? '—'} · pagination=${pagination === null ? '—' : Object.keys(pagination).join(',')} · sample_keys=${sampleKeys.slice(0, 8).join(',')}`
+              : messages.error.message,
+          ),
+        );
+      }
+
+      const cron = await get('/api/cron/jobs?profile=all');
+      const cronRows = arrayField(asRecord(cron.ok ? cron.data : null), 'jobs');
+      rows.push(
+        row(
+          'cron_jobs',
+          '例行任务 /api/cron/jobs',
+          cron.ok ? 'pass' : 'fail',
+          cron.ok ? `jobs=${cronRows?.length ?? '—'}` : cron.error.message,
+        ),
+      );
+
+      const boards = await get('/api/plugins/kanban/boards');
+      const boardsRecord = asRecord(boards.ok ? boards.data : null);
+      const boardRows = arrayField(boardsRecord, 'boards');
+      const kanbanAvailable = boards.ok && boardRows !== null;
+      rows.push(
+        row(
+          'kanban_boards',
+          'Kanban boards /api/plugins/kanban/boards',
+          kanbanAvailable ? 'pass' : boards.ok ? 'fail' : 'not-supported',
+          boards.ok
+            ? `boards=${boardRows?.length ?? '—'} · current=${typeof boardsRecord?.['current'] === 'string' ? maskId(boardsRecord['current'] as string) : '(none)'}`
+            : boards.error.message,
+        ),
+      );
+      const firstBoard = boardRows?.[0];
+      const boardSlug = asRecord(firstBoard)?.['slug'];
+      if (kanbanAvailable && typeof boardSlug === 'string') {
+        const board = await get(`/api/plugins/kanban/board?board=${encodeURIComponent(boardSlug)}`);
+        const boardRecord = asRecord(board.ok ? board.data : null);
+        const tasks = arrayField(boardRecord, 'tasks');
+        rows.push(
+          row(
+            'kanban_board',
+            'Kanban board 详情与游标',
+            board.ok ? 'pass' : 'fail',
+            board.ok
+              ? `tasks=${tasks?.length ?? '—'} · keys=${boardRecord === null ? '—' : Object.keys(boardRecord).slice(0, 8).join(',')}`
+              : board.error.message,
+          ),
+        );
+      }
+
+      rows.push(
+        row(
+          'profile_model_write',
+          '模型配置写入 /api/profiles/{name}/model',
+          'unverified',
+          '需要专用测试 profile 与授权模型（M0b 第 3 步）',
+        ),
+      );
+      rows.push(
+        row(
+          'kanban_write',
+          'Kanban 新建/改状态并回读',
+          'unverified',
+          '需要专用 board/任务（M0b 第 4 步）',
+        ),
+      );
+      return { ok: true, data: { generatedAt: now(), target: target.displayUrl, rows } };
+    },
+
+    runNewBot() {
+      return runNewBotProbe({
+        auth: deps.auth,
+        fetchImpl: deps.fetchImpl,
+        ...(deps.requestTimeoutMs === undefined ? {} : { requestTimeoutMs: deps.requestTimeoutMs }),
+        ...(deps.now === undefined ? {} : { now: deps.now }),
+      });
+    },
+
+    runKanbanWrite() {
+      return runKanbanWriteProbe({
+        auth: deps.auth,
+        fetchImpl: deps.fetchImpl,
+        ...(deps.requestTimeoutMs === undefined ? {} : { requestTimeoutMs: deps.requestTimeoutMs }),
+        ...(deps.now === undefined ? {} : { now: deps.now }),
+      });
     },
 
     runSignOut(): CapabilityRow[] {

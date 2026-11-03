@@ -22,6 +22,12 @@ export interface DashboardService {
   probe(): Promise<Result<ProbeReport>>;
   /** Step 2: gateway handshake, gateway.ready, profiles, Bot Chat query, ticket replay. */
   probeWebSocket(): Promise<Result<ProbeReport>>;
+  /** Step 4 (read-only): profiles, model read, sessions paging/search, messages, cron, kanban. */
+  probeWorkbench(): Promise<Result<ProbeReport>>;
+  /** Step 3: dedicated profile, model config read/write, canonical Bot Chat claim, cleanup. */
+  probeNewBot(): Promise<Result<ProbeReport>>;
+  /** Step 4 write: dedicated Kanban board/task, status patch, cursor, cleanup. */
+  probeKanbanWrite(): Promise<Result<ProbeReport>>;
   /** Local sign-out plus what it verified. */
   signOut(): Result<ProbeReport>;
   status(): Promise<Result<DashboardStatus>>;
@@ -125,6 +131,18 @@ export function createDashboardService(deps: DashboardServiceDeps): DashboardSer
 
     async probeWebSocket() {
       return probe.runWebSocket();
+    },
+
+    async probeWorkbench() {
+      return probe.runWorkbench();
+    },
+
+    async probeNewBot() {
+      return probe.runNewBot();
+    },
+
+    async probeKanbanWrite() {
+      return probe.runKanbanWrite();
     },
 
     signOut() {

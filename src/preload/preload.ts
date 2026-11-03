@@ -41,6 +41,17 @@ const bridge: MosBotBridge = {
     probeWebSocket(): Promise<Result<ProbeReport>> {
       return ipcRenderer.invoke(DASHBOARD_CHANNELS.probeWebSocket) as Promise<Result<ProbeReport>>;
     },
+    probeWorkbench(): Promise<Result<ProbeReport>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.probeWorkbench) as Promise<Result<ProbeReport>>;
+    },
+    probeNewBot(): Promise<Result<ProbeReport>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.probeNewBot) as Promise<Result<ProbeReport>>;
+    },
+    probeKanbanWrite(): Promise<Result<ProbeReport>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.probeKanbanWrite) as Promise<
+        Result<ProbeReport>
+      >;
+    },
     signOut(): Promise<Result<ProbeReport>> {
       return ipcRenderer.invoke(DASHBOARD_CHANNELS.signOut) as Promise<Result<ProbeReport>>;
     },

@@ -30,6 +30,12 @@ export interface MosBotDashboardBridge {
   probe(): Promise<Result<ProbeReport>>;
   /** Step 2 probe: WS handshake, gateway.ready, profiles, Bot Chat query, ticket replay. */
   probeWebSocket(): Promise<Result<ProbeReport>>;
+  /** Step 4 read-only probe: profiles, model read, sessions paging/search, cron, kanban. */
+  probeWorkbench(): Promise<Result<ProbeReport>>;
+  /** Step 3 write probe on a dedicated profile (created and deleted by the probe). */
+  probeNewBot(): Promise<Result<ProbeReport>>;
+  /** Step 4 write probe on a dedicated Kanban board (created and deleted by the probe). */
+  probeKanbanWrite(): Promise<Result<ProbeReport>>;
   /** Clears local credentials and reports what survived. */
   signOut(): Promise<Result<ProbeReport>>;
   status(): Promise<Result<DashboardStatus>>;
@@ -41,6 +47,9 @@ export const DASHBOARD_CHANNELS = {
   restore: 'mosbot:dashboard:restore',
   probe: 'mosbot:dashboard:probe',
   probeWebSocket: 'mosbot:dashboard:probeWebSocket',
+  probeWorkbench: 'mosbot:dashboard:probeWorkbench',
+  probeNewBot: 'mosbot:dashboard:probeNewBot',
+  probeKanbanWrite: 'mosbot:dashboard:probeKanbanWrite',
   signOut: 'mosbot:dashboard:signOut',
   status: 'mosbot:dashboard:status',
 } as const;
