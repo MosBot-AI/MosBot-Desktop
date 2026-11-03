@@ -16,7 +16,14 @@ import { _electron as electron } from 'playwright';
 const DEFAULT_URL = 'http://192.168.2.171:9119';
 const URL_FROM_ENV = process.env.MOSBOT_DASHBOARD_URL ?? DEFAULT_URL;
 const PROVIDER = process.env.MOSBOT_AUTH_PROVIDER ?? '';
-const PREFLIGHT_ONLY = process.env.MOSBOT_PROBE_MODE === 'preflight';
+const MODE = process.env.MOSBOT_PROBE_MODE ?? 'auto';
+const PREFLIGHT_ONLY = MODE === 'preflight';
+const RESTORE_ONLY = MODE === 'restore';
+const FORCE_LOGIN = MODE === 'login';
+const WS_ONLY = MODE === 'ws';
+const RUN_WS_PROBE = WS_ONLY || MODE === 'all';
+const RUN_AUTH_PROBE = !WS_ONLY;
+const SIGN_OUT = process.env.MOSBOT_PROBE_SIGN_OUT === '1';
 const APP = path.resolve(
   'out',
   `MosBot-${process.platform}-${process.arch}`,
@@ -106,43 +113,98 @@ async function main() {
     return;
   }
 
-  const provider = PROVIDER !== '' ? PROVIDER : providers.length === 1 ? providers[0].name : '';
-  if (provider === '') {
-    console.error('\n多个登录提供方可用，请用 MOSBOT_AUTH_PROVIDER 指定一个后再运行。');
-    await application.close();
-    process.exitCode = 2;
-    return;
-  }
-
-  console.log('\n即将打开系统浏览器完成登录；登录后回到应用即可继续。');
-  const login = await page.evaluate(
-    ({ address, providerName }) => window.mosbot.dashboard.login(address, providerName),
-    { address: URL_FROM_ENV, providerName: provider },
-  );
-  if (!login.ok) {
-    console.error(`\nSign-in failed: [${login.error.code}] ${login.error.message}`);
-    await application.close();
-    process.exitCode = 3;
-    return;
-  }
-  console.log(
-    `\n已登录：${login.data.displayName || '(no display name)'} · provider ${login.data.provider} · user ${login.data.userId ?? ''}`,
-  );
-
-  const authenticated = await page.evaluate(() => window.mosbot.dashboard.probe());
-  if (!authenticated.ok) {
-    console.error(
-      `\nAuthenticated probe failed: [${authenticated.error.code}] ${authenticated.error.message}`,
+  // Silent restore first: a refresh token saved by safeStorage means nobody has to
+  // sign in again on the next run.
+  let session = null;
+  if (!FORCE_LOGIN) {
+    const restored = await page.evaluate(
+      (address) => window.mosbot.dashboard.restore(address),
+      URL_FROM_ENV,
     );
-    await application.close();
-    process.exitCode = 4;
-    return;
+    if (restored.ok && restored.data.connected) {
+      console.log(
+        `\n已恢复上次登录：${restored.data.displayName || '(no display name)'} · provider ${restored.data.provider}`,
+      );
+      session = restored.data;
+    } else if (!restored.ok) {
+      console.log(`\n未能恢复登录（${restored.error.code}），需要重新登录。`);
+    } else {
+      console.log('\n没有可恢复的登录，需要登录一次。');
+    }
   }
-  printRows('第 1 步 · 已登录探针', authenticated.data.rows);
 
-  const signOut = await page.evaluate(() => window.mosbot.dashboard.signOut());
-  if (signOut.ok) {
-    printRows('第 1 步 · 注销', signOut.data.rows);
+  if (session === null) {
+    if (RESTORE_ONLY) {
+      console.error('\n没有已保存的登录，且当前模式为 restore；请先用 login 模式登录一次。');
+      await application.close();
+      process.exitCode = 3;
+      return;
+    }
+    const provider = PROVIDER !== '' ? PROVIDER : providers.length === 1 ? providers[0].name : '';
+    if (provider === '') {
+      console.error('\n多个登录提供方可用，请用 MOSBOT_AUTH_PROVIDER 指定一个后再运行。');
+      await application.close();
+      process.exitCode = 2;
+      return;
+    }
+
+    console.log(
+      '\n即将打开系统浏览器完成登录（密码由 Dashboard 自己的登录页处理）；登录后应用会自动继续，凭据会加密保存，下次无需再输入。',
+    );
+    const login = await page.evaluate(
+      ({ address, providerName }) => window.mosbot.dashboard.login(address, providerName),
+      { address: URL_FROM_ENV, providerName: provider },
+    );
+    if (!login.ok) {
+      console.error(`\nSign-in failed: [${login.error.code}] ${login.error.message}`);
+      await application.close();
+      process.exitCode = 3;
+      return;
+    }
+    session = login.data;
+    console.log(
+      `\n已登录并保存凭据：${session.displayName || '(no display name)'} · provider ${session.provider} · user ${session.userId ?? ''}`,
+    );
+  }
+
+  let authenticated = null;
+  if (RUN_AUTH_PROBE) {
+    authenticated = await page.evaluate(() => window.mosbot.dashboard.probe());
+    if (!authenticated.ok) {
+      console.error(
+        `\nAuthenticated probe failed: [${authenticated.error.code}] ${authenticated.error.message}`,
+      );
+      await application.close();
+      process.exitCode = 4;
+      return;
+    }
+    printRows('第 1 步 · 已登录探针', authenticated.data.rows);
+  }
+
+  let webSocket = null;
+  if (RUN_WS_PROBE) {
+    webSocket = await page.evaluate(() => window.mosbot.dashboard.probeWebSocket());
+    if (!webSocket.ok) {
+      console.error(
+        `\nWebSocket probe failed: [${webSocket.error.code}] ${webSocket.error.message}`,
+      );
+      await application.close();
+      process.exitCode = 5;
+      return;
+    }
+    printRows('第 2 步 · WS 与名单', webSocket.data.rows);
+  }
+
+  // Keep the session by default so later runs restore silently; explicit
+  // sign-out is a separate, deliberate check.
+  let signOut = null;
+  if (SIGN_OUT) {
+    signOut = await page.evaluate(() => window.mosbot.dashboard.signOut());
+    if (signOut.ok) {
+      printRows('第 1 步 · 注销', signOut.data.rows);
+    }
+  } else {
+    console.log('\n已保留登录凭据（如需验证注销，设置 MOSBOT_PROBE_SIGN_OUT=1）。');
   }
 
   mkdirSync(OUT_DIR, { recursive: true });
@@ -156,10 +218,16 @@ async function main() {
       {
         generatedAt: new Date().toISOString(),
         target: URL_FROM_ENV,
-        provider,
+        provider: session.provider,
+        session: {
+          userId: session.userId,
+          displayName: session.displayName,
+          expiresAt: session.expiresAt,
+        },
         preflight: preflight.data.report,
-        authenticated: authenticated.data,
-        signOut: signOut.ok ? signOut.data : null,
+        authenticated: authenticated === null ? null : authenticated.data,
+        webSocket: webSocket === null ? null : webSocket.data,
+        signOut: signOut !== null && signOut.ok ? signOut.data : null,
       },
       null,
       2,

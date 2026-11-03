@@ -120,6 +120,45 @@ export const wsTicketSchema = wsTicketObject.transform((value): WsTicketPayload 
   ttlSeconds: value.ttl_seconds,
 }));
 
+const profileRowSchema = z
+  .object({
+    name: z.string(),
+    is_default: z.boolean().optional(),
+    display_name: z.string().optional(),
+    canonical_session: z.unknown().optional(),
+    last_session: z.unknown().optional(),
+  })
+  .catchall(z.unknown());
+
+export const profilesListSchema = z
+  .object({
+    profiles: z.array(profileRowSchema),
+    bot_mode_protocol: z.boolean().optional(),
+    install_id: z.string().optional(),
+  })
+  .catchall(z.unknown());
+
+const sessionRowSchema = z
+  .object({
+    id: z.string(),
+    resolved_id: z.string().nullish(),
+    title: z.string().optional(),
+    message_count: z.number().optional(),
+  })
+  .catchall(z.unknown());
+
+export const sessionListSchema = z
+  .object({ sessions: z.array(sessionRowSchema) })
+  .catchall(z.unknown());
+
+export const clientCapabilitiesSchema = z
+  .object({
+    server_requests: z.array(z.string()).optional(),
+    declines_not_shown: z.boolean().optional(),
+    canonical_clarify_batch: z.boolean().optional(),
+  })
+  .catchall(z.unknown());
+
 /** `{error: "session_expired"}` body of a rejected native refresh. */
 export const sessionExpiredSchema = z.object({ error: z.string() });
 

@@ -124,8 +124,21 @@ function createSessionFetch(): TransportFetch {
   };
 }
 
+function loginTimeoutMs(): number | undefined {
+  const raw = process.env['MOSBOT_LOGIN_TIMEOUT_MS'];
+  if (raw === undefined) {
+    return undefined;
+  }
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed) || parsed < 60_000 || parsed > 3_600_000) {
+    return undefined;
+  }
+  return parsed;
+}
+
 function registerDashboard(): void {
   const fetchImpl = createSessionFetch();
+  const timeoutMs = loginTimeoutMs();
   const auth = createAuthManager({
     fetchImpl,
     openExternal: async (url) => {
@@ -133,8 +146,13 @@ function registerDashboard(): void {
     },
     safeStorage,
     credentialsPath: path.join(app.getPath('userData'), 'dashboard-credentials.json'),
+    ...(timeoutMs === undefined ? {} : { loopbackTimeoutMs: timeoutMs }),
   });
-  const service = createDashboardService({ auth, fetchImpl });
+  const service = createDashboardService({
+    auth,
+    fetchImpl,
+    ticketExpiryCheck: process.env['MOSBOT_PROBE_TICKET_EXPIRY'] === '1',
+  });
   registerDashboardIpc({
     ipcMain,
     service,

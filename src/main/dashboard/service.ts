@@ -16,8 +16,12 @@ export interface DashboardService {
   preflight(address: string): Promise<Result<PreflightResult>>;
   /** Starts the RFC 8252 sign-in and returns the connected snapshot. */
   login(address: string, provider?: string): Promise<Result<ConnectionSnapshot>>;
+  /** Restores a saved session without user interaction; `connected: false` when none. */
+  restore(address: string): Promise<Result<ConnectionSnapshot>>;
   /** Authenticated capability probe for the current connection. */
   probe(): Promise<Result<ProbeReport>>;
+  /** Step 2: gateway handshake, gateway.ready, profiles, Bot Chat query, ticket replay. */
+  probeWebSocket(): Promise<Result<ProbeReport>>;
   /** Local sign-out plus what it verified. */
   signOut(): Result<ProbeReport>;
   status(): Promise<Result<DashboardStatus>>;
@@ -28,6 +32,7 @@ export interface DashboardServiceDeps {
   readonly fetchImpl: TransportFetch;
   readonly requestTimeoutMs?: number;
   readonly now?: () => number;
+  readonly ticketExpiryCheck?: boolean;
 }
 
 function toProtocolError(error: unknown): ProtocolError {
@@ -53,6 +58,7 @@ export function createDashboardService(deps: DashboardServiceDeps): DashboardSer
     fetchImpl: deps.fetchImpl,
     ...(deps.requestTimeoutMs === undefined ? {} : { requestTimeoutMs: deps.requestTimeoutMs }),
     ...(deps.now === undefined ? {} : { now: deps.now }),
+    ...(deps.ticketExpiryCheck === undefined ? {} : { ticketExpiryCheck: deps.ticketExpiryCheck }),
   });
 
   return {
@@ -98,9 +104,27 @@ export function createDashboardService(deps: DashboardServiceDeps): DashboardSer
       return { ok: true, data: deps.auth.current() };
     },
 
+    async restore(address) {
+      let target;
+      try {
+        target = parseDashboardTarget(address);
+      } catch (error) {
+        return { ok: false, error: toProtocolError(error) };
+      }
+      const restored = await deps.auth.restore(target);
+      if (!restored.ok) {
+        return { ok: false, error: restored.error };
+      }
+      return { ok: true, data: deps.auth.current() };
+    },
+
     async probe() {
       const report = await probe.runAuthenticated();
       return report;
+    },
+
+    async probeWebSocket() {
+      return probe.runWebSocket();
     },
 
     signOut() {

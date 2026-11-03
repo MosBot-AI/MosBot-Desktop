@@ -1,11 +1,15 @@
 import type { CapabilityRow, DashboardTarget, ProbeReport, Result } from '../../shared/protocol';
 import { protocolError, targetUrl } from '../../shared/protocol';
 import type { AuthManager } from './auth';
+import { attemptGatewayConnection, connectGateway, gatewayUrl, type GatewayReady } from './rpc';
 import {
+  clientCapabilitiesSchema,
   healthSchema,
   meSchema,
+  profilesListSchema,
   providersSchema,
   sessionExpiredSchema,
+  sessionListSchema,
   statusSchema,
   wsTicketSchema,
 } from './schemas';
@@ -29,11 +33,27 @@ export interface ProbeDeps {
   readonly fetchImpl: TransportFetch;
   readonly requestTimeoutMs?: number;
   readonly now?: () => number;
+  /** Slow check: mint a ticket, wait 31 s, prove the handshake is rejected. */
+  readonly ticketExpiryCheck?: boolean;
+}
+
+function describeReady(ready: GatewayReady): string {
+  return [
+    `replay_epoch=${ready.replayEpoch === null ? 'absent' : 'present'}`,
+    `change_events=${String(ready.changeEvents)}`,
+    `heartbeat=${String(ready.heartbeat)}`,
+    `payload_keys=${ready.payloadKeys.join(',') || '(none)'}`,
+  ].join(' · ');
+}
+
+function maskSessionId(id: string): string {
+  return id.length <= 8 ? `${id.slice(0, 2)}…` : `${id.slice(0, 8)}…`;
 }
 
 export interface ProbeService {
   runPreflight(target: DashboardTarget): Promise<Result<ProbeReport>>;
   runAuthenticated(): Promise<Result<ProbeReport>>;
+  runWebSocket(): Promise<Result<ProbeReport>>;
   /** Signs out locally and reports what survived the sign-out. */
   runSignOut(): CapabilityRow[];
 }
@@ -275,6 +295,198 @@ export function createProbeService(deps: ProbeDeps): ProbeService {
         ok: true,
         data: { generatedAt: now(), target: target.displayUrl, rows },
       };
+    },
+
+    async runWebSocket() {
+      const target = deps.auth.target();
+      if (target === null || !deps.auth.current().connected) {
+        return {
+          ok: false,
+          error: protocolError(
+            'unauthorized',
+            'Sign in to the Dashboard before running this probe.',
+          ),
+        };
+      }
+      const transport = transportFor(target);
+      const rows: CapabilityRow[] = [];
+      const connection = await connectGateway({
+        fetchImpl: deps.fetchImpl,
+        target,
+        getAccessToken: () => deps.auth.accessToken(),
+        ...(deps.requestTimeoutMs === undefined ? {} : { requestTimeoutMs: deps.requestTimeoutMs }),
+      });
+      if (!connection.ok) {
+        rows.push(row('ws_handshake', 'WS 一次性票据握手', 'fail', connection.error.message));
+        return { ok: true, data: { generatedAt: now(), target: target.displayUrl, rows } };
+      }
+      const client = connection.data;
+      try {
+        rows.push(
+          row(
+            'ws_handshake',
+            'WS 一次性票据握手',
+            'pass',
+            'ticket accepted · gateway.ready was the first frame',
+          ),
+        );
+        rows.push(row('gateway_ready', 'gateway.ready 首帧', 'pass', describeReady(client.ready)));
+
+        const capabilities = await client.call(
+          'client.capabilities',
+          { server_requests: true },
+          clientCapabilitiesSchema,
+        );
+        if (capabilities.ok) {
+          const requests = capabilities.data.server_requests ?? [];
+          rows.push(
+            row(
+              'client_capabilities',
+              'client.capabilities',
+              'pass',
+              `server_requests=${requests.length} · declines_not_shown=${String(capabilities.data.declines_not_shown)} · canonical_clarify_batch=${String(capabilities.data.canonical_clarify_batch)}`,
+            ),
+          );
+        } else {
+          rows.push(
+            row('client_capabilities', 'client.capabilities', 'fail', capabilities.error.message),
+          );
+        }
+
+        const profiles = await client.call(
+          'profiles.list',
+          { include_sessions: true },
+          profilesListSchema,
+        );
+        let defaultProfile: string | null = null;
+        if (profiles.ok) {
+          const list = profiles.data.profiles;
+          const defaultRow = list.find((profile) => profile.is_default === true) ?? list[0];
+          defaultProfile = defaultRow?.name ?? null;
+          const withCanonical = list.filter(
+            (profile) =>
+              profile.canonical_session !== undefined && profile.canonical_session !== null,
+          ).length;
+          rows.push(
+            row(
+              'profiles_list',
+              'profiles.list {include_sessions}',
+              'pass',
+              `profiles=${list.length} · default=${defaultProfile === null ? 'absent' : 'present'} · canonical_session=${withCanonical} · bot_mode_protocol=${String(profiles.data.bot_mode_protocol)}`,
+            ),
+          );
+        } else {
+          rows.push(
+            row(
+              'profiles_list',
+              'profiles.list {include_sessions}',
+              'fail',
+              profiles.error.message,
+            ),
+          );
+        }
+
+        if (defaultProfile === null) {
+          rows.push(
+            row('bot_chat_query', '精确 Bot Chat 查询', 'unverified', '没有可用 profile 可供查询'),
+          );
+        } else {
+          const sessions = await client.call(
+            'session.list',
+            { profile: defaultProfile, title: 'Bot Chat', include_hidden: true },
+            sessionListSchema,
+          );
+          if (sessions.ok) {
+            const list = sessions.data.sessions;
+            const first = list[0];
+            rows.push(
+              row(
+                'bot_chat_query',
+                '精确 Bot Chat 查询',
+                'pass',
+                `matches=${list.length} · first=${first === undefined ? 'none' : maskSessionId(first.id)} · resolved_id=${first?.resolved_id === undefined || first?.resolved_id === null ? 'absent' : 'present'} · message_count=${first?.message_count ?? '—'}`,
+              ),
+            );
+          } else {
+            rows.push(row('bot_chat_query', '精确 Bot Chat 查询', 'fail', sessions.error.message));
+          }
+        }
+
+        // A consumed ticket must be rejected when replayed.
+        const freshTicket = await requestJson(transport, {
+          method: 'POST',
+          path: '/api/auth/ws-ticket',
+          authenticated: true,
+          schema: wsTicketSchema,
+        });
+        if (freshTicket.ok) {
+          const reuseUrl = gatewayUrl(target, freshTicket.data.ticket);
+          const first = await attemptGatewayConnection(reuseUrl, 5_000, 120);
+          const second = await attemptGatewayConnection(reuseUrl, 5_000, 0);
+          const rejected = first.accepted && !second.accepted;
+          rows.push(
+            row(
+              'ws_ticket_reuse',
+              'ticket 重复使用拒绝',
+              rejected ? 'pass' : 'fail',
+              `first accepted=${String(first.accepted)} · second accepted=${String(second.accepted)} · close code=${second.code ?? '—'}`,
+            ),
+          );
+        } else {
+          rows.push(
+            row('ws_ticket_reuse', 'ticket 重复使用拒绝', 'fail', freshTicket.error.message),
+          );
+        }
+
+        if (deps.ticketExpiryCheck === true) {
+          const expiring = await requestJson(transport, {
+            method: 'POST',
+            path: '/api/auth/ws-ticket',
+            authenticated: true,
+            schema: wsTicketSchema,
+          });
+          if (expiring.ok) {
+            await new Promise((resolve) => setTimeout(resolve, 31_000));
+            const expiredAttempt = await attemptGatewayConnection(
+              gatewayUrl(target, expiring.data.ticket),
+              5_000,
+              0,
+            );
+            rows.push(
+              row(
+                'ws_ticket_expiry',
+                'ticket 过期拒绝',
+                expiredAttempt.accepted ? 'fail' : 'pass',
+                `accepted=${String(expiredAttempt.accepted)} · close code=${expiredAttempt.code ?? '—'} · ttl=${expiring.data.ttlSeconds}s`,
+              ),
+            );
+          }
+        } else {
+          rows.push(
+            row(
+              'ws_ticket_expiry',
+              'ticket 过期拒绝',
+              'unverified',
+              '默认跳过 31 秒等待；设置 MOSBOT_PROBE_TICKET_EXPIRY=1 复验',
+            ),
+          );
+        }
+
+        rows.push(
+          row(
+            'session_resume',
+            'session.resume 与首个真实 delta',
+            'unverified',
+            '需要一次真实 turn（M0b 第 3 步 / M1）',
+          ),
+        );
+        rows.push(
+          row('stop_turn', '停止与终态', 'unverified', '需要一次真实 turn（M0b 第 3 步 / M1）'),
+        );
+      } finally {
+        client.close();
+      }
+      return { ok: true, data: { generatedAt: now(), target: target.displayUrl, rows } };
     },
 
     runSignOut(): CapabilityRow[] {

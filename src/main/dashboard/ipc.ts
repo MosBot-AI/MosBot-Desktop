@@ -74,7 +74,18 @@ export function registerDashboardIpc(options: {
     return service.login(address, typeof provider === 'string' ? provider : undefined);
   });
 
+  handle<ConnectionSnapshot>(DASHBOARD_CHANNELS.restore, (address) => {
+    if (!isBoundedString(address, MAX_ADDRESS_LENGTH)) {
+      return {
+        ok: false,
+        error: protocolError('invalid_url', 'Enter the Dashboard address.'),
+      };
+    }
+    return service.restore(address);
+  });
+
   handle<ProbeReport>(DASHBOARD_CHANNELS.probe, () => service.probe());
+  handle<ProbeReport>(DASHBOARD_CHANNELS.probeWebSocket, () => service.probeWebSocket());
   handle<ProbeReport>(DASHBOARD_CHANNELS.signOut, () => service.signOut());
   handle<DashboardStatus>(DASHBOARD_CHANNELS.status, () => service.status());
 }

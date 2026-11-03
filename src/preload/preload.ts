@@ -30,8 +30,16 @@ const bridge: MosBotBridge = {
         Result<ConnectionSnapshot>
       >;
     },
+    restore(address: string): Promise<Result<ConnectionSnapshot>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.restore, address) as Promise<
+        Result<ConnectionSnapshot>
+      >;
+    },
     probe(): Promise<Result<ProbeReport>> {
       return ipcRenderer.invoke(DASHBOARD_CHANNELS.probe) as Promise<Result<ProbeReport>>;
+    },
+    probeWebSocket(): Promise<Result<ProbeReport>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.probeWebSocket) as Promise<Result<ProbeReport>>;
     },
     signOut(): Promise<Result<ProbeReport>> {
       return ipcRenderer.invoke(DASHBOARD_CHANNELS.signOut) as Promise<Result<ProbeReport>>;

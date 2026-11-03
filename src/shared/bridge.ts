@@ -24,8 +24,12 @@ export interface MosBotDashboardBridge {
   preflight(address: string): Promise<Result<PreflightResult>>;
   /** Opens the system browser for RFC 8252 PKCE sign-in and waits for the loopback callback. */
   login(address: string, provider?: string): Promise<Result<ConnectionSnapshot>>;
+  /** Silently restores a saved sign-in for this address (refresh token in safeStorage). */
+  restore(address: string): Promise<Result<ConnectionSnapshot>>;
   /** Authenticated capability probe for the current connection. */
   probe(): Promise<Result<ProbeReport>>;
+  /** Step 2 probe: WS handshake, gateway.ready, profiles, Bot Chat query, ticket replay. */
+  probeWebSocket(): Promise<Result<ProbeReport>>;
   /** Clears local credentials and reports what survived. */
   signOut(): Promise<Result<ProbeReport>>;
   status(): Promise<Result<DashboardStatus>>;
@@ -34,7 +38,9 @@ export interface MosBotDashboardBridge {
 export const DASHBOARD_CHANNELS = {
   preflight: 'mosbot:dashboard:preflight',
   login: 'mosbot:dashboard:login',
+  restore: 'mosbot:dashboard:restore',
   probe: 'mosbot:dashboard:probe',
+  probeWebSocket: 'mosbot:dashboard:probeWebSocket',
   signOut: 'mosbot:dashboard:signOut',
   status: 'mosbot:dashboard:status',
 } as const;

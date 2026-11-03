@@ -23,6 +23,8 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
 - 名单与置顶头像的悬停反馈：延迟出现的预览浮层（名称、最后摘要、状态、最近活动），脸部切到 `listening` 姿态并轻微上浮；指针悬停与键盘聚焦都会触发。
 - M0b 协议基础：Dashboard 地址策略（其余一律 https，仅保留一个精确的明文测试 origin）；基于 Electron 网络栈、zod 校验的 REST 传输（超时、响应大小上限、禁止跟随重定向）；RFC 8252 PKCE 登录与 loopback 回调 + state 校验；safeStorage 加密的刷新令牌凭据库（access token 只存内存）；仅接受应用自身顶层 frame 的 Dashboard IPC 桥。
 - M0b 探针：可重跑的 `pnpm test:integration`，打包应用后先做无凭据 REST 探活，再经系统浏览器登录，随后跑已登录探针与本地注销检查；能力矩阵见 `docs/evidence/capabilities.md`。
+- safeStorage 凭据库支持静默恢复登录（`dashboard.restore`），后续运行与应用启动无需重复输入密码；探针支持 preflight / restore / login / ws / all 模式，默认保留会话。
+- Gateway WebSocket 客户端（`ws`）：一次性 ticket 握手、`gateway.ready` 首帧、zod 校验的 JSON-RPC 请求响应、类型化服务端事件，以及 ticket 复用/过期拒绝检查。已在测试部署验证：`profiles.list`、`client.capabilities` 与精确 Bot Chat 查询通过；复用与过期 ticket 被拒绝。
 
 ### 变更
 
@@ -33,9 +35,11 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
 
 - 本条仅为源码改动：尚无签名安装包、升级路径与真实 Dashboard 连接。M0a 用样例数据做界面评审，M0b/M1 再切换到 `192.168.2.171:9119` 真实服务。
 - 截图中的聊天内容全部为脱敏样例数据。
-- M0b 只读探针已在测试部署（`192.168.2.171:9119`，v0.22.5 / `bf0203a794`）跑通：health、
-  status、鉴权形态、登录提供方与 native authorize 路由均通过。登录、刷新与已登录探针仍需在
-  浏览器完成一次登录；详见 `docs/evidence/capabilities.md`。
+- M0b 探针已在测试部署（`192.168.2.171:9119`，v0.22.5 / `bf0203a794`）跑通：health、status、
+  鉴权形态、登录提供方、native authorize、浏览器登录、身份、刷新轮换、失效刷新处理、ws ticket、
+  WS 握手、`gateway.ready`、`client.capabilities`、`profiles.list` 与精确 Bot Chat 查询均通过；
+  复用与过期 ticket 被拒绝。真实 turn（delta/停止/resume）仍未验证；详见
+  `docs/evidence/capabilities.md`。
 
 ## [0.1.0] - 2026-11-03
 

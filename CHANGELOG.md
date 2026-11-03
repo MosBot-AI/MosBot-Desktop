@@ -54,6 +54,14 @@ until the release repository exists.
   unauthenticated REST probe, signs in through the system browser, then runs the
   authenticated probe and a local sign-out check; capability matrix in
   `docs/evidence/capabilities.md`.
+- Silent sign-in restore from the safeStorage vault (`dashboard.restore`) so later
+  runs and app launches need no repeated password entry; probe modes for preflight,
+  restore, login, WS and all, with the session kept by default.
+- Gateway WebSocket client (`ws`): one-time ticket handshake, `gateway.ready` first
+  frame, JSON-RPC request/response with zod validation, typed server events, and
+  ticket replay/expiry rejection checks. Verified against the test deployment:
+  `profiles.list`, `client.capabilities` and the exact Bot Chat lookup pass; replay
+  and expired tickets are rejected.
 
 ### Changed
 
@@ -69,11 +77,12 @@ until the release repository exists.
   yet. M0a uses fixtures for interface review; M0b/M1 replace them with the real
   service at `192.168.2.171:9119`.
 - All chat content in screenshots is desensitised fixture data.
-- The read-only M0b preflight was run against the test deployment
-  (`192.168.2.171:9119`, v0.22.5 / `bf0203a794`): health, status, auth flows,
-  providers and the native authorize route pass. Sign-in, refresh and the
-  authenticated probes still need one browser login; see
-  `docs/evidence/capabilities.md`.
+- The M0b probes were run against the test deployment (`192.168.2.171:9119`,
+  v0.22.5 / `bf0203a794`): health, status, auth flows, providers, native authorize,
+  browser sign-in, identity, refresh rotation, invalid-refresh handling, ws tickets,
+  WS handshake, `gateway.ready`, `client.capabilities`, `profiles.list` and the exact
+  Bot Chat query all pass; replayed and expired tickets are rejected. A real turn
+  (delta/stop/resume) is still unverified; see `docs/evidence/capabilities.md`.
 
 ## [0.1.0] - 2026-11-03
 

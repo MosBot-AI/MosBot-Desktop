@@ -6,7 +6,7 @@
 - 记录时间：2026-11-03
 - 探针：`MOSBOT_DASHBOARD_URL=http://192.168.2.171:9119 npm run test:integration`（无凭据部分可用 `MOSBOT_PROBE_MODE=preflight` 单独重跑）
 - 说明：本文件只记录脱敏字段形状、状态与结论；令牌、票据、凭据、真实会话正文、账号身份值不进入证据。
-- 状态：**第 1 步的只读部分已验证，登录后的部分未验证**（等待用户完成一次系统浏览器登录）
+- 状态：**第 1、2 步已验证**（2026-11-04 用户在系统浏览器完成一次 basic 登录，凭据经 safeStorage 保存并可静默恢复）；第 3–6 步未验证
 
 ## 部署实测摘要（只读）
 
@@ -56,6 +56,16 @@
 | 文件上传、产物索引、保存与外开               | 未验证 | 主 Agent | M0b/M0c |
 | 未打开 Bot 的审批发现、跨端回执、通知        | 未验证 | 主 Agent | M0b/M0c |
 | 电脑状态、唤醒、预览、非抢占接管、租约       | 未验证 | 主 Agent | M0b/M0c |
+
+## 已登录证据说明
+
+- 凭据：刷新令牌经 Electron safeStorage（Keychain）加密存于应用 userData 的
+  `dashboard-credentials.json`；access token 只在内存。探针使用独立 userData
+  （`.tmp/userdata-probe`），因此与日常应用互不影响。
+- 会话保持：探针默认**不注销**，后续运行先静默恢复再刷新；只有设置
+  `MOSBOT_PROBE_SIGN_OUT=1` 时才验证注销并清除凭据。
+- 重复运行：`MOSBOT_PROBE_MODE=restore` 只恢复 + 跑第 1 步；`MOSBOT_PROBE_MODE=ws` 恢复后跑
+  第 2 步；`MOSBOT_PROBE_MODE=all` 全跑；`MOSBOT_PROBE_TICKET_EXPIRY=1` 额外等待 31 s 复验过期。
 
 ## 关闭条件
 
