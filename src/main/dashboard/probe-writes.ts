@@ -8,8 +8,10 @@ import {
   type Result,
 } from '../../shared/protocol';
 import type { AuthManager } from './auth';
+import { createChatManager, type ChatManager } from './chat';
 import { connectGateway, type RpcClient } from './rpc';
 import { emptySchema } from './schemas';
+import type { DashboardChatEvent } from '../../shared/protocol';
 import { requestJson, type TransportFetch } from './transport';
 
 export interface WriteProbeDeps {
@@ -685,3 +687,170 @@ export async function runKanbanWriteProbe(deps: WriteProbeDeps): Promise<Result<
 }
 
 export { targetUrl };
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+async function waitFor(predicate: () => boolean, timeoutMs: number): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (predicate()) {
+      return true;
+    }
+    await sleep(100);
+  }
+  return predicate();
+}
+
+/**
+ * M1 chat probe: creates a dedicated profile, opens its Bot Chat through the same
+ * ChatManager the app uses, sends one prompt, waits for the streamed reply, then
+ * sends a longer prompt and interrupts it. Everything is deleted afterwards.
+ */
+export async function runChatProbe(deps: WriteProbeDeps): Promise<Result<ProbeReport>> {
+  const target = deps.auth.target();
+  if (target === null || !deps.auth.current().connected) {
+    return {
+      ok: false,
+      error: protocolError('unauthorized', 'Sign in to the Dashboard before running this probe.'),
+    };
+  }
+  const now = deps.now ?? (() => Date.now());
+  const marker = markerFor('mosbot-chat-probe', now());
+  const rest = createRest(deps, target);
+  const rows: CapabilityRow[] = [];
+  let profileCreated = false;
+  let chat: ChatManager | null = null;
+
+  try {
+    const created = await rest.send('POST', '/api/profiles', {
+      name: marker,
+      description: 'MosBot chat probe; safe to delete',
+      no_skills: true,
+    });
+    profileCreated = created.ok;
+    rows.push(
+      row(
+        'profile_create',
+        '聊天探针专用 profile',
+        created.ok ? 'pass' : 'fail',
+        created.ok ? `name=${marker}` : errorDetail(created.error),
+      ),
+    );
+    if (!created.ok) {
+      return { ok: true, data: { generatedAt: now(), target: target.displayUrl, rows } };
+    }
+
+    const events: DashboardChatEvent[] = [];
+    chat = createChatManager({
+      auth: deps.auth,
+      fetchImpl: deps.fetchImpl,
+      ...(deps.requestTimeoutMs === undefined ? {} : { requestTimeoutMs: deps.requestTimeoutMs }),
+    });
+    chat.subscribe((event) => {
+      events.push(event);
+    });
+
+    const opened = await chat.open(marker, null);
+    rows.push(
+      row(
+        'chat_open',
+        '打开 Bot Chat 会话',
+        opened.ok && opened.data.runtimeSessionId !== null ? 'pass' : 'fail',
+        opened.ok
+          ? `stored=${mask(opened.data.storedSessionId ?? '')} · runtime=${mask(opened.data.runtimeSessionId ?? '')}`
+          : errorDetail(opened.error),
+      ),
+    );
+    if (!opened.ok) {
+      return { ok: true, data: { generatedAt: now(), target: target.displayUrl, rows } };
+    }
+
+    const sent = await chat.send('MosBot 自动探针：请只回复 pong。');
+    rows.push(
+      row(
+        'chat_send',
+        '发送 prompt.submit',
+        sent.ok ? 'pass' : 'fail',
+        sent.ok ? 'prompt accepted' : errorDetail(sent.error),
+      ),
+    );
+
+    const sawDelta = await waitFor(
+      () => events.some((event) => event.type === 'delta' && event.text !== ''),
+      60_000,
+    );
+    rows.push(
+      row(
+        'chat_delta',
+        '首个流式 delta',
+        sawDelta ? 'pass' : 'unverified',
+        sawDelta ? 'streamed text arrived' : 'no delta within 60s',
+      ),
+    );
+
+    const completed = await waitFor(
+      () => events.some((event) => event.type === 'turn-complete'),
+      90_000,
+    );
+    const completeEvent = events.find((event) => event.type === 'turn-complete');
+    rows.push(
+      row(
+        'chat_complete',
+        '回合终态 message.complete',
+        completed ? 'pass' : 'unverified',
+        completed && completeEvent?.type === 'turn-complete'
+          ? `status=${completeEvent.status} · error=${completeEvent.error ?? 'none'}`
+          : 'no terminal event within 90s',
+      ),
+    );
+
+    // Interrupt path: send a longer prompt and stop it quickly.
+    events.length = 0;
+    const secondSend = await chat.send('请用大约一百字介绍你自己，并列出三个要点。');
+    let stoppedRequest: Result<void> | null = null;
+    if (secondSend.ok) {
+      await sleep(500);
+      stoppedRequest = await chat.stop();
+    }
+    const interrupted = await waitFor(
+      () =>
+        events.some(
+          (event) =>
+            event.type === 'turn-complete' &&
+            (event.status === 'interrupted' || event.status === 'error'),
+        ),
+      60_000,
+    );
+    rows.push(
+      row(
+        'chat_stop',
+        '停止 session.interrupt',
+        stoppedRequest !== null && stoppedRequest.ok && interrupted ? 'pass' : 'unverified',
+        stoppedRequest !== null && stoppedRequest.ok
+          ? interrupted
+            ? 'turn interrupted'
+            : 'stop accepted, terminal status not observed within 60s'
+          : 'stop was not sent',
+      ),
+    );
+  } finally {
+    chat?.close();
+    if (profileCreated) {
+      const deleted = await rest.send('DELETE', `/api/profiles/${encodeURIComponent(marker)}`);
+      rows.push(
+        row(
+          'cleanup',
+          '清理聊天探针 profile',
+          deleted.ok ? 'pass' : 'fail',
+          deleted.ok ? 'deleted' : errorDetail(deleted.error),
+        ),
+      );
+    }
+  }
+
+  return { ok: true, data: { generatedAt: now(), target: target.displayUrl, rows } };
+}

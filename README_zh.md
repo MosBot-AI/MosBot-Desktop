@@ -7,8 +7,9 @@ Profile、Session 和 Kanban 时再进入独立的 Hermes 工作台。
 已经可以操作，但界面仍使用确定性 fixture 数据。Dashboard 客户端（地址策略、Electron 网络栈
 REST 传输、RFC 8252 PKCE 登录、safeStorage 凭据库、IPC 桥）已经实现，并在测试部署（v0.22.5）
 上完成真实浏览器登录、刷新轮换、Gateway WebSocket 契约与专用对象写入探针验证。首次连接弹层会
-加密保存登录并在下次启动静默恢复。连接后名单与所选 Bot 的 Bot Chat 历史来自真实 Dashboard（当前只读），发送与流式回复下一步接入；
-未连接时仍使用 fixture。尚无签名安装包和升级路径。详见
+加密保存登录并在下次启动静默恢复。连接后名单与所选 Bot 的 Bot Chat 来自真实 Dashboard：可以发送、流式接收回复、停止当前回合，
+审批/澄清卡经同一 Gateway 回执；连接断开会自动重连并 resume 原会话。未连接时仍使用 fixture。
+尚无签名安装包和升级路径。详见
 [`docs/evidence/m0a-design-slice.md`](docs/evidence/m0a-design-slice.md) 与
 [`docs/evidence/capabilities.md`](docs/evidence/capabilities.md)。
 

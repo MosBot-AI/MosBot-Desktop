@@ -18,6 +18,7 @@ import { botColorSwatches, normalizeColor, profileColor } from '../../shared/col
 import type {
   AuthProviderInfo,
   ConnectionSnapshot,
+  DashboardChatEvent,
   ProtocolError,
   RemoteBot,
   RemoteChat,
@@ -68,6 +69,26 @@ export interface RemoteState {
   readonly error: ProtocolError | null;
 }
 
+export interface LiveRequest {
+  readonly id: string;
+  readonly method: 'approval' | 'clarify';
+  readonly payload: Readonly<Record<string, unknown>>;
+}
+
+export interface LiveChatState {
+  readonly profile: string | null;
+  readonly phase: 'idle' | 'sending' | 'streaming' | 'stopped' | 'error';
+  readonly connection: 'connected' | 'reconnecting' | 'disconnected';
+  readonly userText: string | null;
+  readonly userAt: number;
+  readonly botText: string;
+  readonly error: string | null;
+  readonly requests: readonly LiveRequest[];
+  readonly receipts: Readonly<Record<string, string>>;
+  readonly runtimeSessionId: string | null;
+  readonly storedSessionId: string | null;
+}
+
 export interface PendingReply {
   readonly botId: string;
   readonly text: string;
@@ -95,6 +116,7 @@ export interface AppState {
   readonly pendingReply: PendingReply | null;
   readonly connectionUi: ConnectionUiState;
   readonly remote: RemoteState;
+  readonly live: LiveChatState;
 }
 
 export type AppAction =
@@ -141,7 +163,28 @@ export type AppAction =
   | { type: 'remote-error'; error: ProtocolError }
   | { type: 'remote-select'; profile: string }
   | { type: 'remote-chat'; chat: RemoteChat }
-  | { type: 'remote-reset' };
+  | { type: 'remote-reset' }
+  | { type: 'live-reset'; profile: string | null }
+  | {
+      type: 'live-session';
+      profile: string;
+      storedSessionId: string | null;
+      runtimeSessionId: string | null;
+    }
+  | { type: 'live-user'; profile: string; text: string; at: number }
+  | { type: 'live-phase'; phase: LiveChatState['phase'] }
+  | { type: 'live-delta'; text: string }
+  | {
+      type: 'live-complete';
+      status: 'complete' | 'error' | 'interrupted';
+      text: string;
+      error: string | null;
+    }
+  | { type: 'live-connection'; state: LiveChatState['connection'] }
+  | { type: 'live-request'; request: LiveRequest }
+  | { type: 'live-request-cancel'; requestId: string }
+  | { type: 'live-request-resolved'; requestId: string; receipt: string }
+  | { type: 'live-error'; message: string };
 
 export interface Bootstrap {
   readonly resolvedTheme: ResolvedTheme;
@@ -316,6 +359,19 @@ export function createInitialState(seed: FixtureSeed, bootstrap: Bootstrap): App
       chats: {},
       selectedProfile: null,
       error: null,
+    },
+    live: {
+      profile: null,
+      phase: 'idle',
+      connection: 'disconnected',
+      userText: null,
+      userAt: 0,
+      botText: '',
+      error: null,
+      requests: [],
+      receipts: {},
+      runtimeSessionId: null,
+      storedSessionId: null,
     },
   };
 }
@@ -718,6 +774,110 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
         ...state,
         remote: { status: 'off', bots: [], chats: {}, selectedProfile: null, error: null },
       };
+    case 'live-reset':
+      return {
+        ...state,
+        live: {
+          profile: action.profile,
+          phase: 'idle',
+          connection: 'reconnecting',
+          userText: null,
+          userAt: 0,
+          botText: '',
+          error: null,
+          requests: [],
+          receipts: {},
+          runtimeSessionId: null,
+          storedSessionId: null,
+        },
+      };
+    case 'live-session':
+      return {
+        ...state,
+        live: {
+          ...state.live,
+          profile: action.profile,
+          storedSessionId: action.storedSessionId,
+          runtimeSessionId: action.runtimeSessionId,
+        },
+      };
+    case 'live-user':
+      return {
+        ...state,
+        live: {
+          ...state.live,
+          profile: action.profile,
+          userText: action.text,
+          userAt: action.at,
+          botText: '',
+          error: null,
+          phase: 'sending',
+        },
+      };
+    case 'live-phase':
+      return { ...state, live: { ...state.live, phase: action.phase } };
+    case 'live-delta':
+      return {
+        ...state,
+        live: {
+          ...state.live,
+          botText: state.live.botText + action.text,
+          phase: 'streaming',
+        },
+      };
+    case 'live-complete': {
+      const finalText =
+        state.live.botText === '' && action.text !== '' ? action.text : state.live.botText;
+      return {
+        ...state,
+        live: {
+          ...state.live,
+          botText: finalText,
+          phase:
+            action.status === 'interrupted'
+              ? 'stopped'
+              : action.status === 'error'
+                ? 'error'
+                : 'idle',
+          error: action.error,
+        },
+      };
+    }
+    case 'live-connection':
+      return { ...state, live: { ...state.live, connection: action.state } };
+    case 'live-request':
+      return {
+        ...state,
+        live: {
+          ...state.live,
+          requests: [
+            ...state.live.requests.filter((request) => request.id !== action.request.id),
+            action.request,
+          ],
+        },
+      };
+    case 'live-request-cancel':
+      return {
+        ...state,
+        live: {
+          ...state.live,
+          requests: state.live.requests.filter((request) => request.id !== action.requestId),
+        },
+      };
+    case 'live-request-resolved':
+      return {
+        ...state,
+        live: {
+          ...state.live,
+          requests: state.live.requests.filter((request) => request.id !== action.requestId),
+          receipts: { ...state.live.receipts, [action.requestId]: action.receipt },
+        },
+      };
+    case 'live-error':
+      return {
+        ...state,
+        live: { ...state.live, phase: 'error', error: action.message },
+      };
     case 'set-footer-menu':
       return state.footerMenuOpen === action.open && !state.pinnedMenuOpen
         ? state
@@ -873,21 +1033,176 @@ export function selectSectionBots(state: AppState, sectionId: string): BotProfil
   return state.bots.filter((bot) => bot.sectionId === sectionId);
 }
 
-export function selectChatMessages(state: AppState, botId: string): ChatMessage[] {
-  if (isRemoteRoster(state)) {
-    const chat = state.remote.chats[botId];
-    if (chat === undefined) {
-      return [];
-    }
-    return chat.messages.map((message): ChatMessage => ({
-      id: message.id,
-      role: message.role,
-      kind: 'text',
-      text: message.text,
-      at: message.at,
-    }));
+function approvalChoiceAction(choice: string): ApprovalActionId | null {
+  switch (choice) {
+    case 'once':
+      return 'allow';
+    case 'session':
+      return 'allow-session';
+    case 'always':
+      return 'allow-always';
+    case 'deny':
+      return 'deny';
+    default:
+      return null;
   }
-  return state.messages[botId] ?? [];
+}
+
+function asRecordOf(value: unknown): Record<string, unknown> | null {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+/** Maps one live server request into the inline card the transcript already draws. */
+function liveRequestMessage(request: LiveRequest, state: AppState): ChatMessage | null {
+  const receipt = state.live.receipts[request.id] ?? null;
+  if (request.method === 'approval') {
+    const choices = Array.isArray(request.payload['choices'])
+      ? request.payload['choices'].filter((value): value is string => typeof value === 'string')
+      : ['once', 'deny'];
+    const actions = choices
+      .map((choice) => {
+        const action = approvalChoiceAction(choice);
+        return action === null
+          ? null
+          : { id: action, tone: choice === 'deny' ? ('danger' as const) : ('primary' as const) };
+      })
+      .filter(
+        (action): action is { id: ApprovalActionId; tone: 'primary' | 'danger' } => action !== null,
+      );
+    const title =
+      typeof request.payload['description'] === 'string' && request.payload['description'] !== ''
+        ? (request.payload['description'] as string)
+        : '需要你确认';
+    const detail =
+      typeof request.payload['command'] === 'string' ? (request.payload['command'] as string) : '';
+    return {
+      id: request.id,
+      role: 'bot',
+      kind: 'approval',
+      at: 0,
+      approval: {
+        id: request.id,
+        title,
+        detail,
+        actions,
+        resolution: receipt === null ? null : { action: receipt as ApprovalActionId, at: 0 },
+      },
+    };
+  }
+  const questions = Array.isArray(request.payload['questions']) ? request.payload['questions'] : [];
+  const first = asRecordOf(questions[0]);
+  const qid = typeof first?.['qid'] === 'string' ? (first['qid'] as string) : 'q';
+  const question =
+    typeof first?.['question'] === 'string' && first['question'] !== ''
+      ? (first['question'] as string)
+      : '需要你确认';
+  const choices = Array.isArray(first?.['choices'])
+    ? (first['choices'] as unknown[]).filter((value): value is string => typeof value === 'string')
+    : [];
+  return {
+    id: request.id,
+    role: 'bot',
+    kind: 'clarify',
+    at: 0,
+    clarify: {
+      id: request.id,
+      question,
+      options: choices.map((choice) => ({ id: `${qid}::${choice}`, label: choice })),
+      answerId: receipt,
+    },
+  };
+}
+
+export function selectChatMessages(state: AppState, botId: string): ChatMessage[] {
+  if (!isRemoteRoster(state)) {
+    return state.messages[botId] ?? [];
+  }
+  const chat = state.remote.chats[botId];
+  const base: ChatMessage[] = (chat?.messages ?? []).map((message): ChatMessage => ({
+    id: message.id,
+    role: message.role,
+    kind: 'text',
+    text: message.text,
+    at: message.at,
+  }));
+  if (state.live.profile !== botId) {
+    return base;
+  }
+  const live: ChatMessage[] = [];
+  if (state.live.userText !== null) {
+    live.push({
+      id: 'live-user',
+      role: 'user',
+      kind: 'text',
+      text: state.live.userText,
+      at: state.live.userAt,
+    });
+  }
+  if (state.live.botText !== '' || state.live.phase === 'streaming') {
+    live.push({
+      id: 'live-bot',
+      role: 'bot',
+      kind: 'text',
+      text: state.live.botText,
+      at: state.live.userAt,
+    });
+  }
+  for (const request of state.live.requests) {
+    const message = liveRequestMessage(request, state);
+    if (message !== null) {
+      live.push(message);
+    }
+  }
+  if (state.live.phase === 'stopped') {
+    live.push({
+      id: 'live-stopped',
+      role: 'bot',
+      kind: 'stopped',
+      text: '',
+      at: state.live.userAt,
+    });
+  }
+  return [...base, ...live];
+}
+
+/** Translates one main-process chat event into a store action. */
+export function chatEventAction(event: DashboardChatEvent): AppAction | null {
+  switch (event.type) {
+    case 'connection':
+      return { type: 'live-connection', state: event.state };
+    case 'session':
+      return {
+        type: 'live-session',
+        profile: event.profile,
+        storedSessionId: event.storedSessionId,
+        runtimeSessionId: event.runtimeSessionId,
+      };
+    case 'turn-start':
+      return { type: 'live-phase', phase: 'streaming' };
+    case 'delta':
+      return { type: 'live-delta', text: event.text };
+    case 'interim':
+      return { type: 'live-delta', text: event.text };
+    case 'turn-complete':
+      return {
+        type: 'live-complete',
+        status: event.status,
+        text: event.text,
+        error: event.error,
+      };
+    case 'request':
+      return { type: 'live-request', request: event.request };
+    case 'request-cancel':
+      return { type: 'live-request-cancel', requestId: event.requestId };
+    case 'error':
+      return { type: 'live-error', message: event.message };
+    case 'tool':
+      return null;
+    default:
+      return null;
+  }
 }
 
 export function selectUnresolvedCount(state: AppState): number {

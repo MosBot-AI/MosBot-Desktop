@@ -1,5 +1,7 @@
 import type {
+  ChatOpenResult,
   ConnectionSnapshot,
+  DashboardChatEvent,
   DashboardSettings,
   DashboardStatus,
   PreflightResult,
@@ -41,6 +43,8 @@ export interface MosBotDashboardBridge {
   probeNewBot(): Promise<Result<ProbeReport>>;
   /** Step 4 write probe on a dedicated Kanban board (created and deleted by the probe). */
   probeKanbanWrite(): Promise<Result<ProbeReport>>;
+  /** M1 chat probe: dedicated profile, real send/stream/stop, cleanup. */
+  probeChat(): Promise<Result<ProbeReport>>;
   /** Clears local credentials and reports what survived. */
   signOut(): Promise<Result<ProbeReport>>;
   status(): Promise<Result<DashboardStatus>>;
@@ -48,6 +52,16 @@ export interface MosBotDashboardBridge {
   listBots(): Promise<Result<readonly RemoteBot[]>>;
   /** Read-only Bot Chat history for one profile. */
   openChat(profileName: string): Promise<Result<RemoteChat>>;
+  /** Resumes (or creates) the live Bot Chat session so prompts can be sent. */
+  chatOpen(profileName: string, storedSessionId: string | null): Promise<Result<ChatOpenResult>>;
+  /** Submits one prompt to the open session. */
+  chatSend(text: string): Promise<Result<void>>;
+  /** Interrupts the running turn. */
+  chatStop(): Promise<Result<void>>;
+  /** Answers a server→client approval/clarify request. */
+  chatAnswer(requestId: string, result: Readonly<Record<string, unknown>>): Promise<Result<void>>;
+  /** Subscribes to live turn events; returns an unsubscribe function. */
+  onChatEvent(listener: (event: DashboardChatEvent) => void): () => void;
   /** Non-secret connection preferences (last address). */
   settings(): Promise<Result<DashboardSettings>>;
   saveAddress(address: string | null): Promise<Result<void>>;
@@ -63,10 +77,16 @@ export const DASHBOARD_CHANNELS = {
   probeWorkbench: 'mosbot:dashboard:probeWorkbench',
   probeNewBot: 'mosbot:dashboard:probeNewBot',
   probeKanbanWrite: 'mosbot:dashboard:probeKanbanWrite',
+  probeChat: 'mosbot:dashboard:probeChat',
   signOut: 'mosbot:dashboard:signOut',
   status: 'mosbot:dashboard:status',
   listBots: 'mosbot:dashboard:listBots',
   openChat: 'mosbot:dashboard:openChat',
+  chatOpen: 'mosbot:dashboard:chatOpen',
+  chatSend: 'mosbot:dashboard:chatSend',
+  chatStop: 'mosbot:dashboard:chatStop',
+  chatAnswer: 'mosbot:dashboard:chatAnswer',
+  chatEvent: 'mosbot:dashboard:chatEvent',
   settings: 'mosbot:dashboard:settings',
   saveAddress: 'mosbot:dashboard:saveAddress',
 } as const;

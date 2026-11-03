@@ -1,6 +1,8 @@
 import { app, BrowserWindow, ipcMain, nativeTheme, safeStorage, session, shell } from 'electron';
 import path from 'node:path';
 import { createAuthManager } from './dashboard/auth';
+import { createChatManager } from './dashboard/chat';
+import { registerChatIpc } from './dashboard/chat-ipc';
 import { createTrustedSenderCheck, registerDashboardIpc } from './dashboard/ipc';
 import { createDashboardService } from './dashboard/service';
 import { createSettingsStore } from './dashboard/settings';
@@ -158,13 +160,25 @@ function registerDashboard(): void {
     settings,
     ticketExpiryCheck: process.env['MOSBOT_PROBE_TICKET_EXPIRY'] === '1',
   });
+  const chat = createChatManager({ auth, fetchImpl });
+  const trusted = createTrustedSenderCheck(() => mainWindow?.webContents ?? null);
   registerDashboardIpc({
     ipcMain,
     service,
-    isTrustedEvent: createTrustedSenderCheck(() => mainWindow?.webContents ?? null),
+    isTrustedEvent: trusted,
+    onSignOut: () => {
+      chat.close();
+    },
+  });
+  registerChatIpc({
+    ipcMain,
+    chat,
+    getWebContents: () => mainWindow?.webContents ?? null,
+    isTrustedEvent: trusted,
   });
   app.on('before-quit', () => {
     auth.cancelLogin();
+    chat.close();
   });
 }
 

@@ -1,7 +1,7 @@
 import { useEffect, type ReactElement } from 'react';
 import styles from './App.module.css';
 import { LOCALE_TAGS } from './app/i18n';
-import { appStore, useAppState, useDispatch } from './app/store';
+import { appStore, chatEventAction, useAppState, useDispatch } from './app/store';
 import { BotSidebar } from './features/bots/BotSidebar';
 import { ChatView } from './features/chat/ChatView';
 import { ConnectionDialog } from './features/connection/ConnectionDialog';
@@ -129,6 +129,20 @@ export function App(): ReactElement {
     };
   }, [connected, dispatch]);
 
+  // Subscribe to live turn events from the main process (stream, requests, reconnect).
+  useEffect(() => {
+    const dashboard = window.mosbot?.dashboard;
+    if (dashboard === undefined) {
+      return;
+    }
+    return dashboard.onChatEvent((event) => {
+      const action = chatEventAction(event);
+      if (action !== null) {
+        dispatch(action);
+      }
+    });
+  }, [dispatch]);
+
   // Load the selected Bot Chat once per profile (read-only prefetch).
   const selectedProfile = useAppState((state) => state.remote.selectedProfile);
   useEffect(() => {
@@ -146,6 +160,29 @@ export function App(): ReactElement {
       }
     })();
   }, [connected, selectedProfile, dispatch]);
+
+  // Open (resume or create) the live chat session behind the selected Bot.
+  const remoteChat = useAppState((state) =>
+    state.remote.selectedProfile === null
+      ? undefined
+      : state.remote.chats[state.remote.selectedProfile],
+  );
+  const liveProfile = useAppState((state) => state.live.profile);
+  useEffect(() => {
+    const dashboard = window.mosbot?.dashboard;
+    if (dashboard === undefined || !connected || selectedProfile === null) {
+      return;
+    }
+    if (remoteChat === undefined || liveProfile === selectedProfile) {
+      return;
+    }
+    dispatch({ type: 'live-reset', profile: selectedProfile });
+    void dashboard.chatOpen(selectedProfile, remoteChat.storedSessionId).then((result) => {
+      if (!result.ok) {
+        dispatch({ type: 'live-error', message: result.error.message });
+      }
+    });
+  }, [connected, selectedProfile, remoteChat, liveProfile, dispatch]);
 
   useEffect(() => {
     const media = window.matchMedia('(max-width: 968px)');

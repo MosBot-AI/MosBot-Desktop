@@ -32,7 +32,15 @@ export interface RpcClient {
   readonly ready: GatewayReady;
   call<T>(method: string, params: Record<string, unknown>, schema: ZodType<T>): Promise<Result<T>>;
   waitForEvent(type: string, timeoutMs?: number): Promise<Result<GatewayEvent>>;
+  /** Answers a server→client request by its id. */
+  respond(id: string, result: Record<string, unknown>): void;
   close(): void;
+}
+
+export interface GatewayServerRequest {
+  readonly id: string;
+  readonly method: string;
+  readonly params: Record<string, unknown>;
 }
 
 export interface GatewayOptions {
@@ -42,6 +50,12 @@ export interface GatewayOptions {
   readonly requestTimeoutMs?: number;
   readonly handshakeTimeoutMs?: number;
   readonly socketFactory?: (url: string) => WebSocketLike;
+  /** Server→client requests (approval, clarify, …) needing a renderer answer. */
+  readonly onRequest?: (request: GatewayServerRequest) => void;
+  /** Every `event` frame, after gateway.ready. */
+  readonly onEvent?: (type: string, params: Record<string, unknown>) => void;
+  /** Socket closed unexpectedly (not via `close()`), e.g. for reconnect. */
+  readonly onClose?: (code: number, reason: string) => void;
 }
 
 const DEFAULT_TIMEOUT_MS = 10_000;
@@ -178,9 +192,13 @@ export async function connectGateway(options: GatewayOptions): Promise<Result<Rp
       });
     };
     socket.onclose = (event) => {
+      const wasClosed = closed;
       closed = true;
       clearTimeout(timer);
       failAll(`The Dashboard gateway closed the connection (code ${event.code}).`);
+      if (!wasClosed && options.onClose !== undefined) {
+        options.onClose(event.code, event.reason);
+      }
       resolve({
         ok: false,
         error: protocolError('unreachable', 'The Dashboard gateway closed the connection.', {
@@ -225,9 +243,18 @@ export async function connectGateway(options: GatewayOptions): Promise<Result<Rp
         for (const listener of listeners.get(type) ?? []) {
           listener(gatewayEvent);
         }
+        options.onEvent?.(type, params);
         return;
       }
       const id = record['id'];
+      if (typeof id === 'string' && typeof record['method'] === 'string') {
+        const params =
+          typeof record['params'] === 'object' && record['params'] !== null
+            ? (record['params'] as Record<string, unknown>)
+            : {};
+        options.onRequest?.({ id, method: record['method'], params });
+        return;
+      }
       if (typeof id !== 'number') {
         return;
       }
@@ -335,6 +362,12 @@ export async function connectGateway(options: GatewayOptions): Promise<Result<Rp
         };
         listeners.set(type, [...(listeners.get(type) ?? []), handler]);
       });
+    },
+    respond(id: string, result: Record<string, unknown>): void {
+      if (closed) {
+        return;
+      }
+      socket.send(JSON.stringify({ jsonrpc: '2.0', id, result }));
     },
     close(): void {
       closed = true;

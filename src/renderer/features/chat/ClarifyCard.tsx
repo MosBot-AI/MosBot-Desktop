@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, type ReactElement } from 'react';
 import type { ClarifyRequest } from '../../../shared/domain';
 import { useMessages } from '../../app/i18n';
-import { useDispatch } from '../../app/store';
+import { isRemoteRoster, useAppState, useDispatch } from '../../app/store';
 import { IconCheck } from '../../components/icons';
 import styles from './ChatView.module.css';
 
@@ -14,6 +14,7 @@ export interface ClarifyCardProps {
 export function ClarifyCard({ messageId, clarify }: ClarifyCardProps): ReactElement {
   const t = useMessages();
   const dispatch = useDispatch();
+  const remoteMode = useAppState((state) => isRemoteRoster(state));
   const receiptRef = useRef<HTMLDivElement | null>(null);
   const cardRef = useRef<HTMLDivElement | null>(null);
 
@@ -47,6 +48,19 @@ export function ClarifyCard({ messageId, clarify }: ClarifyCardProps): ReactElem
             type="button"
             className={styles.actionNeutral}
             onClick={() => {
+              if (remoteMode) {
+                const [qid, choice] = option.id.split('::');
+                void window.mosbot?.dashboard.chatAnswer(messageId, {
+                  answers: { [qid ?? '']: choice ?? option.label },
+                  outcome: 'submitted',
+                });
+                dispatch({
+                  type: 'live-request-resolved',
+                  requestId: messageId,
+                  receipt: option.id,
+                });
+                return;
+              }
               dispatch({
                 type: 'answer-clarify',
                 messageId,

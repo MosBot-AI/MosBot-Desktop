@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, type ReactElement } from 'react';
 import type { BotProfile } from '../../../shared/domain';
 import { useMessages } from '../../app/i18n';
-import { useAppState, useDispatch } from '../../app/store';
+import { isRemoteRoster, useAppState, useDispatch } from '../../app/store';
 import { IconPaperclip, IconSend, IconStop } from '../../components/icons';
 import styles from './ChatView.module.css';
 
@@ -13,19 +13,22 @@ const MAX_TEXTAREA_HEIGHT = 160;
 
 /**
  * The input bar: attach (enabled by M4), a growing text area and send/stop.
- * Enter sends, Shift+Enter breaks the line, and Enter during IME composition
- * belongs to the input method.
+ * In fixture mode a local echo simulates a reply; in connected mode the prompt is
+ * submitted to the real Bot Chat and the reply streams back over the gateway.
  */
 export function Composer({ bot }: ComposerProps): ReactElement {
   const t = useMessages();
   const dispatch = useDispatch();
   const draft = useAppState((state) => state.drafts[bot.id] ?? '');
-  const readOnly = useAppState(
-    (state) => state.remote.status === 'ready' && state.remote.bots.length > 0,
-  );
-  const replying = useAppState(
+  const remoteMode = useAppState((state) => isRemoteRoster(state));
+  const livePhase = useAppState((state) => state.live.phase);
+  const liveConnection = useAppState((state) => state.live.connection);
+  const fixtureReplying = useAppState(
     (state) => state.pendingReply?.botId === bot.id || bot.presence === 'replying',
   );
+  const replying = remoteMode
+    ? livePhase === 'sending' || livePhase === 'streaming'
+    : fixtureReplying;
   const areaRef = useRef<HTMLTextAreaElement | null>(null);
   const composingRef = useRef(false);
 
@@ -43,51 +46,33 @@ export function Composer({ bot }: ComposerProps): ReactElement {
     if (text === '' || replying) {
       return;
     }
+    if (remoteMode) {
+      dispatch({ type: 'live-user', profile: bot.id, text, at: Date.now() });
+      dispatch({ type: 'set-draft', botId: bot.id, text: '' });
+      void window.mosbot?.dashboard.chatSend(text).then((result) => {
+        if (!result.ok) {
+          dispatch({ type: 'live-error', message: result.error.message });
+          dispatch({ type: 'set-draft', botId: bot.id, text });
+        }
+      });
+      areaRef.current?.focus();
+      return;
+    }
     dispatch({ type: 'send-message', botId: bot.id, text, at: Date.now() });
     areaRef.current?.focus();
   };
 
   const stop = (): void => {
+    if (remoteMode) {
+      void window.mosbot?.dashboard.chatStop();
+      dispatch({ type: 'live-phase', phase: 'stopped' });
+      return;
+    }
     dispatch({ type: 'stop-reply', botId: bot.id, at: Date.now() });
   };
 
   const placeholder = t('chat.composer.placeholder', { name: bot.name });
-
-  if (readOnly) {
-    return (
-      <div className={styles.composerWrap}>
-        <p className={styles.readOnlyNotice}>{t('chat.readOnlyNotice')}</p>
-        <div className={styles.composer} data-readonly="true">
-          <button
-            type="button"
-            className={styles.attachButton}
-            disabled
-            aria-label={t('chat.composer.attach')}
-            title={t('chat.composer.attachDisabled')}
-          >
-            <IconPaperclip size={16} />
-          </button>
-          <textarea
-            className={styles.textarea}
-            rows={1}
-            value=""
-            readOnly
-            disabled
-            placeholder={t('chat.readOnlyPlaceholder')}
-            aria-label={t('chat.readOnlyPlaceholder')}
-          />
-          <button
-            type="button"
-            className={styles.sendButton}
-            disabled
-            aria-label={t('chat.composer.send')}
-          >
-            <IconSend size={16} />
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const disabled = remoteMode && liveConnection === 'disconnected';
 
   return (
     <div className={styles.composerWrap}>
@@ -108,6 +93,7 @@ export function Composer({ bot }: ComposerProps): ReactElement {
           value={draft}
           placeholder={placeholder}
           aria-label={placeholder}
+          disabled={disabled}
           onChange={(event) => {
             dispatch({ type: 'set-draft', botId: bot.id, text: event.target.value });
           }}
@@ -146,7 +132,7 @@ export function Composer({ bot }: ComposerProps): ReactElement {
             type="button"
             className={styles.sendButton}
             onClick={send}
-            disabled={draft.trim() === ''}
+            disabled={draft.trim() === '' || disabled}
             aria-label={t('chat.composer.send')}
             title={t('chat.composer.send')}
           >

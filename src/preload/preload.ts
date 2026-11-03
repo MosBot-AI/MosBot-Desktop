@@ -1,7 +1,9 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { DASHBOARD_CHANNELS, type MosBotBridge } from '../shared/bridge';
 import type {
+  ChatOpenResult,
   ConnectionSnapshot,
+  DashboardChatEvent,
   DashboardSettings,
   DashboardStatus,
   PreflightResult,
@@ -60,6 +62,36 @@ const bridge: MosBotBridge = {
         Result<RemoteChat>
       >;
     },
+    chatOpen(profileName: string, storedSessionId: string | null): Promise<Result<ChatOpenResult>> {
+      return ipcRenderer.invoke(
+        DASHBOARD_CHANNELS.chatOpen,
+        profileName,
+        storedSessionId,
+      ) as Promise<Result<ChatOpenResult>>;
+    },
+    chatSend(text: string): Promise<Result<void>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.chatSend, text) as Promise<Result<void>>;
+    },
+    chatStop(): Promise<Result<void>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.chatStop) as Promise<Result<void>>;
+    },
+    chatAnswer(
+      requestId: string,
+      result: Readonly<Record<string, unknown>>,
+    ): Promise<Result<void>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.chatAnswer, requestId, result) as Promise<
+        Result<void>
+      >;
+    },
+    onChatEvent(listener: (event: DashboardChatEvent) => void): () => void {
+      const wrapped = (_event: Electron.IpcRendererEvent, payload: DashboardChatEvent): void => {
+        listener(payload);
+      };
+      ipcRenderer.on(DASHBOARD_CHANNELS.chatEvent, wrapped);
+      return () => {
+        ipcRenderer.removeListener(DASHBOARD_CHANNELS.chatEvent, wrapped);
+      };
+    },
     settings(): Promise<Result<DashboardSettings>> {
       return ipcRenderer.invoke(DASHBOARD_CHANNELS.settings) as Promise<Result<DashboardSettings>>;
     },
@@ -73,6 +105,9 @@ const bridge: MosBotBridge = {
       return ipcRenderer.invoke(DASHBOARD_CHANNELS.probeKanbanWrite) as Promise<
         Result<ProbeReport>
       >;
+    },
+    probeChat(): Promise<Result<ProbeReport>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.probeChat) as Promise<Result<ProbeReport>>;
     },
     signOut(): Promise<Result<ProbeReport>> {
       return ipcRenderer.invoke(DASHBOARD_CHANNELS.signOut) as Promise<Result<ProbeReport>>;

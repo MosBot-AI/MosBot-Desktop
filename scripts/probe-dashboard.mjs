@@ -23,6 +23,7 @@ const FORCE_LOGIN = MODE === 'login';
 const WS_ONLY = MODE === 'ws';
 const WORKBENCH_ONLY = MODE === 'workbench';
 const ROSTER_ONLY = MODE === 'roster';
+const CHAT_ONLY = MODE === 'chat';
 const NEWBOT_ONLY = MODE === 'newbot';
 const KANBAN_ONLY = MODE === 'kanban';
 const WRITES_ONLY = MODE === 'writes';
@@ -31,7 +32,13 @@ const RUN_WORKBENCH_PROBE = WORKBENCH_ONLY || MODE === 'all';
 const RUN_NEWBOT_PROBE = NEWBOT_ONLY || WRITES_ONLY;
 const RUN_KANBAN_PROBE = KANBAN_ONLY || WRITES_ONLY;
 const RUN_AUTH_PROBE =
-  !WS_ONLY && !WORKBENCH_ONLY && !NEWBOT_ONLY && !KANBAN_ONLY && !WRITES_ONLY && !ROSTER_ONLY;
+  !WS_ONLY &&
+  !WORKBENCH_ONLY &&
+  !NEWBOT_ONLY &&
+  !KANBAN_ONLY &&
+  !WRITES_ONLY &&
+  !ROSTER_ONLY &&
+  !CHAT_ONLY;
 const SIGN_OUT = process.env.MOSBOT_PROBE_SIGN_OUT === '1';
 const APP = path.resolve(
   'out',
@@ -291,6 +298,29 @@ async function main() {
       return;
     }
     printRows('第 4 步 · 工作台只读', workbench.data.rows);
+  }
+
+  if (CHAT_ONLY) {
+    const report = await page.evaluate(() => window.mosbot.dashboard.probeChat());
+    if (!report.ok) {
+      console.error(`\nChat probe failed: [${report.error.code}] ${report.error.message}`);
+      await application.close();
+      process.exitCode = 10;
+      return;
+    }
+    printRows('M1 · 真实发送 / 流式 / 停止（专用 profile，自动清理）', report.data.rows);
+    mkdirSync(OUT_DIR, { recursive: true });
+    const reportPath = path.join(
+      OUT_DIR,
+      `dashboard-chat-${new Date().toISOString().replace(/[:.]/g, '-')}.json`,
+    );
+    writeFileSync(
+      reportPath,
+      `${JSON.stringify({ generatedAt: new Date().toISOString(), target: URL_FROM_ENV, rows: report.data.rows }, null, 2)}\n`,
+    );
+    console.log(`\n聊天报告已写入 ${reportPath}`);
+    await application.close();
+    return;
   }
 
   let newBot = null;

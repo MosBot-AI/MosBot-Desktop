@@ -29,6 +29,8 @@ export function registerDashboardIpc(options: {
   readonly ipcMain: IpcMain;
   readonly service: DashboardService;
   readonly isTrustedEvent: (event: IpcMainInvokeEvent) => boolean;
+  /** Called after a successful local sign-out (e.g. to close the live chat socket). */
+  readonly onSignOut?: () => void;
 }): void {
   const { ipcMain, service, isTrustedEvent } = options;
 
@@ -92,7 +94,14 @@ export function registerDashboardIpc(options: {
   handle<ProbeReport>(DASHBOARD_CHANNELS.probeWorkbench, () => service.probeWorkbench());
   handle<ProbeReport>(DASHBOARD_CHANNELS.probeNewBot, () => service.probeNewBot());
   handle<ProbeReport>(DASHBOARD_CHANNELS.probeKanbanWrite, () => service.probeKanbanWrite());
-  handle<ProbeReport>(DASHBOARD_CHANNELS.signOut, () => service.signOut());
+  handle<ProbeReport>(DASHBOARD_CHANNELS.probeChat, () => service.probeChat());
+  handle<ProbeReport>(DASHBOARD_CHANNELS.signOut, () => {
+    const result = service.signOut();
+    if (result.ok) {
+      options.onSignOut?.();
+    }
+    return result;
+  });
   handle<DashboardStatus>(DASHBOARD_CHANNELS.status, () => service.status());
   handle<void>(DASHBOARD_CHANNELS.cancelLogin, () => service.cancelLogin());
   handle<readonly RemoteBot[]>(DASHBOARD_CHANNELS.listBots, () => service.listBots());

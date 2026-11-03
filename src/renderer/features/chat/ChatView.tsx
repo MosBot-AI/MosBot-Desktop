@@ -1,6 +1,12 @@
 import { useLayoutEffect, useRef, useState, type ReactElement } from 'react';
 import { useMessages } from '../../app/i18n';
-import { selectSelectedBot, useAppState, useDispatch } from '../../app/store';
+import {
+  isRemoteRoster,
+  selectChatMessages,
+  selectSelectedBot,
+  useAppState,
+  useDispatch,
+} from '../../app/store';
 import { IconChevronDown } from '../../components/icons';
 import { userBubbleTheme } from '../bots/botLook';
 import { ChatNameplate } from './ChatNameplate';
@@ -20,7 +26,12 @@ export function ChatView(): ReactElement {
   const dispatch = useDispatch();
   const state = useAppState((value) => value);
   const bot = selectSelectedBot(state);
-  const messages = state.messages[state.selectedBotId] ?? [];
+  const messages = selectChatMessages(state, state.selectedBotId);
+  const remoteMode = isRemoteRoster(state);
+  const liveConnection = state.live.connection;
+  const livePhase = state.live.phase;
+  const liveError = state.live.error;
+  const liveTextLength = state.live.botText.length;
   const timelineRef = useRef<HTMLDivElement | null>(null);
   const lastBotRef = useRef(state.selectedBotId);
   const lastCountRef = useRef(messages.length);
@@ -43,6 +54,13 @@ export function ChatView(): ReactElement {
     lastCountRef.current = messages.length;
     scrollToLatest(false);
   }, [state.selectedBotId]);
+
+  // Streaming text grows one live bubble; keep following when already at the bottom.
+  useLayoutEffect(() => {
+    if (atBottom) {
+      scrollToLatest(false);
+    }
+  }, [liveTextLength]);
 
   // New messages: follow when already at the bottom, otherwise offer the jump.
   useLayoutEffect(() => {
@@ -86,6 +104,16 @@ export function ChatView(): ReactElement {
           }}
         />
       </header>
+
+      {remoteMode && (liveConnection !== 'connected' || livePhase === 'error') ? (
+        <p className={styles.connectionBanner} role="status">
+          {livePhase === 'error' && liveError !== null
+            ? t('chat.live.failed', { message: liveError })
+            : liveConnection === 'reconnecting'
+              ? t('chat.connection.reconnecting')
+              : t('chat.connection.disconnected')}
+        </p>
+      ) : null}
 
       <div
         className={styles.timeline}

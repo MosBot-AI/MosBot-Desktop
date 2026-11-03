@@ -240,6 +240,51 @@ export interface RemoteMessage {
   readonly at: number;
 }
 
+export type ChatTurnStatus = 'complete' | 'error' | 'interrupted';
+
+export interface ChatServerRequest {
+  readonly id: string;
+  readonly method: 'approval' | 'clarify';
+  readonly payload: Readonly<Record<string, unknown>>;
+}
+
+/** Events the main process pushes to the renderer for the live chat turn. */
+export type DashboardChatEvent =
+  | {
+      readonly type: 'connection';
+      readonly state: 'connected' | 'reconnecting' | 'disconnected';
+      readonly detail?: string;
+    }
+  | {
+      readonly type: 'session';
+      readonly profile: string;
+      readonly storedSessionId: string | null;
+      readonly runtimeSessionId: string | null;
+    }
+  | { readonly type: 'turn-start' }
+  | { readonly type: 'delta'; readonly text: string }
+  | { readonly type: 'interim'; readonly text: string }
+  | {
+      readonly type: 'turn-complete';
+      readonly status: ChatTurnStatus;
+      readonly text: string;
+      readonly error: string | null;
+    }
+  | {
+      readonly type: 'tool';
+      readonly phase: 'start' | 'progress' | 'complete';
+      readonly name: string;
+    }
+  | { readonly type: 'request'; readonly request: ChatServerRequest }
+  | { readonly type: 'request-cancel'; readonly requestId: string }
+  | { readonly type: 'error'; readonly message: string };
+
+export interface ChatOpenResult {
+  readonly profile: string;
+  readonly storedSessionId: string | null;
+  readonly runtimeSessionId: string | null;
+}
+
 /** Read-only Bot Chat history for one profile (M1 transcript prefetch). */
 export interface RemoteChat {
   readonly profileName: string;

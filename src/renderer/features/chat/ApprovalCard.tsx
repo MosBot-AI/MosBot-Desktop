@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, type ReactElement } from 'react';
 import type { ApprovalRequest } from '../../../shared/domain';
 import { useMessages } from '../../app/i18n';
-import { useDispatch } from '../../app/store';
+import { isRemoteRoster, useAppState, useDispatch } from '../../app/store';
 import { IconCheck, IconWarning } from '../../components/icons';
 import styles from './ChatView.module.css';
 
@@ -12,17 +12,30 @@ export interface ApprovalCardProps {
 
 const ACTION_KEYS: Record<
   ApprovalRequest['actions'][number]['id'],
-  'chat.approval.allow' | 'chat.approval.allow-always' | 'chat.approval.deny'
+  | 'chat.approval.allow'
+  | 'chat.approval.allow-session'
+  | 'chat.approval.allow-always'
+  | 'chat.approval.deny'
 > = {
   allow: 'chat.approval.allow',
+  'allow-session': 'chat.approval.allow-session',
   'allow-always': 'chat.approval.allow-always',
   deny: 'chat.approval.deny',
+};
+
+/** Wire choice names of the gateway's approval tool. */
+const REMOTE_CHOICES: Record<ApprovalRequest['actions'][number]['id'], string> = {
+  allow: 'once',
+  'allow-session': 'session',
+  'allow-always': 'always',
+  deny: 'deny',
 };
 
 /** A server request in the transcript; once answered it folds into a receipt. */
 export function ApprovalCard({ messageId, approval }: ApprovalCardProps): ReactElement {
   const t = useMessages();
   const dispatch = useDispatch();
+  const remoteMode = useAppState((state) => isRemoteRoster(state));
   const receiptRef = useRef<HTMLDivElement | null>(null);
   const cardRef = useRef<HTMLDivElement | null>(null);
   const resolved = approval.resolution;
@@ -71,6 +84,17 @@ export function ApprovalCard({ messageId, approval }: ApprovalCardProps): ReactE
                   : styles.actionNeutral
             }
             onClick={() => {
+              if (remoteMode) {
+                void window.mosbot?.dashboard.chatAnswer(messageId, {
+                  choice: REMOTE_CHOICES[action.id],
+                });
+                dispatch({
+                  type: 'live-request-resolved',
+                  requestId: messageId,
+                  receipt: action.id,
+                });
+                return;
+              }
               dispatch({
                 type: 'answer-approval',
                 messageId,

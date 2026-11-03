@@ -52,7 +52,7 @@ export interface WorkStep {
   readonly detail: string;
 }
 
-export type ApprovalActionId = 'allow' | 'allow-always' | 'deny';
+export type ApprovalActionId = 'allow' | 'allow-session' | 'allow-always' | 'deny';
 
 export interface ApprovalAction {
   readonly id: ApprovalActionId;

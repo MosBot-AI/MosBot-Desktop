@@ -12,6 +12,7 @@ import type {
 import { parseDashboardTarget, protocolError } from '../../shared/protocol';
 import type { AuthManager } from './auth';
 import { listRemoteBots, openRemoteChat } from './bots';
+import { runChatProbe } from './probe-writes';
 import { createProbeService, type ProbeService } from './probe';
 import type { TransportFetch } from './transport';
 
@@ -32,6 +33,8 @@ export interface DashboardService {
   probeNewBot(): Promise<Result<ProbeReport>>;
   /** Step 4 write: dedicated Kanban board/task, status patch, cursor, cleanup. */
   probeKanbanWrite(): Promise<Result<ProbeReport>>;
+  /** M1 chat: dedicated profile, real send/stream/stop through the chat manager. */
+  probeChat(): Promise<Result<ProbeReport>>;
   /** Local sign-out plus what it verified. */
   signOut(): Result<ProbeReport>;
   /** Aborts a pending browser sign-in. */
@@ -160,6 +163,15 @@ export function createDashboardService(deps: DashboardServiceDeps): DashboardSer
 
     async probeKanbanWrite() {
       return probe.runKanbanWrite();
+    },
+
+    async probeChat() {
+      return runChatProbe({
+        auth: deps.auth,
+        fetchImpl: deps.fetchImpl,
+        ...(deps.requestTimeoutMs === undefined ? {} : { requestTimeoutMs: deps.requestTimeoutMs }),
+        ...(deps.now === undefined ? {} : { now: deps.now }),
+      });
     },
 
     signOut() {

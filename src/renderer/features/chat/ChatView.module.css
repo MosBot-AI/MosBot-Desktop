@@ -63,6 +63,17 @@
   white-space: nowrap;
 }
 
+.connectionBanner {
+  flex: none;
+  margin: 0 var(--space-5);
+  padding: 6px var(--space-3);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--accent-warning) 12%, transparent);
+  color: var(--accent-warning);
+  font-size: var(--text-xs);
+  text-align: center;
+}
+
 .timeline {
   flex: 1;
   min-height: 0;
@@ -521,6 +532,17 @@
 @media (max-width: 900px) {
   .nameplateStatus {
     display: none;
+  }
+
+  .connectionBanner {
+    flex: none;
+    margin: 0 var(--space-5);
+    padding: 6px var(--space-3);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--accent-warning) 12%, transparent);
+    color: var(--accent-warning);
+    font-size: var(--text-xs);
+    text-align: center;
   }
 
   .timeline {
