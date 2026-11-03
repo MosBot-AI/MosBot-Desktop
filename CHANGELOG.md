@@ -39,6 +39,8 @@ until the release repository exists.
   client.
 - Tooling: `pnpm dev`, `pnpm package`, `pnpm typecheck`, `pnpm test`, `pnpm test:e2e`,
   `pnpm lint`, `pnpm format`, Playwright Electron smoke tests and evidence capture.
+- Bilingual `README.md` / `README_zh.md` with requirements, run and check commands,
+  layout, documentation index and the M0a limitations.
 
 ### Notes
 

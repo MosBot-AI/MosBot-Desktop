@@ -19,6 +19,7 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
 - 按需详情栏（详情/资料库/电脑，可拖拽宽度、窄窗口覆盖态）、键盘可用的搜索浮层，以及实时预览的新建 Bot 弹层。
 - 从 MosBot@3c118c4 复制的品牌资产与 provenance 记录、`pnpm assets:sync` 命令，以及从移动端移植的程序化 BotFace 几何。
 - 工具链：`pnpm dev`、`pnpm package`、`pnpm typecheck`、`pnpm test`、`pnpm test:e2e`、`pnpm lint`、`pnpm format`、Playwright Electron 冒烟测试与证据截屏。
+- 中英成对的 `README.md` / `README_zh.md`：环境要求、运行与检查命令、目录结构、文档索引与 M0a 已知限制。
 
 ### 说明
 
