@@ -3,7 +3,9 @@ import type { BotProfile } from '../../../shared/domain';
 import { useMessages } from '../../app/i18n';
 import { presenceKey } from '../../app/format';
 import { BotAvatar } from './BotAvatar';
+import { BotHoverCard } from './BotHoverCard';
 import { BotStatusDot } from './BotStatusDot';
+import { useHoverPreview } from './useHoverPreview';
 import styles from './BotRoster.module.css';
 
 export interface PinnedGridProps {
@@ -35,28 +37,7 @@ export function PinnedGrid({
         <div className={styles.pinnedGrid}>
           {visible.map((bot) => {
             const selected = bot.id === selectedBotId;
-            return (
-              <button
-                key={bot.id}
-                type="button"
-                className={styles.pinTile}
-                data-selected={selected ? 'true' : 'false'}
-                onClick={() => {
-                  onSelect(bot.id);
-                }}
-                aria-current={selected ? 'true' : undefined}
-                title={`${bot.name} · ${t(presenceKey(bot.presence))}`}
-              >
-                <span className={styles.pinFace}>
-                  <BotAvatar bot={bot} size={52} label={bot.name} />
-                  {bot.unread > 0 ? <span className={styles.pinUnread} aria-hidden="true" /> : null}
-                  <BotStatusDot presence={bot.presence} size="sm" className={styles.pinDot} />
-                </span>
-                <span className={styles.pinName} title={bot.name}>
-                  {bot.name}
-                </span>
-              </button>
-            );
+            return <PinnedTile key={bot.id} bot={bot} selected={selected} onSelect={onSelect} />;
           })}
         </div>
       )}
@@ -64,5 +45,50 @@ export function PinnedGrid({
         {t('sidebar.pinnedAll')}
       </button>
     </section>
+  );
+}
+
+interface PinnedTileProps {
+  readonly bot: BotProfile;
+  readonly selected: boolean;
+  readonly onSelect: (botId: string) => void;
+}
+
+function PinnedTile({ bot, selected, onSelect }: PinnedTileProps): ReactElement {
+  const t = useMessages();
+  const preview = useHoverPreview();
+  return (
+    <>
+      <button
+        type="button"
+        ref={preview.anchorRef}
+        className={styles.pinTile}
+        data-selected={selected ? 'true' : 'false'}
+        onClick={() => {
+          onSelect(bot.id);
+        }}
+        onPointerEnter={preview.onEnter}
+        onPointerLeave={preview.onLeave}
+        onFocus={preview.onFocus}
+        onBlur={preview.onBlur}
+        aria-current={selected ? 'true' : undefined}
+        title={`${bot.name} · ${t(presenceKey(bot.presence))}`}
+      >
+        <span className={styles.pinFace}>
+          <BotAvatar
+            bot={bot}
+            size={52}
+            label={bot.name}
+            moodOverride={preview.hovered ? 'listening' : undefined}
+          />
+          {bot.unread > 0 ? <span className={styles.pinUnread} aria-hidden="true" /> : null}
+          <BotStatusDot presence={bot.presence} size="sm" className={styles.pinDot} />
+        </span>
+        <span className={styles.pinName} title={bot.name}>
+          {bot.name}
+        </span>
+      </button>
+      {preview.position === null ? null : <BotHoverCard bot={bot} position={preview.position} />}
+    </>
   );
 }

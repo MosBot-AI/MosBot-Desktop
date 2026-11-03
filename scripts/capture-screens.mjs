@@ -109,6 +109,13 @@ async function main() {
   await shot('10-library');
   await page.getByRole('button', { name: '关闭详情' }).click();
 
+  // Hover preview: the card appears after 260 ms and the face blends to `listening`.
+  await page.locator('button[title^="设计评审 · "]').hover();
+  await page.waitForTimeout(650);
+  await page.screenshot({ path: path.join(OUT_DIR, '11-hover-preview.png') });
+  console.log('captured 11-hover-preview.png');
+  await page.mouse.move(1, 1);
+
   await application.close();
 }
 
