@@ -233,7 +233,13 @@ function remoteState(): AppState {
   });
   state = reduceAppState(state, {
     type: 'remote-chat',
-    chat: { profileName: 'default', storedSessionId: 'stored-1', messages: [], hasMore: false },
+    chat: {
+      profileName: 'default',
+      storedSessionId: 'stored-1',
+      messages: [],
+      hasMore: false,
+      nextOffset: 0,
+    },
   });
   state = reduceAppState(state, { type: 'live-reset', profile: 'default' });
   return state;

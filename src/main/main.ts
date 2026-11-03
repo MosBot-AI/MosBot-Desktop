@@ -1,4 +1,5 @@
 import { app, BrowserWindow, ipcMain, nativeTheme, safeStorage, session, shell } from 'electron';
+import { SHELL_CHANNELS } from '../shared/bridge';
 import path from 'node:path';
 import { createAuthManager } from './dashboard/auth';
 import { createChatManager } from './dashboard/chat';
@@ -139,6 +140,24 @@ function loginTimeoutMs(): number | undefined {
   return parsed;
 }
 
+function registerShellIpc(): void {
+  ipcMain.handle(SHELL_CHANNELS.openExternal, async (_event, rawUrl: unknown): Promise<boolean> => {
+    if (typeof rawUrl !== 'string' || rawUrl.length > 2048) {
+      return false;
+    }
+    try {
+      const url = new URL(rawUrl);
+      if (url.protocol !== 'https:') {
+        return false;
+      }
+      await shell.openExternal(url.toString());
+      return true;
+    } catch {
+      return false;
+    }
+  });
+}
+
 function registerDashboard(): void {
   const fetchImpl = createSessionFetch();
   const timeoutMs = loginTimeoutMs();
@@ -183,6 +202,7 @@ function registerDashboard(): void {
 }
 
 void app.whenReady().then(() => {
+  registerShellIpc();
   registerDashboard();
   createMainWindow();
 

@@ -11,7 +11,7 @@ import type {
 } from '../../shared/protocol';
 import { parseDashboardTarget, protocolError } from '../../shared/protocol';
 import type { AuthManager } from './auth';
-import { listRemoteBots, openRemoteChat } from './bots';
+import { listRemoteBots, loadOlderRemoteChat, openRemoteChat } from './bots';
 import { runChatProbe } from './probe-writes';
 import { createProbeService, type ProbeService } from './probe';
 import type { TransportFetch } from './transport';
@@ -43,6 +43,12 @@ export interface DashboardService {
   listBots(): Promise<Result<readonly RemoteBot[]>>;
   /** Read-only Bot Chat history for one profile. */
   openChat(profileName: string): Promise<Result<RemoteChat>>;
+  /** One older history page of the same Bot Chat. */
+  loadOlderChat(
+    profileName: string,
+    storedSessionId: string,
+    offset: number,
+  ): Promise<Result<RemoteChat>>;
   /** Non-secret connection preferences. */
   settings(): Result<DashboardSettings>;
   saveAddress(address: string | null): Result<void>;
@@ -193,6 +199,22 @@ export function createDashboardService(deps: DashboardServiceDeps): DashboardSer
         ...(deps.requestTimeoutMs === undefined ? {} : { requestTimeoutMs: deps.requestTimeoutMs }),
         ...(deps.now === undefined ? {} : { now: deps.now }),
       });
+    },
+
+    async loadOlderChat(profileName, storedSessionId, offset) {
+      return loadOlderRemoteChat(
+        {
+          auth: deps.auth,
+          fetchImpl: deps.fetchImpl,
+          ...(deps.requestTimeoutMs === undefined
+            ? {}
+            : { requestTimeoutMs: deps.requestTimeoutMs }),
+          ...(deps.now === undefined ? {} : { now: deps.now }),
+        },
+        profileName,
+        storedSessionId,
+        offset,
+      );
     },
 
     async openChat(profileName) {

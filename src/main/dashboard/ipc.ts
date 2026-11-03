@@ -105,6 +105,19 @@ export function registerDashboardIpc(options: {
   handle<DashboardStatus>(DASHBOARD_CHANNELS.status, () => service.status());
   handle<void>(DASHBOARD_CHANNELS.cancelLogin, () => service.cancelLogin());
   handle<readonly RemoteBot[]>(DASHBOARD_CHANNELS.listBots, () => service.listBots());
+  handle<RemoteChat>(DASHBOARD_CHANNELS.loadOlderChat, (profileName, storedSessionId, offset) => {
+    if (!isBoundedString(profileName, 128) || !isBoundedString(storedSessionId, 128)) {
+      return {
+        ok: false,
+        error: protocolError('invalid_url', 'The history request is not valid.'),
+      };
+    }
+    if (typeof offset !== 'number' || !Number.isInteger(offset) || offset < 0) {
+      return { ok: false, error: protocolError('invalid_url', 'The history offset is not valid.') };
+    }
+    return service.loadOlderChat(profileName, storedSessionId, offset);
+  });
+
   handle<RemoteChat>(DASHBOARD_CHANNELS.openChat, (profileName) => {
     if (!isBoundedString(profileName, 128)) {
       return {

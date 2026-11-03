@@ -12,9 +12,10 @@ against the test deployment (v0.22.5) including a real browser sign-in, refresh
 rotation, the gateway WebSocket contract and dedicated-object write probes. The
 first-connection dialog stores the sign-in securely and restores it silently on
 the next launch. When connected, the roster and the selected Bot Chat come from the real Dashboard:
-prompts are submitted, replies stream into the transcript, Stop interrupts the
-turn, approval/clarify cards answer over the same gateway connection, and a dropped
-socket reconnects and resumes the stored session. Without a connection the window
+prompts are submitted, replies stream into the transcript with full Markdown
+rendering, Stop interrupts the turn, approval/clarify cards answer over the same
+gateway connection, older history pages load in place, and a dropped socket
+reconnects and resumes the stored session. Without a connection the window
 keeps using fixtures. No signed installer or upgrade path
 exists yet. See
 [`docs/evidence/m0a-design-slice.md`](docs/evidence/m0a-design-slice.md) and

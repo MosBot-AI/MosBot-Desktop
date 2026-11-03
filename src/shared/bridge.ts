@@ -22,6 +22,8 @@ export interface MosBotBridge {
     readonly chrome: string;
   };
   readonly dashboard: MosBotDashboardBridge;
+  /** Opens an https URL in the system browser (main process validates the scheme). */
+  openExternal(url: string): Promise<boolean>;
 }
 
 export interface MosBotDashboardBridge {
@@ -50,8 +52,14 @@ export interface MosBotDashboardBridge {
   status(): Promise<Result<DashboardStatus>>;
   /** Roster from `profiles.list` for the connected Dashboard. */
   listBots(): Promise<Result<readonly RemoteBot[]>>;
-  /** Read-only Bot Chat history for one profile. */
+  /** Read-only Bot Chat history for one profile (latest page). */
   openChat(profileName: string): Promise<Result<RemoteChat>>;
+  /** One older page of the same Bot Chat (offset-based). */
+  loadOlderChat(
+    profileName: string,
+    storedSessionId: string,
+    offset: number,
+  ): Promise<Result<RemoteChat>>;
   /** Resumes (or creates) the live Bot Chat session so prompts can be sent. */
   chatOpen(profileName: string, storedSessionId: string | null): Promise<Result<ChatOpenResult>>;
   /** Submits one prompt to the open session. */
@@ -66,6 +74,10 @@ export interface MosBotDashboardBridge {
   settings(): Promise<Result<DashboardSettings>>;
   saveAddress(address: string | null): Promise<Result<void>>;
 }
+
+export const SHELL_CHANNELS = {
+  openExternal: 'mosbot:shell:openExternal',
+} as const;
 
 export const DASHBOARD_CHANNELS = {
   preflight: 'mosbot:dashboard:preflight',
@@ -82,6 +94,7 @@ export const DASHBOARD_CHANNELS = {
   status: 'mosbot:dashboard:status',
   listBots: 'mosbot:dashboard:listBots',
   openChat: 'mosbot:dashboard:openChat',
+  loadOlderChat: 'mosbot:dashboard:loadOlderChat',
   chatOpen: 'mosbot:dashboard:chatOpen',
   chatSend: 'mosbot:dashboard:chatSend',
   chatStop: 'mosbot:dashboard:chatStop',

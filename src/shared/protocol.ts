@@ -291,6 +291,8 @@ export interface RemoteChat {
   readonly storedSessionId: string | null;
   readonly messages: readonly RemoteMessage[];
   readonly hasMore: boolean;
+  /** Offset for the next (older) page; equal to the raw row count consumed so far. */
+  readonly nextOffset: number;
 }
 
 export interface PreflightResult {

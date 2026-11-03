@@ -65,7 +65,8 @@
 - 真实名单与 Bot Chat 历史已接入：连接后名单来自 `profiles.list`，Bot Chat 历史来自 REST 分页；
   发送、流式 delta、终态、停止、审批/澄清卡、工作记录归组与自动重连已实现并在专用 profile 上验证；
   `client.capabilities {server_requests:true}` 实测返回 16 个方法（含 approval/clarify）。真实审批请求
-  因部署对 `echo` 类命令自动放行而未触发，待自然触发复验。
+  因部署对 `echo` 类命令自动放行而未触发，待自然触发复验。历史分页（更早一页）与 Markdown 渲染
+  （安全 HTML/链接）已实现并验证。
   证据：`docs/evidence/m1-roster-and-history.md`、`docs/evidence/m1-chat-streaming.md`。
 - 未连接时仍使用 fixture，M0a 演示不受影响。
 

@@ -200,12 +200,35 @@ async function main() {
             (profileName) => window.mosbot.dashboard.openChat(profileName),
             preferred.profileName,
           );
+    let older = null;
+    if (chat !== null && chat.ok && chat.data.storedSessionId !== null && chat.data.hasMore) {
+      older = await page.evaluate(
+        ({ profileName, storedId, offset }) =>
+          window.mosbot.dashboard.loadOlderChat(profileName, storedId, offset),
+        {
+          profileName: chat.data.profileName,
+          storedId: chat.data.storedSessionId,
+          offset: chat.data.nextOffset,
+        },
+      );
+    }
     const rows = [
       {
         id: 'roster',
         title: '真实名单 profiles.list',
         status: bots.data.length > 0 ? 'pass' : 'fail',
         detail: `bots=${bots.data.length} · default=${preferred === undefined ? 'absent' : mask(preferred.displayName)} · canonical=${bots.data.filter((bot) => bot.canonicalSessionId !== null).length} · default_model=${preferred?.model ?? '—'}`,
+      },
+      {
+        id: 'roster_history_page',
+        title: '历史分页（更早一页）',
+        status: older !== null && older.ok ? 'pass' : 'unverified',
+        detail:
+          older !== null && older.ok
+            ? `older=${older.data.messages.length} · hasMore=${older.data.hasMore} · nextOffset=${older.data.nextOffset}`
+            : older === null
+              ? 'latest page has no more history'
+              : older.error.message,
       },
       {
         id: 'roster_chat',
@@ -246,6 +269,7 @@ async function main() {
                   storedSessionId: chat.data.storedSessionId,
                   messageCount: chat.data.messages.length,
                   hasMore: chat.data.hasMore,
+                  nextOffset: chat.data.nextOffset,
                 }
               : null,
         },

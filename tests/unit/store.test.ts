@@ -325,6 +325,7 @@ describe('remote roster', () => {
           { id: 'm2', role: 'bot', text: 'hi', at: now - 4_000 },
         ],
         hasMore: false,
+        nextOffset: 0,
       },
     });
     expect(selectChatMessages(withChat, 'default').map((message) => message.role)).toEqual([
@@ -335,6 +336,43 @@ describe('remote roster', () => {
     const reset = reduceAppState(withChat, { type: 'remote-reset' });
     expect(isRemoteRoster(reset)).toBe(false);
     expect(selectChatMessages(reset, 'bot-project').length).toBeGreaterThan(0);
+  });
+
+  it('prepends older history pages without duplicating messages', () => {
+    let state = reduceAppState(build(), { type: 'remote-ready', bots: [...bots] });
+    state = reduceAppState(state, {
+      type: 'remote-chat',
+      chat: {
+        profileName: 'default',
+        storedSessionId: 'stored-1',
+        messages: [
+          { id: 'm2', role: 'user', text: 'newer', at: 2 },
+          { id: 'm3', role: 'bot', text: 'reply', at: 3 },
+        ],
+        hasMore: true,
+        nextOffset: 50,
+      },
+    });
+    state = reduceAppState(state, { type: 'remote-loading-older' });
+    expect(state.remote.loadingOlder).toBe(true);
+    state = reduceAppState(state, {
+      type: 'remote-chat-older',
+      chat: {
+        profileName: 'default',
+        storedSessionId: 'stored-1',
+        messages: [
+          { id: 'm1', role: 'user', text: 'older', at: 1 },
+          { id: 'm2', role: 'user', text: 'newer', at: 2 },
+        ],
+        hasMore: false,
+        nextOffset: 52,
+      },
+    });
+    const chat = state.remote.chats['default'];
+    expect(chat?.messages.map((message) => message.id)).toEqual(['m1', 'm2', 'm3']);
+    expect(chat?.hasMore).toBe(false);
+    expect(chat?.nextOffset).toBe(52);
+    expect(state.remote.loadingOlder).toBe(false);
   });
 
   it('remote selection drives both the profile and the selected Bot id', () => {

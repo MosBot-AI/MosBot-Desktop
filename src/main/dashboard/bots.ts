@@ -1,4 +1,10 @@
-import type { RemoteBot, RemoteChat, RemoteMessage, Result } from '../../shared/protocol';
+import type {
+  DashboardTarget,
+  RemoteBot,
+  RemoteChat,
+  RemoteMessage,
+  Result,
+} from '../../shared/protocol';
 import { protocolError } from '../../shared/protocol';
 import type { AuthManager } from './auth';
 import { connectGateway } from './rpc';
@@ -160,6 +166,49 @@ export async function listRemoteBots(deps: BotsDeps): Promise<Result<RemoteBot[]
   }
 }
 
+/** One message page for a stored session; `offset` walks backwards through history. */
+export async function fetchMessagePage(
+  deps: BotsDeps,
+  target: DashboardTarget,
+  profile: string,
+  storedSessionId: string,
+  offset: number,
+): Promise<Result<RemoteChat>> {
+  const history = await requestJson(
+    {
+      fetchImpl: deps.fetchImpl,
+      target,
+      ...(deps.requestTimeoutMs === undefined ? {} : { timeoutMs: deps.requestTimeoutMs }),
+      getAccessToken: () => deps.auth.accessToken(),
+    },
+    {
+      method: 'GET',
+      path: `/api/sessions/${encodeURIComponent(storedSessionId)}/messages?profile=${encodeURIComponent(profile)}&limit=${HISTORY_LIMIT}&offset=${offset}&order=latest&inline_images=false`,
+      authenticated: true,
+      schema: emptySchema,
+    },
+  );
+  if (!history.ok) {
+    return history;
+  }
+  const payload = asRecord(history.data);
+  const rows = asArray(payload?.['messages']) ?? [];
+  const messages = rows
+    .map((row) => mapMessageRow(row))
+    .filter((message): message is RemoteMessage => message !== null);
+  const returned = num(asRecord(payload?.['pagination'])?.['returned']) ?? rows.length;
+  return {
+    ok: true,
+    data: {
+      profileName: profile,
+      storedSessionId,
+      messages,
+      hasMore: returned >= HISTORY_LIMIT,
+      nextOffset: offset + returned,
+    },
+  };
+}
+
 /** Exact Bot Chat lookup plus its latest message page. */
 export async function openRemoteChat(
   deps: BotsDeps,
@@ -206,40 +255,48 @@ export async function openRemoteChat(
   if (storedSessionId === null) {
     return {
       ok: true,
-      data: { profileName: profile, storedSessionId: null, messages: [], hasMore: false },
+      data: {
+        profileName: profile,
+        storedSessionId: null,
+        messages: [],
+        hasMore: false,
+        nextOffset: 0,
+      },
     };
   }
 
-  const history = await requestJson(
-    {
-      fetchImpl: deps.fetchImpl,
-      target,
-      ...(deps.requestTimeoutMs === undefined ? {} : { timeoutMs: deps.requestTimeoutMs }),
-      getAccessToken: () => deps.auth.accessToken(),
-    },
-    {
-      method: 'GET',
-      path: `/api/sessions/${encodeURIComponent(storedSessionId)}/messages?profile=${encodeURIComponent(profile)}&limit=${HISTORY_LIMIT}&order=latest&inline_images=false`,
-      authenticated: true,
-      schema: emptySchema,
-    },
-  );
-  if (!history.ok) {
-    return history;
+  return fetchMessagePage(deps, target, profile, storedSessionId, 0);
+}
+
+/** Loads one older page of the same stored Bot Chat. */
+export async function loadOlderRemoteChat(
+  deps: BotsDeps,
+  profileName: string,
+  storedSessionId: string,
+  offset: number,
+): Promise<Result<RemoteChat>> {
+  const target = deps.auth.target();
+  if (target === null || !deps.auth.current().connected) {
+    return connectionError();
   }
-  const payload = asRecord(history.data);
-  const rows = asArray(payload?.['messages']) ?? [];
-  const messages = rows
-    .map((row) => mapMessageRow(row))
-    .filter((message): message is RemoteMessage => message !== null);
-  const returned = num(asRecord(payload?.['pagination'])?.['returned']) ?? messages.length;
-  return {
-    ok: true,
-    data: {
-      profileName: profile,
-      storedSessionId,
-      messages,
-      hasMore: returned >= HISTORY_LIMIT,
-    },
-  };
+  const profile = profileName.trim();
+  if (profile === '' || profile.length > 128) {
+    return {
+      ok: false,
+      error: protocolError('invalid_url', 'A profile name is required to load history.'),
+    };
+  }
+  if (storedSessionId.trim() === '' || storedSessionId.length > 128) {
+    return {
+      ok: false,
+      error: protocolError('invalid_url', 'The stored session id is not valid.'),
+    };
+  }
+  if (!Number.isInteger(offset) || offset < 0 || offset > 100_000) {
+    return {
+      ok: false,
+      error: protocolError('invalid_url', 'The history offset is not valid.'),
+    };
+  }
+  return fetchMessagePage(deps, target, profile, storedSessionId, offset);
 }

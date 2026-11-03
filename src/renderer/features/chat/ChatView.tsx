@@ -28,6 +28,8 @@ export function ChatView(): ReactElement {
   const bot = selectSelectedBot(state);
   const messages = selectChatMessages(state, state.selectedBotId);
   const remoteMode = isRemoteRoster(state);
+  const remoteChat = state.remote.chats[state.selectedBotId];
+  const loadingOlder = state.remote.loadingOlder;
   const liveConnection = state.live.connection;
   const livePhase = state.live.phase;
   const liveError = state.live.error;
@@ -37,6 +39,7 @@ export function ChatView(): ReactElement {
   const lastCountRef = useRef(messages.length);
   const [atBottom, setAtBottom] = useState(true);
   const [hasNew, setHasNew] = useState(false);
+  const prependAnchor = useRef<{ height: number; top: number } | null>(null);
 
   const scrollToLatest = (smooth: boolean): void => {
     const timeline = timelineRef.current;
@@ -54,6 +57,17 @@ export function ChatView(): ReactElement {
     lastCountRef.current = messages.length;
     scrollToLatest(false);
   }, [state.selectedBotId]);
+
+  // Prepending an older page keeps the first visible message anchored.
+  useLayoutEffect(() => {
+    const timeline = timelineRef.current;
+    const anchor = prependAnchor.current;
+    if (timeline === null || anchor === null) {
+      return;
+    }
+    prependAnchor.current = null;
+    timeline.scrollTop = timeline.scrollHeight - anchor.height + anchor.top;
+  }, [messages.length]);
 
   // Streaming text grows one live bubble; keep following when already at the bottom.
   useLayoutEffect(() => {
@@ -128,6 +142,40 @@ export function ChatView(): ReactElement {
           <EmptyChat bot={bot} />
         ) : (
           <div className={styles.thread}>
+            {remoteMode && remoteChat !== undefined && remoteChat.hasMore ? (
+              <button
+                type="button"
+                className={styles.loadOlder}
+                disabled={loadingOlder}
+                onClick={() => {
+                  const dashboard = window.mosbot?.dashboard;
+                  if (dashboard === undefined || remoteChat.storedSessionId === null) {
+                    return;
+                  }
+                  const timeline = timelineRef.current;
+                  prependAnchor.current =
+                    timeline === null
+                      ? null
+                      : { height: timeline.scrollHeight, top: timeline.scrollTop };
+                  dispatch({ type: 'remote-loading-older' });
+                  void dashboard
+                    .loadOlderChat(
+                      remoteChat.profileName,
+                      remoteChat.storedSessionId,
+                      remoteChat.nextOffset,
+                    )
+                    .then((result) => {
+                      if (result.ok) {
+                        dispatch({ type: 'remote-chat-older', chat: result.data });
+                      } else {
+                        prependAnchor.current = null;
+                      }
+                    });
+                }}
+              >
+                {loadingOlder ? t('chat.loadingOlder') : t('chat.loadOlder')}
+              </button>
+            ) : null}
             {messages.map((message) => (
               <MessageBubble key={message.id} message={message} userBubble={userBubbleTheme(bot)} />
             ))}

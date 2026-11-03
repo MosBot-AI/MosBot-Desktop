@@ -726,6 +726,24 @@ export async function runChatProbe(deps: WriteProbeDeps): Promise<Result<ProbeRe
   let chat: ChatManager | null = null;
 
   try {
+    // Clean up a chat-probe profile left behind by an interrupted earlier run.
+    const existing = await rest.get('/api/profiles');
+    const existingRows = asArray(asRecord(dataOf(existing))?.['profiles']) ?? [];
+    for (const entry of existingRows) {
+      const name = stringField(asRecord(entry), 'name') ?? '';
+      const match = /^mosbot-chat-probe-(\d{14})$/.exec(name);
+      if (match === null) {
+        continue;
+      }
+      const stamp = match[1] ?? '';
+      const parsed = Date.parse(
+        `${stamp.slice(0, 4)}-${stamp.slice(4, 6)}-${stamp.slice(6, 8)}T${stamp.slice(8, 10)}:${stamp.slice(10, 12)}:${stamp.slice(12, 14)}`,
+      );
+      if (Number.isFinite(parsed) && now() - parsed > 2 * 60_000) {
+        await rest.send('DELETE', `/api/profiles/${encodeURIComponent(name)}`);
+      }
+    }
+
     const created = await rest.send('POST', '/api/profiles', {
       name: marker,
       description: 'MosBot chat probe; safe to delete',

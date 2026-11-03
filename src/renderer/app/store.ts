@@ -67,6 +67,7 @@ export interface RemoteState {
   readonly chats: Readonly<Record<string, RemoteChat>>;
   readonly selectedProfile: string | null;
   readonly error: ProtocolError | null;
+  readonly loadingOlder: boolean;
 }
 
 export interface LiveRequest {
@@ -174,6 +175,8 @@ export type AppAction =
   | { type: 'remote-error'; error: ProtocolError }
   | { type: 'remote-select'; profile: string }
   | { type: 'remote-chat'; chat: RemoteChat }
+  | { type: 'remote-loading-older' }
+  | { type: 'remote-chat-older'; chat: RemoteChat }
   | { type: 'remote-reset' }
   | { type: 'live-reset'; profile: string | null }
   | {
@@ -371,6 +374,7 @@ export function createInitialState(seed: FixtureSeed, bootstrap: Bootstrap): App
       chats: {},
       selectedProfile: null,
       error: null,
+      loadingOlder: false,
     },
     live: {
       profile: null,
@@ -780,12 +784,42 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
         remote: {
           ...state.remote,
           chats: { ...state.remote.chats, [action.chat.profileName]: action.chat },
+          loadingOlder: false,
         },
       };
+    case 'remote-loading-older':
+      return { ...state, remote: { ...state.remote, loadingOlder: true } };
+    case 'remote-chat-older': {
+      const existing = state.remote.chats[action.chat.profileName];
+      const known = new Set((existing?.messages ?? []).map((message) => message.id));
+      const older = action.chat.messages.filter((message) => !known.has(message.id));
+      const merged: RemoteChat = {
+        profileName: action.chat.profileName,
+        storedSessionId: action.chat.storedSessionId,
+        messages: [...older, ...(existing?.messages ?? [])],
+        hasMore: action.chat.hasMore,
+        nextOffset: action.chat.nextOffset,
+      };
+      return {
+        ...state,
+        remote: {
+          ...state.remote,
+          chats: { ...state.remote.chats, [action.chat.profileName]: merged },
+          loadingOlder: false,
+        },
+      };
+    }
     case 'remote-reset':
       return {
         ...state,
-        remote: { status: 'off', bots: [], chats: {}, selectedProfile: null, error: null },
+        remote: {
+          status: 'off',
+          bots: [],
+          chats: {},
+          selectedProfile: null,
+          error: null,
+          loadingOlder: false,
+        },
       };
     case 'live-reset':
       return {

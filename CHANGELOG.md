@@ -67,8 +67,10 @@ until the release repository exists.
   requests render as inline cards answered by request id, and a closed socket
   reconnects with backoff and resumes the stored session. Tool events from one turn
   collapse into a single expandable work log, and the client advertises
-  `server_requests` (16 methods on the test deployment). Fixture windows keep the
-  offline demo.
+  `server_requests` (16 methods on the test deployment). Older history pages load
+  from the top of the transcript with scroll anchoring, and replies render as
+  Markdown (headings, lists, tables, code) with raw HTML kept as text and only
+  https links clickable. Fixture windows keep the offline demo.
 - Gateway WebSocket client (`ws`): one-time ticket handshake, `gateway.ready` first
   frame, JSON-RPC request/response with zod validation, typed server events, and
   ticket replay/expiry rejection checks. Verified against the test deployment:
