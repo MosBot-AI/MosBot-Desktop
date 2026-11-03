@@ -1,0 +1,64 @@
+# Dashboard 能力矩阵（M0b）
+
+- 唯一验收目标：`192.168.2.171:9119`（系统浏览器登录，RFC 8252 PKCE + loopback）
+- 本地源码基线：`hermes-agent@c419cf7c86`；**部署实测：v0.22.5 / commit `bf0203a794` / release 2026.9.24**
+- 版本关系：部署 commit 是本地基线的祖先（落后 3133 个提交）。凡本客户端依赖的方法以**部署实测**为准，差异与最低兼容版本在 M0c 记录。
+- 记录时间：2026-11-03
+- 探针：`MOSBOT_DASHBOARD_URL=http://192.168.2.171:9119 npm run test:integration`（无凭据部分可用 `MOSBOT_PROBE_MODE=preflight` 单独重跑）
+- 说明：本文件只记录脱敏字段形状、状态与结论；令牌、票据、凭据、真实会话正文、账号身份值不进入证据。
+- 状态：**第 1 步的只读部分已验证，登录后的部分未验证**（等待用户完成一次系统浏览器登录）
+
+## 部署实测摘要（只读）
+
+| 项                      | 实测值                                                                                                                                                 |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/api/health`           | `200`，`version=0.22.5`，`commit=bf0203a794`，`auth_required=true`，耗时约 18 ms                                                                       |
+| `/api/status`           | `200`，`overall=ok`，`gateway_running=true`，`gateway_state=running`，`gateway_mode=multiplex`，31 个顶层字段                                          |
+| 鉴权形态                | `auth_required=true`，`auth_flows=[cookie, native_pkce]`，`auth_providers=[basic]`（Username & Password，`supports_password=true`）                    |
+| 登录入口                | `/auth/native/authorize`（合法参数）→ `302 /login` 并下发 PKCE Cookie；用户在同一 Dashboard 的登录页输入账号密码后，经 loopback 回调把 code 交给桌面端 |
+| Scheme / 前缀           | 明文 `http://192.168.2.171:9119`，无前缀、无反代；属于方案允许的唯一精确 origin 例外                                                                   |
+| `install_id` / profiles | `install_id` 存在（值不记录）；已有多个 profile，本轮**不改动**，写入只针对带本轮标识的新测试对象                                                      |
+| 证据                    | `docs/evidence/probes/preflight-*.json`（探针原始行，已脱敏）                                                                                          |
+
+## 第 1 步 · REST 探活与认证
+
+| 能力                                         | 本地与部署版本                                | 请求结果                                             | 必交或扩展   | 状态                | 负责人   | 依赖卡  | 关闭证据                           |
+| -------------------------------------------- | --------------------------------------------- | ---------------------------------------------------- | ------------ | ------------------- | -------- | ------- | ---------------------------------- |
+| `/api/health` 探活                           | 本地 c419cf7c86 / 部署待测                    | 待探针                                               | 必交         | 未验证              | 主 Agent | M0b     | `pnpm test:integration` 报告       |
+| `/api/status` 部署状态与 auth_flows          | 同上                                          | 待探针                                               | 必交         | 未验证              | 主 Agent | M0b     | 同上                               |
+| `/api/auth/providers` 提供方列表             | 同上                                          | 待探针                                               | 必交         | 未验证              | 主 Agent | M0b     | 同上                               |
+| `GET /auth/native/authorize` + loopback 回调 | 同上                                          | 待探针                                               | 必交         | 未验证              | 主 Agent | M0b     | 登录回调 + state 校验记录          |
+| `POST /auth/native/token` 换码（PKCE S256）  | 同上                                          | 待探针                                               | 必交         | 未验证              | 主 Agent | M0b     | token 形状（不含值）               |
+| `/api/auth/me` 身份                          | 同上                                          | 待探针                                               | 必交         | 未验证              | 主 Agent | M0b     | 脱敏 user id / provider            |
+| `POST /auth/native/refresh` 刷新与轮换       | 同上                                          | 待探针                                               | 必交         | 未验证              | 主 Agent | M0b     | 轮换成功 + 旧 RT 失效              |
+| 失效刷新令牌 401 `session_expired`           | 同上                                          | 待探针                                               | 必交         | 未验证              | 主 Agent | M0b     | 探针 `refresh_invalid` 行          |
+| `POST /api/auth/ws-ticket` 一次性票据        | 同上                                          | 待探针                                               | 必交         | 未验证              | 主 Agent | M0b     | ttl/长度（不记票据）               |
+| 注销：本地清除凭据                           | 本地实现                                      | 待探针                                               | 必交         | 未验证              | 主 Agent | M0b     | 注销后快照断开                     |
+| 服务端注销（撤销 bearer 会话）               | 源码 c419cf7c86                               | `/auth/logout` 依赖 Cookie，无可用的 bearer 撤销端点 | 必交（部分） | 缺失（待 M0c 评估） | 主 Agent | M0b/M0c | 源码核查 + 探针 `remote_logout` 行 |
+| 浏览器取消登录 / 超时                        | 本地实现                                      | 待用户手动复验                                       | 必交         | 未验证              | 主 Agent | M0b     | 取消后应用回到可重试状态           |
+| 代理 / 证书 / URL 前缀                       | 本地实现（Electron 网络栈 + manual redirect） | 待探针                                               | 必交         | 未验证              | 主 Agent | M0b     | 前缀地址 + 重定向拒绝记录          |
+
+## 第 2 步 · WS 与已有 Bot
+
+| 能力                                             | 请求结果         | 必交或扩展 | 状态   | 负责人   | 依赖卡 |
+| ------------------------------------------------ | ---------------- | ---------- | ------ | -------- | ------ |
+| `?ticket=` 一次性 WS 握手                        | 待实现 WS 客户端 | 必交       | 未验证 | 主 Agent | M0b    |
+| ticket 过期/重复使用拒绝                         | 待验证           | 必交       | 未验证 | 主 Agent | M0b    |
+| `gateway.ready`、`profiles.list`、`session.list` | 待验证           | 必交       | 未验证 | 主 Agent | M0b    |
+| resume、`session.events.since`、停止             | 待验证           | 必交       | 未验证 | 主 Agent | M0b    |
+
+## 第 3–6 步（新 Bot、工作台、文件与后台、电脑）
+
+| 能力                                         | 状态   | 负责人   | 依赖卡  |
+| -------------------------------------------- | ------ | -------- | ------- |
+| 新 Bot 授权、首回复、双端标题竞争            | 未验证 | 主 Agent | M0b/M0c |
+| Profiles / Sessions / Kanban REST 与 WS 游标 | 未验证 | 主 Agent | M0b/M0c |
+| 文件上传、产物索引、保存与外开               | 未验证 | 主 Agent | M0b/M0c |
+| 未打开 Bot 的审批发现、跨端回执、通知        | 未验证 | 主 Agent | M0b/M0c |
+| 电脑状态、唤醒、预览、非抢占接管、租约       | 未验证 | 主 Agent | M0b/M0c |
+
+## 关闭条件
+
+- 第 1 步全部必交项通过后，把上表状态改为已验证并登记探针报告路径与关键字段。
+- 服务端注销缺失、以及其他缺失的必交能力进入 M0c，并在 `docs/plans/03-agent-handoff.md` 的 M0c 表中登记负责人、最小兼容契约与复验条件。
+- 未完成登录复验前，不把任何一项标为“已验证”。

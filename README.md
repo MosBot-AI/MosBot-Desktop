@@ -4,11 +4,14 @@ A macOS-first Electron client for Hermes Agent bots: open the app, land on your
 Bots, and keep talking to the one you were using. Profiles, sessions and Kanban
 live in a separate Hermes workbench you open when you need them.
 
-**Status:** M0a design slice. The window, roster, chat, details column, search and
-create-Bot dialog run on deterministic fixtures; no Dashboard connection, signed
-installer or upgrade path exists yet. See
-[`docs/evidence/m0a-design-slice.md`](docs/evidence/m0a-design-slice.md) for what
-was verified and what is still pending.
+**Status:** M0a design slice plus the M0b protocol foundation. The window, roster,
+chat, details column, search and create-Bot dialog run on deterministic fixtures.
+The Dashboard client (address policy, Electron-network REST transport, RFC 8252
+PKCE sign-in, safeStorage credential vault, IPC bridge) is implemented and its
+read-only preflight passes against the test deployment (v0.22.5); sign-in still
+needs one browser login. No signed installer or upgrade path exists yet. See
+[`docs/evidence/m0a-design-slice.md`](docs/evidence/m0a-design-slice.md) and
+[`docs/evidence/capabilities.md`](docs/evidence/capabilities.md).
 
 ## Requirements
 

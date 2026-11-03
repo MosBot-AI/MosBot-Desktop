@@ -3,9 +3,12 @@
 面向 macOS 的 Hermes Agent 桌面客户端：打开应用就看到熟悉的 Bot，点头像接着聊；需要看
 Profile、Session 和 Kanban 时再进入独立的 Hermes 工作台。
 
-**当前状态：** M0a 设计切片。窗口、名单、聊天、详情栏、搜索和新建 Bot 弹层已经可以操作，
-但使用确定性 fixture 数据；尚无 Dashboard 连接、签名安装包和升级路径。已验证项与待办见
-[`docs/evidence/m0a-design-slice.md`](docs/evidence/m0a-design-slice.md)。
+**当前状态：** M0a 设计切片 + M0b 协议基础。窗口、名单、聊天、详情栏、搜索和新建 Bot 弹层
+已经可以操作，但界面仍使用确定性 fixture 数据。Dashboard 客户端（地址策略、Electron 网络栈
+REST 传输、RFC 8252 PKCE 登录、safeStorage 凭据库、IPC 桥）已经实现，只读探针在测试部署
+（v0.22.5）上通过；登录还需在系统浏览器完成一次。尚无签名安装包和升级路径。详见
+[`docs/evidence/m0a-design-slice.md`](docs/evidence/m0a-design-slice.md) 与
+[`docs/evidence/capabilities.md`](docs/evidence/capabilities.md)。
 
 ## 环境要求
 

@@ -41,6 +41,27 @@ until the release repository exists.
   `pnpm lint`, `pnpm format`, Playwright Electron smoke tests and evidence capture.
 - Bilingual `README.md` / `README_zh.md` with requirements, run and check commands,
   layout, documentation index and the M0a limitations.
+- Hover feedback on roster and pinned avatars: a delayed preview card (name, last
+  summary, presence, last activity) plus a `listening` face reaction and a small
+  lift, triggered by pointer hover or keyboard focus.
+- M0b protocol foundation: dashboard URL policy (https everywhere, one exact
+  plain-http test origin), zod-validated REST transport over Electron's network
+  stack with timeouts, size caps and manual redirects; RFC 8252 PKCE sign-in with a
+  loopback receiver and state validation; refresh-token vault encrypted with
+  safeStorage (access tokens stay in memory); dashboard IPC bridge restricted to
+  the app's own top-level frame.
+- M0b probe: reproducible `pnpm test:integration` that packages the app, runs the
+  unauthenticated REST probe, signs in through the system browser, then runs the
+  authenticated probe and a local sign-out check; capability matrix in
+  `docs/evidence/capabilities.md`.
+
+### Changed
+
+- `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,
+  credential vault, loopback state validation and the full sign-in/probe flow
+  (89 tests).
+- The app's dev dependency on pnpm keeps Electron Forge's package-manager check
+  reproducible without a global install.
 
 ### Notes
 
@@ -48,6 +69,11 @@ until the release repository exists.
   yet. M0a uses fixtures for interface review; M0b/M1 replace them with the real
   service at `192.168.2.171:9119`.
 - All chat content in screenshots is desensitised fixture data.
+- The read-only M0b preflight was run against the test deployment
+  (`192.168.2.171:9119`, v0.22.5 / `bf0203a794`): health, status, auth flows,
+  providers and the native authorize route pass. Sign-in, refresh and the
+  authenticated probes still need one browser login; see
+  `docs/evidence/capabilities.md`.
 
 ## [0.1.0] - 2026-11-03
 
