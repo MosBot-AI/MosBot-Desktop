@@ -62,7 +62,9 @@
 - 登录界面与静默恢复已实现：首次连接弹层（地址 → 预检 → 选择登录方式 → 系统浏览器 → 连接摘要）、
   左下账号状态、注销；启动时用 safeStorage 中的刷新令牌静默恢复，不重复输入。
 - 证据：`docs/evidence/m1-first-connection.md`、`docs/evidence/screens/m1/`；离线表单/错误路径有 E2E。
-- 名单/聊天仍使用 fixture；真实 `profiles.list` 与 Bot Chat 流式接入属于 M1 后续工作。
+- 真实名单与 Bot Chat 历史（只读）已接入：连接后名单来自 `profiles.list`，默认 profile 的 Bot Chat
+  历史来自 REST 分页；发送/流式/审批仍待 M1 下一段。证据：`docs/evidence/m1-roster-and-history.md`。
+- 未连接时仍使用 fixture，M0a 演示不受影响。
 
 ## 已登录证据说明
 

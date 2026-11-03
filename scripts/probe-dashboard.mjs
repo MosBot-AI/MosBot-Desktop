@@ -22,6 +22,7 @@ const RESTORE_ONLY = MODE === 'restore';
 const FORCE_LOGIN = MODE === 'login';
 const WS_ONLY = MODE === 'ws';
 const WORKBENCH_ONLY = MODE === 'workbench';
+const ROSTER_ONLY = MODE === 'roster';
 const NEWBOT_ONLY = MODE === 'newbot';
 const KANBAN_ONLY = MODE === 'kanban';
 const WRITES_ONLY = MODE === 'writes';
@@ -29,7 +30,8 @@ const RUN_WS_PROBE = WS_ONLY || MODE === 'all';
 const RUN_WORKBENCH_PROBE = WORKBENCH_ONLY || MODE === 'all';
 const RUN_NEWBOT_PROBE = NEWBOT_ONLY || WRITES_ONLY;
 const RUN_KANBAN_PROBE = KANBAN_ONLY || WRITES_ONLY;
-const RUN_AUTH_PROBE = !WS_ONLY && !WORKBENCH_ONLY && !NEWBOT_ONLY && !KANBAN_ONLY && !WRITES_ONLY;
+const RUN_AUTH_PROBE =
+  !WS_ONLY && !WORKBENCH_ONLY && !NEWBOT_ONLY && !KANBAN_ONLY && !WRITES_ONLY && !ROSTER_ONLY;
 const SIGN_OUT = process.env.MOSBOT_PROBE_SIGN_OUT === '1';
 const APP = path.resolve(
   'out',
@@ -172,6 +174,81 @@ async function main() {
     console.log(
       `\n已登录并保存凭据：${session.displayName || '(no display name)'} · provider ${session.provider} · user ${session.userId ?? ''}`,
     );
+  }
+
+  if (ROSTER_ONLY) {
+    const bots = await page.evaluate(() => window.mosbot.dashboard.listBots());
+    if (!bots.ok) {
+      console.error(`\nRoster failed: [${bots.error.code}] ${bots.error.message}`);
+      await application.close();
+      process.exitCode = 9;
+      return;
+    }
+    const mask = (value) => (value.length <= 4 ? `${value.slice(0, 2)}…` : `${value.slice(0, 4)}…`);
+    const preferred = bots.data.find((bot) => bot.isDefault) ?? bots.data[0];
+    const chat =
+      preferred === undefined
+        ? null
+        : await page.evaluate(
+            (profileName) => window.mosbot.dashboard.openChat(profileName),
+            preferred.profileName,
+          );
+    const rows = [
+      {
+        id: 'roster',
+        title: '真实名单 profiles.list',
+        status: bots.data.length > 0 ? 'pass' : 'fail',
+        detail: `bots=${bots.data.length} · default=${preferred === undefined ? 'absent' : mask(preferred.displayName)} · canonical=${bots.data.filter((bot) => bot.canonicalSessionId !== null).length} · default_model=${preferred?.model ?? '—'}`,
+      },
+      {
+        id: 'roster_chat',
+        title: 'Bot Chat 历史（只读）',
+        status: chat !== null && chat.ok ? 'pass' : 'fail',
+        detail:
+          chat !== null && chat.ok
+            ? `stored=${chat.data.storedSessionId === null ? '(none)' : mask(chat.data.storedSessionId)} · messages=${chat.data.messages.length} · hasMore=${chat.data.hasMore}`
+            : chat === null
+              ? 'no profile'
+              : chat.error.message,
+      },
+    ];
+    printRows('M1 · 真实名单与历史（只读）', rows);
+    mkdirSync(OUT_DIR, { recursive: true });
+    const reportPath = path.join(
+      OUT_DIR,
+      `dashboard-roster-${new Date().toISOString().replace(/[:.]/g, '-')}.json`,
+    );
+    writeFileSync(
+      reportPath,
+      `${JSON.stringify(
+        {
+          generatedAt: new Date().toISOString(),
+          target: URL_FROM_ENV,
+          roster: bots.data.map((bot) => ({
+            profileName: bot.profileName,
+            displayName: bot.displayName,
+            isDefault: bot.isDefault,
+            model: bot.model,
+            provider: bot.provider,
+            canonicalSessionId: bot.canonicalSessionId,
+            messageCount: bot.messageCount,
+          })),
+          chat:
+            chat !== null && chat.ok
+              ? {
+                  storedSessionId: chat.data.storedSessionId,
+                  messageCount: chat.data.messages.length,
+                  hasMore: chat.data.hasMore,
+                }
+              : null,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    console.log(`\n名单报告已写入 ${reportPath}`);
+    await application.close();
+    return;
   }
 
   let authenticated = null;

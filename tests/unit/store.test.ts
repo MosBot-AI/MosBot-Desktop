@@ -3,12 +3,16 @@ import { createFixtureSeed } from '../../src/renderer/app/fixtures';
 import {
   createAppStore,
   createInitialState,
+  isRemoteRoster,
   reduceAppState,
   searchEntries,
   selectChatMessages,
   selectPendingBotId,
   selectPinnedBots,
+  selectRosterBots,
+  selectSelectedBot,
   selectUnresolvedCount,
+  synthesizeRemoteBot,
   type AppState,
 } from '../../src/renderer/app/store';
 
@@ -268,5 +272,92 @@ describe('store subscriptions', () => {
     unsubscribe();
     store.dispatch({ type: 'select-bot', botId: 'bot-design' });
     expect(calls).toBe(1);
+  });
+});
+
+describe('remote roster', () => {
+  const now = 1_700_000_000_000;
+  const bots = [
+    {
+      profileName: 'default',
+      displayName: 'Default',
+      description: 'Main profile',
+      model: 'gpt-6-luna-900k',
+      provider: 'openai-codex',
+      isDefault: true,
+      summary: 'latest preview',
+      canonicalSessionId: 'stored-1',
+      lastActiveAt: now - 60_000,
+      messageCount: 12,
+    },
+    {
+      profileName: 'writer',
+      displayName: 'Writer',
+      description: '',
+      model: '',
+      provider: '',
+      isDefault: false,
+      summary: '',
+      canonicalSessionId: null,
+      lastActiveAt: null,
+      messageCount: 0,
+    },
+  ] as const;
+
+  it('synthesizes roster rows and switches the transcript source', () => {
+    const state = reduceAppState(build(), { type: 'remote-ready', bots: [...bots] });
+    expect(isRemoteRoster(state)).toBe(true);
+    const roster = selectRosterBots(state);
+    expect(roster.map((bot) => bot.id)).toEqual(['default', 'writer']);
+    expect(selectPinnedBots(state)).toHaveLength(2);
+    // Fixture selection is not in the remote roster, so the first profile is used.
+    expect(selectSelectedBot(state)?.id).toBe('default');
+    expect(selectUnresolvedCount(state)).toBe(0);
+    expect(selectPendingBotId(state)).toBeNull();
+
+    const withChat = reduceAppState(state, {
+      type: 'remote-chat',
+      chat: {
+        profileName: 'default',
+        storedSessionId: 'stored-1',
+        messages: [
+          { id: 'm1', role: 'user', text: 'hello', at: now - 5_000 },
+          { id: 'm2', role: 'bot', text: 'hi', at: now - 4_000 },
+        ],
+        hasMore: false,
+      },
+    });
+    expect(selectChatMessages(withChat, 'default').map((message) => message.role)).toEqual([
+      'user',
+      'bot',
+    ]);
+
+    const reset = reduceAppState(withChat, { type: 'remote-reset' });
+    expect(isRemoteRoster(reset)).toBe(false);
+    expect(selectChatMessages(reset, 'bot-project').length).toBeGreaterThan(0);
+  });
+
+  it('remote selection drives both the profile and the selected Bot id', () => {
+    const ready = reduceAppState(build(), { type: 'remote-ready', bots: [...bots] });
+    const selected = reduceAppState(ready, { type: 'remote-select', profile: 'writer' });
+    expect(selected.remote.selectedProfile).toBe('writer');
+    expect(selected.selectedBotId).toBe('writer');
+    const viaRow = reduceAppState(selected, { type: 'select-bot', botId: 'default' });
+    expect(viaRow.remote.selectedProfile).toBe('default');
+  });
+
+  it('derives a calm look from profile metadata', () => {
+    const bot = synthesizeRemoteBot(bots[0], now);
+    expect(bot.name).toBe('Default');
+    expect(bot.useMosbotDefault).toBe(true);
+    expect(bot.presence).toBe('idle');
+    expect(bot.lastActiveMinutes).toBe(1);
+    expect(bot.sectionId).toBe('remote-all');
+  });
+
+  it('keeps the fixture roster while disconnected', () => {
+    const state = build();
+    expect(isRemoteRoster(state)).toBe(false);
+    expect(selectRosterBots(state)).toBe(state.bots);
   });
 });

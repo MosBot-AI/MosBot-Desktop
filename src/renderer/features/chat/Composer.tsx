@@ -20,6 +20,9 @@ export function Composer({ bot }: ComposerProps): ReactElement {
   const t = useMessages();
   const dispatch = useDispatch();
   const draft = useAppState((state) => state.drafts[bot.id] ?? '');
+  const readOnly = useAppState(
+    (state) => state.remote.status === 'ready' && state.remote.bots.length > 0,
+  );
   const replying = useAppState(
     (state) => state.pendingReply?.botId === bot.id || bot.presence === 'replying',
   );
@@ -49,6 +52,42 @@ export function Composer({ bot }: ComposerProps): ReactElement {
   };
 
   const placeholder = t('chat.composer.placeholder', { name: bot.name });
+
+  if (readOnly) {
+    return (
+      <div className={styles.composerWrap}>
+        <p className={styles.readOnlyNotice}>{t('chat.readOnlyNotice')}</p>
+        <div className={styles.composer} data-readonly="true">
+          <button
+            type="button"
+            className={styles.attachButton}
+            disabled
+            aria-label={t('chat.composer.attach')}
+            title={t('chat.composer.attachDisabled')}
+          >
+            <IconPaperclip size={16} />
+          </button>
+          <textarea
+            className={styles.textarea}
+            rows={1}
+            value=""
+            readOnly
+            disabled
+            placeholder={t('chat.readOnlyPlaceholder')}
+            aria-label={t('chat.readOnlyPlaceholder')}
+          />
+          <button
+            type="button"
+            className={styles.sendButton}
+            disabled
+            aria-label={t('chat.composer.send')}
+          >
+            <IconSend size={16} />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.composerWrap}>

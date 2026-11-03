@@ -62,6 +62,8 @@ const zhHans = {
   'chat.approval.receipt.deny': '已拒绝',
   'chat.clarify.answered': '已回答：{answer}',
   'chat.replying': '{name} 正在回复',
+  'chat.readOnlyNotice': '只读预览：这条对话来自真实 Dashboard，发送与流式回复将在下一步接入。',
+  'chat.readOnlyPlaceholder': '只读预览',
 
   'inspector.tabs.label': 'Bot 详情',
   'inspector.tab.details': '详情',
@@ -102,6 +104,7 @@ const zhHans = {
   'inspector.computer.openUnavailable': '连接 Dashboard 后可以打开电脑窗口',
   'inspector.library.actionsUnavailable': '连接 Dashboard 后可以预览或保存产物',
   'inspector.computer.previewAlt': '{name} 的电脑预览',
+  'inspector.computer.pending': '电脑观看与接管将在 M4 接入；当前不提供唤醒入口。',
 
   'search.title': '搜索',
   'search.placeholder': '搜索 Bot',
@@ -234,6 +237,9 @@ const en: Record<MessageKey, string> = {
   'chat.approval.receipt.deny': 'Denied',
   'chat.clarify.answered': 'Answered: {answer}',
   'chat.replying': '{name} is replying',
+  'chat.readOnlyNotice':
+    'Read-only preview: this conversation comes from the real Dashboard. Sending and streaming arrive next.',
+  'chat.readOnlyPlaceholder': 'Read-only preview',
 
   'inspector.tabs.label': 'Bot details',
   'inspector.tab.details': 'Details',
@@ -275,6 +281,8 @@ const en: Record<MessageKey, string> = {
   'inspector.computer.openUnavailable': 'The computer window opens once the Dashboard is connected',
   'inspector.library.actionsUnavailable': 'Preview and save arrive with the Dashboard connection',
   'inspector.computer.previewAlt': '{name} computer preview',
+  'inspector.computer.pending':
+    'Computer viewing and takeover arrive in M4; no wake action is offered yet.',
 
   'search.title': 'Search',
   'search.placeholder': 'Search bots',

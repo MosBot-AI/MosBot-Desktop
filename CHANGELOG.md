@@ -62,6 +62,10 @@ until the release repository exists.
   connected summary, and a successful sign-in is remembered (refresh token in
   safeStorage, last address in non-secret settings) so later launches restore
   without retyping. Tokens never reach the renderer.
+- Real-data roster and history (read-only): after connecting, the sidebar lists the
+  Dashboard's profiles and the selected Bot Chat loads its latest message page; the
+  composer explains that sending arrives next, and the computer tab offers no wake
+  action until M4. Disconnected windows keep the fixtures.
 - Gateway WebSocket client (`ws`): one-time ticket handshake, `gateway.ready` first
   frame, JSON-RPC request/response with zod validation, typed server events, and
   ticket replay/expiry rejection checks. Verified against the test deployment:

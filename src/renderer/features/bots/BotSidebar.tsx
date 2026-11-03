@@ -3,8 +3,11 @@ import type { BotProfile, ThemePreference } from '../../../shared/domain';
 import { useMessages } from '../../app/i18n';
 import type { MessageKey } from '../../app/i18n';
 import {
+  isRemoteRoster,
   selectPendingBotId,
   selectPinnedBots,
+  selectRosterBots,
+  selectRosterSections,
   selectSectionBots,
   selectUnreadTotal,
   selectUnresolvedCount,
@@ -41,6 +44,9 @@ export function BotSidebar(): ReactElement {
   const dispatch = useDispatch();
   const state = useAppState((value) => value);
   const pinned = selectPinnedBots(state);
+  const sections = selectRosterSections(state);
+  const roster = selectRosterBots(state);
+  const remote = isRemoteRoster(state);
   const unresolved = selectUnresolvedCount(state);
   const unreadTotal = selectUnreadTotal(state);
   const pendingBotId = selectPendingBotId(state);
@@ -138,7 +144,7 @@ export function BotSidebar(): ReactElement {
         />
 
         <nav className={styles.sections} aria-label={t('sidebar.label')}>
-          {state.sections.map((section) => {
+          {sections.map((section) => {
             const bots = selectSectionBots(state, section.id);
             return (
               <section key={section.id} className={styles.section}>
@@ -181,13 +187,13 @@ export function BotSidebar(): ReactElement {
             );
           })}
 
-          {state.bots.some((bot) => bot.sectionId === null && bot.pinnedIndex === null) ? (
+          {!remote && roster.some((bot) => bot.sectionId === null && bot.pinnedIndex === null) ? (
             <section className={styles.section}>
               <div className={styles.sectionHeader} aria-hidden="true">
                 <span className={styles.sectionName}>{t('sidebar.ungrouped')}</span>
               </div>
               <div className={styles.sectionBots}>
-                {state.bots
+                {roster
                   .filter((bot) => bot.sectionId === null && bot.pinnedIndex === null)
                   .map((bot) => (
                     <BotRow

@@ -11,8 +11,10 @@ PKCE sign-in, safeStorage credential vault, IPC bridge) is implemented, verified
 against the test deployment (v0.22.5) including a real browser sign-in, refresh
 rotation, the gateway WebSocket contract and dedicated-object write probes. The
 first-connection dialog stores the sign-in securely and restores it silently on
-the next launch. The roster and chat still use fixtures; no signed installer or
-upgrade path exists yet. See
+the next launch. When connected, the roster and the selected Bot Chat history are read from the
+real Dashboard (read-only for now); sending and streaming arrive next. Without a
+connection the window keeps using fixtures. No signed installer or upgrade path
+exists yet. See
 [`docs/evidence/m0a-design-slice.md`](docs/evidence/m0a-design-slice.md) and
 [`docs/evidence/capabilities.md`](docs/evidence/capabilities.md).
 

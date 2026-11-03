@@ -7,6 +7,8 @@ import {
   type DashboardStatus,
   type PreflightResult,
   type ProbeReport,
+  type RemoteBot,
+  type RemoteChat,
   type Result,
 } from '../../shared/protocol';
 import type { DashboardService } from './service';
@@ -93,6 +95,16 @@ export function registerDashboardIpc(options: {
   handle<ProbeReport>(DASHBOARD_CHANNELS.signOut, () => service.signOut());
   handle<DashboardStatus>(DASHBOARD_CHANNELS.status, () => service.status());
   handle<void>(DASHBOARD_CHANNELS.cancelLogin, () => service.cancelLogin());
+  handle<readonly RemoteBot[]>(DASHBOARD_CHANNELS.listBots, () => service.listBots());
+  handle<RemoteChat>(DASHBOARD_CHANNELS.openChat, (profileName) => {
+    if (!isBoundedString(profileName, 128)) {
+      return {
+        ok: false,
+        error: protocolError('invalid_url', 'A profile name is required to open a chat.'),
+      };
+    }
+    return service.openChat(profileName);
+  });
   handle<DashboardSettings>(DASHBOARD_CHANNELS.settings, () => service.settings());
   handle<void>(DASHBOARD_CHANNELS.saveAddress, (address) => {
     if (address !== null && !isBoundedString(address, MAX_ADDRESS_LENGTH)) {

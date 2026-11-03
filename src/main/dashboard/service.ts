@@ -5,10 +5,13 @@ import type {
   PreflightResult,
   ProtocolError,
   ProbeReport,
+  RemoteBot,
+  RemoteChat,
   Result,
 } from '../../shared/protocol';
 import { parseDashboardTarget, protocolError } from '../../shared/protocol';
 import type { AuthManager } from './auth';
+import { listRemoteBots, openRemoteChat } from './bots';
 import { createProbeService, type ProbeService } from './probe';
 import type { TransportFetch } from './transport';
 
@@ -33,6 +36,10 @@ export interface DashboardService {
   signOut(): Result<ProbeReport>;
   /** Aborts a pending browser sign-in. */
   cancelLogin(): Result<void>;
+  /** Roster for the connected Dashboard. */
+  listBots(): Promise<Result<readonly RemoteBot[]>>;
+  /** Read-only Bot Chat history for one profile. */
+  openChat(profileName: string): Promise<Result<RemoteChat>>;
   /** Non-secret connection preferences. */
   settings(): Result<DashboardSettings>;
   saveAddress(address: string | null): Result<void>;
@@ -165,6 +172,29 @@ export function createDashboardService(deps: DashboardServiceDeps): DashboardSer
 
     async status() {
       return { ok: true, data: { connection: deps.auth.current(), lastProbe: null } };
+    },
+
+    async listBots() {
+      return listRemoteBots({
+        auth: deps.auth,
+        fetchImpl: deps.fetchImpl,
+        ...(deps.requestTimeoutMs === undefined ? {} : { requestTimeoutMs: deps.requestTimeoutMs }),
+        ...(deps.now === undefined ? {} : { now: deps.now }),
+      });
+    },
+
+    async openChat(profileName) {
+      return openRemoteChat(
+        {
+          auth: deps.auth,
+          fetchImpl: deps.fetchImpl,
+          ...(deps.requestTimeoutMs === undefined
+            ? {}
+            : { requestTimeoutMs: deps.requestTimeoutMs }),
+          ...(deps.now === undefined ? {} : { now: deps.now }),
+        },
+        profileName,
+      );
     },
 
     cancelLogin() {

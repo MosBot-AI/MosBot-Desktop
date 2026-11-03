@@ -4,6 +4,8 @@ import type {
   DashboardStatus,
   PreflightResult,
   ProbeReport,
+  RemoteBot,
+  RemoteChat,
   Result,
 } from './protocol';
 
@@ -42,6 +44,10 @@ export interface MosBotDashboardBridge {
   /** Clears local credentials and reports what survived. */
   signOut(): Promise<Result<ProbeReport>>;
   status(): Promise<Result<DashboardStatus>>;
+  /** Roster from `profiles.list` for the connected Dashboard. */
+  listBots(): Promise<Result<readonly RemoteBot[]>>;
+  /** Read-only Bot Chat history for one profile. */
+  openChat(profileName: string): Promise<Result<RemoteChat>>;
   /** Non-secret connection preferences (last address). */
   settings(): Promise<Result<DashboardSettings>>;
   saveAddress(address: string | null): Promise<Result<void>>;
@@ -59,6 +65,8 @@ export const DASHBOARD_CHANNELS = {
   probeKanbanWrite: 'mosbot:dashboard:probeKanbanWrite',
   signOut: 'mosbot:dashboard:signOut',
   status: 'mosbot:dashboard:status',
+  listBots: 'mosbot:dashboard:listBots',
+  openChat: 'mosbot:dashboard:openChat',
   settings: 'mosbot:dashboard:settings',
   saveAddress: 'mosbot:dashboard:saveAddress',
 } as const;

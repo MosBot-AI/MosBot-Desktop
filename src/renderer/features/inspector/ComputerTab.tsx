@@ -51,9 +51,22 @@ const ASLEEP_FALLBACK: ComputerState = { profileId: '', status: 'asleep', frameA
 export function ComputerTab({ profileId, botName }: ComputerTabProps): ReactElement {
   const t = useMessages();
   const dispatch = useDispatch();
+  const remoteRoster = useAppState(
+    (state) => state.remote.status === 'ready' && state.remote.bots.length > 0,
+  );
   const computer = useAppState((state) => state.computers[profileId]) ?? ASLEEP_FALLBACK;
   const copy = STATUS_COPY[computer.status];
   const showsFrame = FRAME_STATUSES.includes(computer.status);
+
+  if (remoteRoster) {
+    return (
+      <div className={styles.tabContent}>
+        <section className={styles.computerCard}>
+          <p className={styles.hint}>{t('inspector.computer.pending')}</p>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.tabContent}>

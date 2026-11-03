@@ -14,8 +14,14 @@ import type {
   RoutineTask,
   ThemePreference,
 } from '../../shared/domain';
-import { botColorSwatches, normalizeColor } from '../../shared/color';
-import type { AuthProviderInfo, ConnectionSnapshot, ProtocolError } from '../../shared/protocol';
+import { botColorSwatches, normalizeColor, profileColor } from '../../shared/color';
+import type {
+  AuthProviderInfo,
+  ConnectionSnapshot,
+  ProtocolError,
+  RemoteBot,
+  RemoteChat,
+} from '../../shared/protocol';
 import { createFixtureSeed, type FixtureSeed } from './fixtures';
 
 export interface InspectorState {
@@ -54,6 +60,14 @@ export interface ConnectionUiState {
   readonly snapshot: ConnectionSnapshot | null;
 }
 
+export interface RemoteState {
+  readonly status: 'off' | 'loading' | 'ready' | 'error';
+  readonly bots: readonly RemoteBot[];
+  readonly chats: Readonly<Record<string, RemoteChat>>;
+  readonly selectedProfile: string | null;
+  readonly error: ProtocolError | null;
+}
+
 export interface PendingReply {
   readonly botId: string;
   readonly text: string;
@@ -80,6 +94,7 @@ export interface AppState {
   readonly pinnedMenuOpen: boolean;
   readonly pendingReply: PendingReply | null;
   readonly connectionUi: ConnectionUiState;
+  readonly remote: RemoteState;
 }
 
 export type AppAction =
@@ -120,7 +135,13 @@ export type AppAction =
   | { type: 'connection-stage'; stage: ConnectionStage }
   | { type: 'connection-providers'; providers: readonly AuthProviderInfo[] }
   | { type: 'connection-error'; error: ProtocolError | null }
-  | { type: 'connection-snapshot'; snapshot: ConnectionSnapshot | null };
+  | { type: 'connection-snapshot'; snapshot: ConnectionSnapshot | null }
+  | { type: 'remote-loading' }
+  | { type: 'remote-ready'; bots: readonly RemoteBot[] }
+  | { type: 'remote-error'; error: ProtocolError }
+  | { type: 'remote-select'; profile: string }
+  | { type: 'remote-chat'; chat: RemoteChat }
+  | { type: 'remote-reset' };
 
 export interface Bootstrap {
   readonly resolvedTheme: ResolvedTheme;
@@ -220,7 +241,8 @@ export function searchEntries(state: AppState): {
   readonly matches: BotProfile[];
   readonly flat: BotProfile[];
 } {
-  const recent = state.bots
+  const roster = selectRosterBots(state);
+  const recent = roster
     .slice()
     .sort((a, b) => a.lastActiveMinutes - b.lastActiveMinutes)
     .slice(0, 5);
@@ -228,7 +250,7 @@ export function searchEntries(state: AppState): {
   if (query === '') {
     return { recent, matches: [], flat: recent };
   }
-  const matches = state.bots.filter((bot) => {
+  const matches = roster.filter((bot) => {
     const haystack = `${bot.name}\n${bot.summary}\n${bot.description}`.toLowerCase();
     return haystack.includes(query);
   });
@@ -288,19 +310,27 @@ export function createInitialState(seed: FixtureSeed, bootstrap: Bootstrap): App
       error: null,
       snapshot: null,
     },
+    remote: {
+      status: 'off',
+      bots: [],
+      chats: {},
+      selectedProfile: null,
+      error: null,
+    },
   };
 }
 
 export function reduceAppState(state: AppState, action: AppAction): AppState {
   switch (action.type) {
     case 'select-bot': {
-      const target = state.bots.find((bot) => bot.id === action.botId);
+      const remote = isRemoteRoster(state);
+      const target = selectRosterBots(state).find((bot) => bot.id === action.botId);
       if (target === undefined) {
         return state;
       }
       const unchanged =
         target.id === state.selectedBotId &&
-        target.unread === 0 &&
+        (remote || target.unread === 0) &&
         !state.search.open &&
         !state.pinnedMenuOpen;
       if (unchanged) {
@@ -309,7 +339,8 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         selectedBotId: action.botId,
-        bots: patchBot(state.bots, action.botId, { unread: 0 }),
+        remote: remote ? { ...state.remote, selectedProfile: action.botId } : state.remote,
+        bots: remote ? state.bots : patchBot(state.bots, action.botId, { unread: 0 }),
         search: { ...state.search, open: false, query: '', activeIndex: 0 },
         pinnedMenuOpen: false,
       };
@@ -648,6 +679,45 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
           stage: action.snapshot?.connected === true ? 'connected' : 'idle',
         },
       };
+    case 'remote-loading':
+      return {
+        ...state,
+        remote: { ...state.remote, status: 'loading', error: null },
+      };
+    case 'remote-ready':
+      return {
+        ...state,
+        remote: {
+          ...state.remote,
+          status: state.remote.bots.length === 0 && action.bots.length === 0 ? 'off' : 'ready',
+          bots: action.bots,
+          error: null,
+        },
+      };
+    case 'remote-error':
+      return {
+        ...state,
+        remote: { ...state.remote, status: 'error', error: action.error },
+      };
+    case 'remote-select':
+      return {
+        ...state,
+        selectedBotId: action.profile,
+        remote: { ...state.remote, selectedProfile: action.profile },
+      };
+    case 'remote-chat':
+      return {
+        ...state,
+        remote: {
+          ...state.remote,
+          chats: { ...state.remote.chats, [action.chat.profileName]: action.chat },
+        },
+      };
+    case 'remote-reset':
+      return {
+        ...state,
+        remote: { status: 'off', bots: [], chats: {}, selectedProfile: null, error: null },
+      };
     case 'set-footer-menu':
       return state.footerMenuOpen === action.open && !state.pinnedMenuOpen
         ? state
@@ -737,11 +807,59 @@ export function useDispatch(): (action: AppAction) => void {
 
 // --- Selectors -------------------------------------------------------------
 
+const REMOTE_SECTION_ID = 'remote-all';
+
+/** True when the roster comes from the connected Dashboard rather than fixtures. */
+export function isRemoteRoster(state: AppState): boolean {
+  return state.remote.status === 'ready' && state.remote.bots.length > 0;
+}
+
+/**
+ * Maps a Dashboard profile onto the roster shape the UI already draws. Until M2
+ * brings the real appearance metadata, the look is derived from the profile name.
+ */
+export function synthesizeRemoteBot(bot: RemoteBot, now: number): BotProfile {
+  return {
+    id: bot.profileName,
+    name: bot.displayName,
+    shape: 'blobatar',
+    color: profileColor(bot.displayName) || normalizeColor('hsl(210 68% 58%)', '#4f86d6'),
+    useMosbotDefault: bot.isDefault,
+    sectionId: REMOTE_SECTION_ID,
+    pinnedIndex: null,
+    presence: 'idle',
+    unread: 0,
+    summary: bot.summary,
+    description:
+      bot.description || [bot.provider, bot.model].filter((part) => part !== '').join(' · '),
+    lastActiveMinutes:
+      bot.lastActiveAt === null ? 0 : Math.max(0, Math.round((now - bot.lastActiveAt) / 60_000)),
+  };
+}
+
+export function selectRosterBots(state: AppState): BotProfile[] {
+  return isRemoteRoster(state)
+    ? state.remote.bots.map((bot) => synthesizeRemoteBot(bot, Date.now()))
+    : state.bots;
+}
+
+export function selectRosterSections(state: AppState): BotSection[] {
+  return isRemoteRoster(state)
+    ? [{ id: REMOTE_SECTION_ID, name: 'Bots', collapsed: false, order: 0 }]
+    : state.sections;
+}
+
 export function selectSelectedBot(state: AppState): BotProfile | undefined {
-  return state.bots.find((bot) => bot.id === state.selectedBotId);
+  const roster = selectRosterBots(state);
+  return roster.find((bot) => bot.id === state.selectedBotId) ?? roster[0];
 }
 
 export function selectPinnedBots(state: AppState): BotProfile[] {
+  if (isRemoteRoster(state)) {
+    return selectRosterBots(state)
+      .slice(0, 6)
+      .map((bot, index) => ({ ...bot, pinnedIndex: index }));
+  }
   return state.bots
     .filter((bot) => bot.pinnedIndex !== null)
     .slice()
@@ -749,14 +867,33 @@ export function selectPinnedBots(state: AppState): BotProfile[] {
 }
 
 export function selectSectionBots(state: AppState, sectionId: string): BotProfile[] {
+  if (isRemoteRoster(state)) {
+    return sectionId === REMOTE_SECTION_ID ? selectRosterBots(state) : [];
+  }
   return state.bots.filter((bot) => bot.sectionId === sectionId);
 }
 
 export function selectChatMessages(state: AppState, botId: string): ChatMessage[] {
+  if (isRemoteRoster(state)) {
+    const chat = state.remote.chats[botId];
+    if (chat === undefined) {
+      return [];
+    }
+    return chat.messages.map((message): ChatMessage => ({
+      id: message.id,
+      role: message.role,
+      kind: 'text',
+      text: message.text,
+      at: message.at,
+    }));
+  }
   return state.messages[botId] ?? [];
 }
 
 export function selectUnresolvedCount(state: AppState): number {
+  if (isRemoteRoster(state)) {
+    return 0;
+  }
   let total = 0;
   for (const list of Object.values(state.messages)) {
     total += unresolvedRequests(list);
@@ -778,6 +915,9 @@ export function selectComputerFor(state: AppState, profileId: string): ComputerS
 
 /** The Bot that owns the oldest unresolved request, used by the attention chip. */
 export function selectPendingBotId(state: AppState): string | null {
+  if (isRemoteRoster(state)) {
+    return null;
+  }
   for (const [botId, list] of Object.entries(state.messages)) {
     if (unresolvedRequests(list) > 0) {
       return botId;
@@ -787,5 +927,8 @@ export function selectPendingBotId(state: AppState): string | null {
 }
 
 export function selectUnreadTotal(state: AppState): number {
+  if (isRemoteRoster(state)) {
+    return 0;
+  }
   return state.bots.reduce((total, bot) => total + bot.unread, 0);
 }

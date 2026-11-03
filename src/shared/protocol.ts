@@ -218,6 +218,36 @@ export interface ProbeReport {
   readonly rows: readonly CapabilityRow[];
 }
 
+/** A roster row the renderer may draw (no tokens, no raw session content beyond preview). */
+export interface RemoteBot {
+  readonly profileName: string;
+  readonly displayName: string;
+  readonly description: string;
+  readonly model: string;
+  readonly provider: string;
+  readonly isDefault: boolean;
+  /** Canonical Bot Chat preview, else newest-session preview, else the profile description. */
+  readonly summary: string;
+  readonly canonicalSessionId: string | null;
+  readonly lastActiveAt: number | null;
+  readonly messageCount: number;
+}
+
+export interface RemoteMessage {
+  readonly id: string;
+  readonly role: 'user' | 'bot';
+  readonly text: string;
+  readonly at: number;
+}
+
+/** Read-only Bot Chat history for one profile (M1 transcript prefetch). */
+export interface RemoteChat {
+  readonly profileName: string;
+  readonly storedSessionId: string | null;
+  readonly messages: readonly RemoteMessage[];
+  readonly hasMore: boolean;
+}
+
 export interface PreflightResult {
   readonly report: ProbeReport;
   readonly providers: readonly AuthProviderInfo[];

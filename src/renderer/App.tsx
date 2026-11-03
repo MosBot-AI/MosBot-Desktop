@@ -1,7 +1,7 @@
 import { useEffect, type ReactElement } from 'react';
 import styles from './App.module.css';
 import { LOCALE_TAGS } from './app/i18n';
-import { useAppState, useDispatch } from './app/store';
+import { appStore, useAppState, useDispatch } from './app/store';
 import { BotSidebar } from './features/bots/BotSidebar';
 import { ChatView } from './features/chat/ChatView';
 import { ConnectionDialog } from './features/connection/ConnectionDialog';
@@ -95,6 +95,57 @@ export function App(): ReactElement {
   useEffect(() => {
     void restoreConnectionOnStartup(dispatch);
   }, [dispatch]);
+
+  // Once connected, replace the fixture roster with the real profiles.
+  const connected = useAppState((state) => state.connectionUi.snapshot?.connected === true);
+  useEffect(() => {
+    const dashboard = window.mosbot?.dashboard;
+    if (dashboard === undefined) {
+      return;
+    }
+    if (!connected) {
+      dispatch({ type: 'remote-reset' });
+      return;
+    }
+    let cancelled = false;
+    dispatch({ type: 'remote-loading' });
+    void (async () => {
+      const result = await dashboard.listBots();
+      if (cancelled) {
+        return;
+      }
+      if (!result.ok) {
+        dispatch({ type: 'remote-error', error: result.error });
+        return;
+      }
+      dispatch({ type: 'remote-ready', bots: [...result.data] });
+      const preferred = result.data.find((bot) => bot.isDefault) ?? result.data[0];
+      if (preferred !== undefined) {
+        dispatch({ type: 'remote-select', profile: preferred.profileName });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [connected, dispatch]);
+
+  // Load the selected Bot Chat once per profile (read-only prefetch).
+  const selectedProfile = useAppState((state) => state.remote.selectedProfile);
+  useEffect(() => {
+    const dashboard = window.mosbot?.dashboard;
+    if (dashboard === undefined || !connected || selectedProfile === null) {
+      return;
+    }
+    if (appStore.getState().remote.chats[selectedProfile] !== undefined) {
+      return;
+    }
+    void (async () => {
+      const chat = await dashboard.openChat(selectedProfile);
+      if (chat.ok) {
+        dispatch({ type: 'remote-chat', chat: chat.data });
+      }
+    })();
+  }, [connected, selectedProfile, dispatch]);
 
   useEffect(() => {
     const media = window.matchMedia('(max-width: 968px)');

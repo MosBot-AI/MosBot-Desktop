@@ -6,6 +6,8 @@ import type {
   DashboardStatus,
   PreflightResult,
   ProbeReport,
+  RemoteBot,
+  RemoteChat,
   Result,
 } from '../shared/protocol';
 
@@ -47,6 +49,16 @@ const bridge: MosBotBridge = {
     },
     cancelLogin(): Promise<Result<void>> {
       return ipcRenderer.invoke(DASHBOARD_CHANNELS.cancelLogin) as Promise<Result<void>>;
+    },
+    listBots(): Promise<Result<readonly RemoteBot[]>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.listBots) as Promise<
+        Result<readonly RemoteBot[]>
+      >;
+    },
+    openChat(profileName: string): Promise<Result<RemoteChat>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.openChat, profileName) as Promise<
+        Result<RemoteChat>
+      >;
     },
     settings(): Promise<Result<DashboardSettings>> {
       return ipcRenderer.invoke(DASHBOARD_CHANNELS.settings) as Promise<Result<DashboardSettings>>;
