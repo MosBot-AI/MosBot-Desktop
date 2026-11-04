@@ -54,7 +54,7 @@
 | 新 Bot 授权、首回复、双端标题竞争            | 已验证   | `tmp/dashboard-probe-2026-11-03T16-18-26-013Z.json` 的 `newBot` 行：标题认领、双端冲突被拒、canonical 不变、首 delta（seq=5）、停止、清理均 pass；缺口：未配置模型时的引导、重启续聊、真实双客户端同时观察 | 主 Agent | M0b/M0c |
 | Profiles / Sessions / Kanban REST 与 WS 游标 | 已验证   | `m3-workbench.md`：分页 total 1791、搜索、Kanban 快照与游标 0→2、模型写入回读、WS 事件；缺口：插件禁用部署无真实证据                                                                                       | 主 Agent | M0b/M0c |
 | 文件上传、产物索引、保存与外开               | 部分验证 | `m4-attachments-and-computer.md`：真实附件被模型读取、产物索引/读取/保存打开；缺口：来源消息关联、过期/无权限/已删除状态                                                                                   | 主 Agent | M0b/M0c |
-| 未打开 Bot 的审批发现、跨端回执、通知        | 部分验证 | `m1-background-approvals.md`：实现 + 单测 + 真实 `active_list`；缺口：真实人工审批触发、通知横幅展示、跨端回执                                                                                             | 主 Agent | M0b/M0c |
+| 未打开 Bot 的审批发现、跨端回执、通知        | 部分验证 | `m1-background-approvals.md`：实现 + 单测 + 真实 `active_list`；2026-11-04 chat 探针的 approval 行仍待验证（部署智能放行）。缺口：真实人工审批触发、通知横幅展示、跨端回执                                 | 主 Agent | M0b/M0c |
 | 电脑状态、唤醒、预览、非抢占接管、租约       | 部分验证 | `m4-attachments-and-computer.md`：真实 status/thumbnail/observe ticket/acquire/release；缺口：服务端原子认领未部署（M0c）、观看画面与双 viewer 争用未验证                                                  | 主 Agent | M0c     |
 
 ## 客户端接入状态（2026-11-04）

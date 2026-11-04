@@ -71,8 +71,11 @@
 - **部署 API 不提供产物到来源消息的关联字段**：`/api/files` 只有文件系统元数据。因此“来源消息”
   目前只能用于 fixture 演示，真实资料库不显示来源；这是部署能力缺口，登记到 `acceptance.md`
   第 6 项，不能用客户端猜测补造。
-- 验证：`tests/unit/artifacts-mapping.test.ts`（字段/排序/损坏链接/错误映射）；真实服务上的
-  重新探针待 soak 结束后执行并补充。
+- 验证：`tests/unit/artifacts-mapping.test.ts`（字段/排序/损坏链接/错误映射）；**真实服务复跑
+  通过（2026-11-04 14:37，专用 profile 自动清理）**：
+  `chat_artifact_index` 返回 `name=mosbot-probe-artifact.txt · kind=text · bytes=24 ·
+mtime=2026-11-04T06:37:52.972Z · broken=false`，`chat_artifact_read` 回显 token，
+  附件上传/推理读取同时复验通过；报告 `docs/evidence/tmp/dashboard-chat-2026-11-04T06-39-26-736Z.json`。
 
 ## 未完成 / 下一段
 

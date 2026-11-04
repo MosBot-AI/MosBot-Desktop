@@ -20,6 +20,13 @@
 | 工作记录归组                            | ✅                                      | `m1-chat-streaming.md`                                           |
 | 双端同时观察/停止/审批                  | ⏳ 部分                                 | 标题竞争与 canonical 已在 M0b 验证；双端聊天观察待专门构造       |
 
+## 2026-11-04 真实服务复跑
+
+专用 profile 自动清理的 `chat` 探针重新通过：发送、首个 delta、终态、停止、附件上传与模型读取、
+产物索引（含真实 `mtime`）与读取均 pass；审批仍未自然触发（部署对 terminal 工具自动放行，
+`approval_mode=unknown`），列入未关闭项。报告：
+`docs/evidence/tmp/dashboard-chat-2026-11-04T06-39-26-736Z.json`。
+
 ## 自动验证
 
 - `pnpm test`：130 用例（协议、传输、PKCE、凭据、RPC、聊天、持久化、待处理 watcher、Markdown）

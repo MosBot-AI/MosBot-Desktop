@@ -203,6 +203,11 @@ until the release repository exists.
 - The chat probe now also reports the artifact `mtime` it indexed and whether the
   entry is a broken link, so a real-service run verifies the new metadata mapping.
 
+- Real-service re-run (chat probe, dedicated profile cleaned up): send, first
+  delta, terminal, interrupt, attachment read, artifact index with a real `mtime`
+  and artifact read all pass. The approval request still does not fire because the
+  deployment auto-approves the terminal tool; recorded as open.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,
