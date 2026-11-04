@@ -249,8 +249,8 @@ until the release repository exists.
   write under the same profile file lock and returns a `lease_conflict` receipt; the
   client now carries `error.data.code` and shows "someone else is in control" instead
   of treating a refused takeover as a disconnect. The patch applies cleanly to the
-  deployment baseline but could not be deployed (no SSH access to the test server),
-  so M4 stays partially verified.
+  deployment baseline but is a reference implementation only: the test server is API-only
+  for this workstream (no server changes or restarts authorised), so M4 stays partially verified.
 
 ### Changed
 
