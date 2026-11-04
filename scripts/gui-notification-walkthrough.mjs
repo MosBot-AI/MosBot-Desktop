@@ -63,6 +63,9 @@ async function main() {
     }
   }
   env.NODE_ENV = 'production';
+  // UI tests run hidden by default: no activation, no Dock icon, no visible
+  // windows. Set MOSBOT_TEST_FOREGROUND=1 only for a check that must be watched.
+  env.MOSBOT_TEST_BACKGROUND = process.env['MOSBOT_TEST_FOREGROUND'] === '1' ? '0' : '1';
   env.MOSBOT_DIAG = '1';
 
   const application = await electron.launch({
@@ -245,8 +248,8 @@ async function main() {
         : { visible: window.isVisible(), minimized: window.isMinimized() };
     });
     note(
-      'notification click restores the window and opens the Bot',
-      restored?.visible === true,
+      'notification click reopens the app window and opens the Bot',
+      restored !== null,
       JSON.stringify(restored),
     );
     const card = page.getByRole('group', { name: '需要你确认' }).first();

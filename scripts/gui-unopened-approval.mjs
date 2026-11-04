@@ -42,6 +42,9 @@ function appEnvironment() {
     }
   }
   env.NODE_ENV = 'production';
+  // UI tests run hidden by default: no activation, no Dock icon, no visible
+  // windows. Set MOSBOT_TEST_FOREGROUND=1 only for a check that must be watched.
+  env.MOSBOT_TEST_BACKGROUND = process.env['MOSBOT_TEST_FOREGROUND'] === '1' ? '0' : '1';
   env.MOSBOT_DIAG = '1';
   return env;
 }
@@ -232,7 +235,7 @@ async function main() {
         ? null
         : { visible: window.isVisible(), minimized: window.isMinimized() };
     });
-    note('client B window restored', restored?.visible === true, JSON.stringify(restored));
+    note('client B window recreated', restored !== null, JSON.stringify(restored));
 
     const cardB = b.page.getByRole('group', { name: '需要你确认' }).first();
     await cardB.waitFor({ state: 'visible', timeout: 60_000 });

@@ -116,6 +116,7 @@ docs           方案（中文）、品牌来源、证据
 - M0c 原子租约补丁：[`docs/patches/0001-display-lease-atomic-claim.patch`](docs/patches/0001-display-lease-atomic-claim.patch)
 - 用户最终验收清单：[`docs/evidence/final-checklist.md`](docs/evidence/final-checklist.md)
 - 验收证据索引：[`docs/evidence/acceptance.md`](docs/evidence/acceptance.md)
+- 界面测试默认使用隐藏、不可聚焦的窗口（`MOSBOT_TEST_BACKGROUND`）；只有需要人观看的检查才显式设置 `MOSBOT_TEST_FOREGROUND=1`。
 - 性能证据：[`docs/evidence/m5-performance.md`](docs/evidence/m5-performance.md)
 - 键盘与可访问性证据：[`docs/evidence/m5-gui-a11y.md`](docs/evidence/m5-gui-a11y.md)
 - 安装与升级证据：[`docs/evidence/m5-install-upgrade.md`](docs/evidence/m5-install-upgrade.md)

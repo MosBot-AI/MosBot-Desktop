@@ -28,6 +28,8 @@ export function appEnvironment(): Record<string, string> {
     env[key] = value;
   }
   env['NODE_ENV'] = 'production';
+  // Hidden test windows: CI and local runs must not steal focus or show windows.
+  env['MOSBOT_TEST_BACKGROUND'] = '1';
   return env;
 }
 

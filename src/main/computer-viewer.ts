@@ -127,6 +127,7 @@ export function createComputerViewer(deps: ComputerViewerDeps): ComputerViewer {
     return event.sender === contents;
   };
 
+  const backgroundTest = process.env['MOSBOT_TEST_BACKGROUND'] === '1';
   const createWindow = async (bootstrap: ComputerBootstrap): Promise<Result<void>> => {
     const parent = deps.getParent();
     const viewer = new BrowserWindow({
@@ -138,6 +139,7 @@ export function createComputerViewer(deps: ComputerViewerDeps): ComputerViewer {
       backgroundColor: '#101014',
       ...(parent === null ? {} : { parent }),
       show: false,
+      ...(backgroundTest ? { focusable: false, skipTaskbar: true, hasShadow: false } : {}),
       webPreferences: {
         preload: deps.preloadPath,
         contextIsolation: true,
@@ -146,6 +148,7 @@ export function createComputerViewer(deps: ComputerViewerDeps): ComputerViewer {
         spellcheck: false,
         webviewTag: false,
         webSecurity: true,
+        ...(backgroundTest ? { backgroundThrottling: false } : {}),
       },
     });
     window = viewer;
@@ -156,7 +159,9 @@ export function createComputerViewer(deps: ComputerViewerDeps): ComputerViewer {
       // The observe snapshot already carries the current lease: show "someone
       // else is controlling" immediately instead of a misleading view-only state.
       viewer.webContents.send(DASHBOARD_CHANNELS.computerLease, currentLease);
-      viewer.show();
+      if (!backgroundTest) {
+        viewer.show();
+      }
     });
     viewer.on('closed', () => {
       teardown();

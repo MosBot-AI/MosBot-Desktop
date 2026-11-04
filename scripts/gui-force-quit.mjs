@@ -35,6 +35,9 @@ function appEnvironment() {
     }
   }
   env.NODE_ENV = 'production';
+  // UI tests run hidden by default: no activation, no Dock icon, no visible
+  // windows. Set MOSBOT_TEST_FOREGROUND=1 only for a check that must be watched.
+  env.MOSBOT_TEST_BACKGROUND = process.env['MOSBOT_TEST_FOREGROUND'] === '1' ? '0' : '1';
   return env;
 }
 

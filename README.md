@@ -145,6 +145,7 @@ machines.
 - M0c atomic display-lease patch: [`docs/patches/0001-display-lease-atomic-claim.patch`](docs/patches/0001-display-lease-atomic-claim.patch)
 - Final user checklist: [`docs/evidence/final-checklist.md`](docs/evidence/final-checklist.md)
 - Acceptance evidence index: [`docs/evidence/acceptance.md`](docs/evidence/acceptance.md)
+- UI tests run with hidden, unfocused windows (`MOSBOT_TEST_BACKGROUND`); set `MOSBOT_TEST_FOREGROUND=1` only for a check a person must watch.
 - Performance evidence: [`docs/evidence/m5-performance.md`](docs/evidence/m5-performance.md)
 - Keyboard/accessibility evidence: [`docs/evidence/m5-gui-a11y.md`](docs/evidence/m5-gui-a11y.md)
 - Install/upgrade evidence: [`docs/evidence/m5-install-upgrade.md`](docs/evidence/m5-install-upgrade.md)

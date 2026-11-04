@@ -304,6 +304,13 @@ until the release repository exists.
   session, with the offline copy shown in between. This is a simulation; a real
   network-interface loss is still unverified.
 
+- Automated UI tests now run without disturbing the person using the machine:
+  `MOSBOT_TEST_BACKGROUND=1` creates hidden, unfocusable windows, hides the Dock
+  icon and disables app activation; the E2E harness and `scripts/gui-*.mjs` enable
+  it by default. `MOSBOT_TEST_FOREGROUND=1` opts into watched runs. Verified with
+  the window-state probe (visible=false, focusable=false, dockVisible=false), all
+  21 E2E tests, and two real-service GUI walks in background mode.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,

@@ -106,6 +106,8 @@ function windowQuery(): Record<string, string> | null {
   return Object.keys(query).length === 0 ? null : query;
 }
 
+const BACKGROUND_TEST = process.env['MOSBOT_TEST_BACKGROUND'] === '1';
+
 function createMainWindow(): void {
   const benchQuery = windowQuery();
   mainWindow = new BrowserWindow({
@@ -114,6 +116,9 @@ function createMainWindow(): void {
     minWidth: 720,
     minHeight: 500,
     show: false,
+    // Background test mode: keep the window out of the way (no activation, no
+    // Dock presence) while Playwright drives its DOM.
+    ...(BACKGROUND_TEST ? { focusable: false, skipTaskbar: true, hasShadow: false } : {}),
     title: 'MosBot',
     backgroundColor: nativeTheme.shouldUseDarkColors ? CHAT_SURFACE_DARK : CHAT_SURFACE_LIGHT,
     ...(isMac
@@ -131,14 +136,16 @@ function createMainWindow(): void {
       webviewTag: false,
       webSecurity: true,
       // Benchmarks need unthrottled timers/rAF even if the window is occluded.
-      ...(benchQuery === null ? {} : { backgroundThrottling: false }),
+      ...(benchQuery === null && !BACKGROUND_TEST ? {} : { backgroundThrottling: false }),
     },
   });
 
   hardenWebContents(mainWindow);
 
   mainWindow.once('ready-to-show', () => {
-    mainWindow?.show();
+    if (!BACKGROUND_TEST) {
+      mainWindow?.show();
+    }
   });
 
   mainWindow.on('closed', () => {
@@ -226,8 +233,10 @@ function ensureWindow(): void {
     createMainWindow();
     return;
   }
-  mainWindow.show();
-  mainWindow.focus();
+  if (!BACKGROUND_TEST) {
+    mainWindow.show();
+    mainWindow.focus();
+  }
 }
 
 function registerShellIpc(): void {
@@ -573,6 +582,12 @@ function registerDashboard(): void {
 }
 
 void app.whenReady().then(() => {
+  if (BACKGROUND_TEST) {
+    // No Dock icon and no activation: UI tests must not steal focus from the person
+    // using the machine.
+    app.setActivationPolicy('accessory');
+    app.dock?.hide();
+  }
   registerShellIpc();
   registerDashboard();
   installMenu(menuLanguageForLocale(app.getLocale()));
@@ -583,7 +598,7 @@ void app.whenReady().then(() => {
     // macOS; the Dock icon brings the same window back.
     if (BrowserWindow.getAllWindows().length === 0) {
       createMainWindow();
-    } else {
+    } else if (!BACKGROUND_TEST) {
       mainWindow?.show();
     }
   });

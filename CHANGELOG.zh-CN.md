@@ -186,6 +186,11 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
 - 观看窗口断线重连新增 walkthrough：测试专用 socket 断开（或 renderer offline/online 事件）会触发
   重新 observe 并重建 RFB，其间显示断网文案。这是模拟验证，真实网卡断开仍未实测。
 
+- 自动化界面测试不再打扰用户：`MOSBOT_TEST_BACKGROUND=1` 创建隐藏、不可聚焦窗口并隐藏 Dock
+  图标、禁止应用激活；E2E harness 与 `scripts/gui-*.mjs` 默认开启。需要人观看时用
+  `MOSBOT_TEST_FOREGROUND=1`。已用窗口状态探针（visible/focusable/dock=false）、21 项 E2E 与
+  两个真实服务 GUI 流程验证。
+
 ### 变更
 
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。
