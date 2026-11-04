@@ -433,32 +433,97 @@ function registerDashboard(): void {
       const window = mainWindow;
       const focused =
         window !== null && !window.isDestroyed() && window.isVisible() && window.isFocused();
-      if (focused || !Notification.isSupported()) {
+      const supported = Notification.isSupported();
+      const diag =
+        process.env['MOSBOT_DIAG'] === '1'
+          ? (globalThis as typeof globalThis & {
+              __mosbotNotify?: {
+                entries: Array<{
+                  title: string;
+                  body: string;
+                  profile: string;
+                  approval: boolean;
+                  at: number;
+                  focused: boolean;
+                  supported: boolean;
+                  shown: boolean;
+                  click: () => void;
+                }>;
+              };
+            })
+          : null;
+      if (focused || !supported) {
+        diag?.__mosbotNotify?.entries.push({
+          title: pending.displayName,
+          body: '(skipped)',
+          profile: pending.profile,
+          approval: pending.method === 'approval',
+          at: Date.now(),
+          focused,
+          supported,
+          shown: false,
+          click: () => undefined,
+        });
         return;
       }
       const zh = app.getLocale().toLowerCase().startsWith('zh');
-      const notification = new Notification({
-        title: pending.displayName,
-        body: zh
-          ? pending.method === 'approval'
-            ? '需要你确认'
-            : '有一个问题需要你回答'
-          : pending.method === 'approval'
-            ? 'Needs your confirmation'
-            : 'A question is waiting',
-      });
-      notification.on('click', () => {
+      const title = pending.displayName;
+      const body = zh
+        ? pending.method === 'approval'
+          ? '需要你确认'
+          : '有一个问题需要你回答'
+        : pending.method === 'approval'
+          ? 'Needs your confirmation'
+          : 'A question is waiting';
+      const notification = new Notification({ title, body });
+      const click = (): void => {
         ensureWindow();
         mainWindow?.webContents.send(DASHBOARD_CHANNELS.pendingEvent, {
           type: 'open',
           profile: pending.profile,
         });
-      });
+      };
+      notification.on('click', click);
+      // Test-only diagnostics (MOSBOT_DIAG=1): lets the walkthrough assert that a
+      // notification was requested and that its click path opens the Bot, without
+      // needing macOS screen-recording permission to read the actual banner.
+      if (diag !== null) {
+        diag.__mosbotNotify ??= { entries: [] };
+        diag.__mosbotNotify.entries.push({
+          title,
+          body,
+          profile: pending.profile,
+          approval: pending.method === 'approval',
+          at: Date.now(),
+          focused: false,
+          supported: true,
+          shown: true,
+          click,
+        });
+      }
       notification.show();
     },
     onEvent: (event) => {
       mainWindow?.webContents.send(DASHBOARD_CHANNELS.pendingEvent, event);
     },
+    ...(process.env['MOSBOT_DIAG'] === '1'
+      ? {
+          onDiagnostics: (info: {
+            canonicalProfiles: number;
+            active: Array<{ status: string; mapped: boolean }>;
+            waitingProfiles: string[];
+          }) => {
+            const host = globalThis as typeof globalThis & {
+              __mosbotPendingScans?: unknown[];
+            };
+            host.__mosbotPendingScans ??= [];
+            host.__mosbotPendingScans.push({ at: Date.now(), ...info });
+            if (host.__mosbotPendingScans.length > 20) {
+              host.__mosbotPendingScans.shift();
+            }
+          },
+        }
+      : {}),
   });
   const trusted = createTrustedSenderCheck(() => mainWindow?.webContents ?? null);
   const computerViewer = createComputerViewer({

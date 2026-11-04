@@ -20,6 +20,12 @@ export interface PendingWatcherDeps {
   readonly notify: (notification: PendingNotification) => void;
   /** Pushes add/remove/open events to the renderer. */
   readonly onEvent: (event: DashboardPendingEvent) => void;
+  /** Test-only scan diagnostics (arrays only, no session text). */
+  readonly onDiagnostics?: (info: {
+    canonicalProfiles: number;
+    active: Array<{ status: string; mapped: boolean }>;
+    waitingProfiles: string[];
+  }) => void;
   /** Test seam: defaults to the real gateway client. */
   readonly connect?: (
     options: GatewayOptions,
@@ -154,12 +160,14 @@ export function createPendingWatcher(deps: PendingWatcherDeps): PendingWatcher {
     }
     const sessions = asArray(asRecord(active.data)?.['sessions']);
     const waitingProfiles = new Set<string>();
+    const diagActive: Array<{ status: string; mapped: boolean }> = [];
     for (const row of sessions) {
       const record = asRecord(row);
       const status = str(record?.['status']);
       const runtimeId = str(record?.['id']);
       const storedId = str(record?.['session_key']);
       const owner = canonical.get(storedId);
+      diagActive.push({ status, mapped: owner !== undefined });
       if (status !== 'waiting' || owner === undefined || runtimeId === '') {
         continue;
       }
@@ -194,6 +202,12 @@ export function createPendingWatcher(deps: PendingWatcherDeps): PendingWatcher {
         });
       }
     }
+
+    deps.onDiagnostics?.({
+      canonicalProfiles: canonical.size,
+      active: diagActive.slice(0, 20),
+      waitingProfiles: [...waitingProfiles],
+    });
 
     // Requests whose session stopped waiting (answered here or on another client).
     for (const [requestId, request] of known) {

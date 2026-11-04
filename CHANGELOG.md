@@ -261,6 +261,13 @@ until the release repository exists.
   window" receipt. The two-client walkthrough verifies shared chat observation and
   that receipt. Evidence: docs/evidence/m1-dual-client.md.
 
+- Notification path verified programmatically with a test-only diagnostics hook: a
+  real approval pending in an unfocused (minimised) window requests a system
+  notification (Bot name + "needs confirmation"), and the click handler restores
+  the window, opens the waiting Bot and delivers the approval card. The macOS
+  banner pixels and a real pointer click remain unverified because this shell has
+  no screen-recording permission; the walkthrough records that limitation.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,

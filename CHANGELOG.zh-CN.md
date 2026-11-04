@@ -158,6 +158,10 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
   `session.resume` 的 `open_requests` 对账；被另一端处理的请求折成「已由另一端处理」回执。
   双客户端 walkthrough 验证了共享聊天观察与该回执。证据：`docs/evidence/m1-dual-client.md`。
 
+- 通知路径已用测试专用诊断钩子做程序化验证：失焦（最小化）窗口中的真实审批会请求系统通知
+  （Bot 名 +「需要你确认」），点击处理会恢复窗口、打开等待中的 Bot 并重投审批卡。macOS 横幅像素
+  与真实鼠标点击仍未验证（本 shell 无屏幕录制权限），walkthrough 报告中已注明。
+
 ### 变更
 
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。
