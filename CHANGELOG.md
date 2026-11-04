@@ -411,6 +411,10 @@ until the release repository exists.
   rejects empty or credential-less providers. The state is not constructible with
   the Dashboard API; the diagnostic script and limitation are recorded.
 
+- Message-panel stale responses are now verified too: opening a slow session and
+  immediately another one keeps the new transcript and discards the late messages
+  (test-only delay on existing sessions, read-only).
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,

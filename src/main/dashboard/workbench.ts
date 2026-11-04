@@ -175,6 +175,14 @@ export async function readWorkbenchMessages(
   if (target === null) {
     return connectionError();
   }
+  // Test-only latency injection for one session so a walkthrough can prove stale
+  // message panels are discarded after opening another session.
+  const slowSession = process.env['MOSBOT_TEST_MESSAGES_SLOW_SESSION'];
+  if (slowSession !== undefined && slowSession !== '' && slowSession === sessionId) {
+    const raw = Number.parseInt(process.env['MOSBOT_TEST_MESSAGES_DELAY_MS'] ?? '', 10);
+    const delay = Number.isFinite(raw) && raw > 0 ? Math.min(raw, 10_000) : 1_500;
+    await new Promise((resolve) => setTimeout(resolve, delay));
+  }
   const response = await requestJson(options(deps, target), {
     method: 'GET',
     path: `/api/sessions/${encodeURIComponent(sessionId)}/messages?profile=${encodeURIComponent(profile)}&limit=${limit}&offset=${offset}&order=latest&inline_images=false`,

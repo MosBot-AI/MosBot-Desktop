@@ -260,6 +260,9 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
   默认模型且 `/api/model/info` 返回该继承值，`PUT /model` 又拒绝空值/无凭据 provider，因此该
   状态无法通过 Dashboard API 构造；诊断脚本与限制已记录。
 
+- 消息面板旧响应也已验证：先打开慢会话、立即打开另一个会话，新 transcript 保留、旧消息被丢弃
+  （对现有会话只读 + 测试专用延迟）。
+
 ### 变更
 
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。
