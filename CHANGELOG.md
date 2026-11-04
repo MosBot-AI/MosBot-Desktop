@@ -239,6 +239,12 @@ until the release repository exists.
   IPC instead of being rejected as an untrusted sender. The real screen renders
   (1440 x 900 canvas), control can be taken and returned, and the window closes.
 
+- The viewer now reconnects on its own when the RFB socket closes (eviction with
+  close 4000, or a network drop): it re-observes the display, rebuilds RFB and
+  returns to watch-only instead of staying dead. A two-client walkthrough confirms
+  the current deployment still lets a later viewer take the lease from the holder
+  (the M0c atomic-claim gap), and that the evicted client recovers to watch mode.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,

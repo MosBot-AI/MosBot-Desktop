@@ -26,9 +26,10 @@ export function ComputerViewer(): ReactElement {
     }
     const offBootstrap = computer.onBootstrap((payload) => {
       // A re-minted ticket (network recovery) replaces the old RFB session.
-      if (rfbRef.current !== null) {
-        rfbRef.current.disconnect();
+      const previous = rfbRef.current;
+      if (previous !== null) {
         rfbRef.current = null;
+        previous.disconnect();
       }
       setStatus('connecting');
       setBootstrap(payload);
@@ -76,6 +77,8 @@ export function ComputerViewer(): ReactElement {
     if (bootstrap === null || screen === null || rfbRef.current !== null) {
       return;
     }
+    let active = true;
+    let reconnectTimer = 0;
     // The deployment's RFB bridge does not negotiate a WebSocket subprotocol, so
     // noVNC must not offer one (otherwise the handshake is rejected with 1006).
     const rfb = new RFB(screen, bootstrap.wsUrl, { shared: true, wsProtocols: [] });
@@ -86,12 +89,36 @@ export function ComputerViewer(): ReactElement {
       setStatus('connected');
     });
     rfb.addEventListener('disconnect', () => {
+      // The server closes an evicted viewer with 4000 control-taken (and any
+      // network drop closes it too): re-observe and rebuild instead of staying
+      // dead. The bootstrap handler replaces rfbRef, so only a live session
+      // reconnects.
+      if (!active || rfbRef.current !== rfb) {
+        return;
+      }
       setStatus('disconnected');
+      if (navigator.onLine) {
+        reconnectTimer = window.setTimeout(() => {
+          if (!active) {
+            return;
+          }
+          setStatus('connecting');
+          void window.mosbot?.computer.reconnect().then((result) => {
+            if (active && result.ok !== true) {
+              setStatus('disconnected');
+            }
+          });
+        }, 1_200);
+      }
     });
     rfbRef.current = rfb;
     return () => {
+      active = false;
+      window.clearTimeout(reconnectTimer);
+      if (rfbRef.current === rfb) {
+        rfbRef.current = null;
+      }
       rfb.disconnect();
-      rfbRef.current = null;
     };
   }, [bootstrap]);
 
