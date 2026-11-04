@@ -105,7 +105,12 @@ until the release repository exists.
 - Workbench writes: the Kanban page creates tasks and moves them between workflow
   columns (re-reading the board snapshot afterwards), and the Profiles page writes
   the default provider/model through `PUT /api/profiles/{name}/model` and reads
-  readiness back. Verified with dedicated-board and dedicated-profile probes that
+  readiness back.
+- Kanban live events: each open board tails `/api/plugins/kanban/events` over its
+  own WebSocket with a re-signed ticket per reconnect and cursor resume; a board
+  switch closes the old watcher so late frames cannot touch the new board, events
+  debounce a snapshot refetch, and a cursor that moves backwards resubscribes from
+  the new tail. Verified with dedicated-board and dedicated-profile probes that
   clean up after themselves. Fixture windows keep the offline demo.
 - Gateway WebSocket client (`ws`): one-time ticket handshake, `gateway.ready` first
   frame, JSON-RPC request/response with zod validation, typed server events, and

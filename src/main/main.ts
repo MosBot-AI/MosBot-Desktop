@@ -9,10 +9,12 @@ import {
   shell,
 } from 'electron';
 import { DASHBOARD_CHANNELS, SHELL_CHANNELS } from '../shared/bridge';
+import { protocolError, type Result } from '../shared/protocol';
 import path from 'node:path';
 import { createAuthManager } from './dashboard/auth';
 import { createChatManager } from './dashboard/chat';
 import { registerChatIpc } from './dashboard/chat-ipc';
+import { watchKanbanBoard, type KanbanWatcher } from './dashboard/kanban-events';
 import { createPendingWatcher } from './dashboard/pending';
 import { registerLocalIpc } from './local/ipc';
 import { createTrustedSenderCheck, registerDashboardIpc } from './dashboard/ipc';
@@ -201,6 +203,50 @@ function registerDashboard(): void {
     ticketExpiryCheck: process.env['MOSBOT_PROBE_TICKET_EXPIRY'] === '1',
   });
   const chat = createChatManager({ auth, fetchImpl });
+  let kanbanWatcher: KanbanWatcher | null = null;
+  const stopKanbanWatcher = (): void => {
+    kanbanWatcher?.close();
+    kanbanWatcher = null;
+  };
+  ipcMain.handle(
+    DASHBOARD_CHANNELS.kanbanWatch,
+    (event, board: unknown, since: unknown): Result<void> => {
+      if (!trusted(event)) {
+        return { ok: false, error: protocolError('internal', 'Untrusted renderer request.') };
+      }
+      if (
+        typeof board !== 'string' ||
+        board.length === 0 ||
+        board.length > 128 ||
+        typeof since !== 'number' ||
+        !Number.isInteger(since) ||
+        since < 0
+      ) {
+        return { ok: false, error: protocolError('invalid_url', 'The board watch is not valid.') };
+      }
+      stopKanbanWatcher();
+      kanbanWatcher = watchKanbanBoard(
+        {
+          auth,
+          fetchImpl,
+          onEvent: (payload) => {
+            mainWindow?.webContents.send(DASHBOARD_CHANNELS.kanbanEvent, payload);
+          },
+        },
+        board,
+        since,
+      );
+      return { ok: true, data: undefined };
+    },
+  );
+  ipcMain.handle(DASHBOARD_CHANNELS.kanbanUnwatch, (event): Result<void> => {
+    if (!trusted(event)) {
+      return { ok: false, error: protocolError('internal', 'Untrusted renderer request.') };
+    }
+    stopKanbanWatcher();
+    return { ok: true, data: undefined };
+  });
+
   const watcher = createPendingWatcher({
     auth,
     fetchImpl,
@@ -243,6 +289,7 @@ function registerDashboard(): void {
     onSignOut: () => {
       chat.close();
       watcher.stop();
+      stopKanbanWatcher();
     },
     onSessionReady: () => {
       watcher.start();
@@ -263,6 +310,7 @@ function registerDashboard(): void {
     auth.cancelLogin();
     chat.close();
     watcher.stop();
+    stopKanbanWatcher();
   });
   watcher.start();
 }

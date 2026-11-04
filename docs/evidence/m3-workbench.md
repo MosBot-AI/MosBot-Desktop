@@ -1,7 +1,7 @@
 # M3 · Hermes 工作台（外壳 + 三个只读子页）· 证据
 
 - 卡片：M3（Profiles 概览/详情、Sessions 分页/搜索/历史、Kanban 看板快照、返回聊天恢复）
-- 状态：**工作台外壳、三个子页、Kanban 新建/改状态、模型配置写入均已接入并验证；Kanban WS 实时游标待下一段**
+- 状态：**工作台外壳、三个子页、Kanban 新建/改状态与实时 WS 游标、模型配置写入均已接入并验证**
 - 记录时间：2026-11-04
 - 目标服务：`192.168.2.171:9119`（v0.22.5 / `bf0203a794`），只读
 
@@ -21,6 +21,10 @@
   写入后重读快照回显；插件不可用或没有看板时显示专用空态，其他子页不受影响。
 - **模型配置写入**：Profiles 详情可编辑 provider/model，`PUT /api/profiles/{name}/model` 后重新读取
   `/api/model/info` 与名单，回显就绪状态；失败保留输入并提示。
+- **Kanban 实时事件**：主进程按 board 建立独立 WS `/api/plugins/kanban/events?board&since&ticket`；
+  ticket 每次重连重新签（30 s），游标从 `latest_event_id` 起，断线按 2/4/8/15 s 退避并带旧游标续上；
+  切换 board 关闭旧 watcher（旧帧不会写入新 board）；渲染层收到事件后 300 ms 防抖重读快照，
+  若快照 `latest_event_id` 小于本地游标（重置/恢复）则用新游标重订阅。
 - 主进程新增 `workbench.ts` 归一化层（会话/消息/看板），经 IPC 暴露给渲染层；所有参数做边界校验。
 
 ## 验证
@@ -37,7 +41,5 @@
 
 ## 未完成 / 下一段
 
-- WS `/api/plugins/kanban/events?board&since` 游标订阅、断线续传与缺口重抓快照；切换 board 时旧事件
-  不得更新新 board。
-- 连接态工作台的真实窗口截图（需用户登录后操作）。
+- 连接态工作台的真实窗口截图与用户验收（需登录后实际操作）。
 - 已修复：验证时发现 `probeWorkbench` IPC handler 重复注册导致启动失败，已删除重复项并复验。

@@ -293,6 +293,19 @@ export interface KanbanBoard {
   readonly latestEventId: number | null;
 }
 
+export interface KanbanWatchEvent {
+  readonly board: string;
+  readonly events: readonly {
+    readonly id: number;
+    readonly taskId: string;
+    readonly kind: string;
+    readonly createdAt: number;
+    readonly payload: unknown;
+  }[];
+  readonly cursor: number;
+  readonly state: 'connected' | 'reconnecting' | 'disconnected';
+}
+
 export interface CreateBotInput {
   readonly name: string;
   readonly description?: string;

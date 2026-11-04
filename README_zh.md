@@ -15,7 +15,8 @@ Bot 走真实 fresh profile 流程（名称、形状、颜色），创建后自�
 连接后的 Bot 可置顶、建分区（重命名/删除）、在分区间移动，并编辑外观与名称（CAS 写入）；整理结果
 保存在本地并重启恢复。左下菜单可打开 Hermes 工作台（Profiles / Sessions / Kanban），三个子页使用
 真实 REST；Kanban 可新建任务、修改状态，Profiles 可写入默认模型/提供方并回读就绪状态；
-返回 Bots 时聊天、草稿与滚动位置保持不变。未连接时仍使用 fixture。
+Kanban 打开时通过事件 WebSocket 保持实时（重连重签票、旧游标续传、缺口重读快照）；返回 Bots 时
+聊天、草稿与滚动位置保持不变。未连接时仍使用 fixture。
 尚无签名安装包和升级路径。详见
 [`docs/evidence/m0a-design-slice.md`](docs/evidence/m0a-design-slice.md) 与
 [`docs/evidence/capabilities.md`](docs/evidence/capabilities.md)。

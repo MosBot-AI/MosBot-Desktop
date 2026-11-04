@@ -13,6 +13,7 @@ import type {
   CreateBotResult,
   KanbanBoard,
   KanbanBoardSummary,
+  KanbanWatchEvent,
   ModelReadiness,
   WorkbenchMessage,
   WorkbenchSession,
@@ -174,6 +175,23 @@ const bridge: Omit<MosBotBridge, 'openExternal' | 'local'> = {
         provider,
         model,
       ) as Promise<Result<{ provider: string; model: string }>>;
+    },
+    kanbanWatch(board: string, since: number): Promise<Result<void>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.kanbanWatch, board, since) as Promise<
+        Result<void>
+      >;
+    },
+    kanbanUnwatch(): Promise<Result<void>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.kanbanUnwatch) as Promise<Result<void>>;
+    },
+    onKanbanEvent(listener: (event: KanbanWatchEvent) => void): () => void {
+      const wrapped = (_event: Electron.IpcRendererEvent, payload: KanbanWatchEvent): void => {
+        listener(payload);
+      };
+      ipcRenderer.on(DASHBOARD_CHANNELS.kanbanEvent, wrapped);
+      return () => {
+        ipcRenderer.removeListener(DASHBOARD_CHANNELS.kanbanEvent, wrapped);
+      };
     },
     loadOlderChat(
       profileName: string,

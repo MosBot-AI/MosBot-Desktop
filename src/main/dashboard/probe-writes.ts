@@ -17,6 +17,7 @@ import {
   setProfileModel,
   setRemoteAppearance,
 } from './profiles';
+import { watchKanbanBoard, type KanbanWatchEvent } from './kanban-events';
 import { connectGateway, type RpcClient } from './rpc';
 import { emptySchema } from './schemas';
 import type { DashboardChatEvent } from '../../shared/protocol';
@@ -661,6 +662,54 @@ export async function runKanbanWriteProbe(deps: WriteProbeDeps): Promise<Result<
         `before=${String(cursorBefore)} · after=${String(cursorAfter)}`,
       ),
     );
+
+    // Live events: tail the board from the current cursor, then write again and
+    // require the stream to deliver the new event with an advanced cursor.
+    const streamed: KanbanWatchEvent[] = [];
+    const watcher = watchKanbanBoard(
+      {
+        auth: deps.auth,
+        fetchImpl: deps.fetchImpl,
+        ...(deps.requestTimeoutMs === undefined ? {} : { requestTimeoutMs: deps.requestTimeoutMs }),
+        onEvent: (event) => {
+          streamed.push(event);
+        },
+      },
+      marker,
+      cursorAfter ?? 0,
+    );
+    try {
+      await sleep(1_200);
+      const liveTask = await rest.send(
+        'POST',
+        `/api/plugins/kanban/tasks?board=${encodeURIComponent(marker)}`,
+        { title: 'MosBot probe live task', body: 'Automated MosBot probe; safe to delete' },
+      );
+      const liveTaskId = stringField(asRecord(asRecord(dataOf(liveTask))?.['task']), 'id');
+      const received = await waitFor(
+        () => streamed.some((event) => event.events.length > 0),
+        10_000,
+      );
+      const firstEvent = streamed.find((event) => event.events.length > 0);
+      if (liveTaskId !== null) {
+        await rest.send(
+          'DELETE',
+          `/api/plugins/kanban/tasks/${encodeURIComponent(liveTaskId)}?board=${encodeURIComponent(marker)}`,
+        );
+      }
+      rows.push(
+        row(
+          'board_events',
+          'Board 实时事件（WS 游标）',
+          received ? 'pass' : 'unverified',
+          received
+            ? `events=${firstEvent?.events.length ?? 0} · cursor=${String(firstEvent?.cursor)} · state=${firstEvent?.state ?? '—'}`
+            : 'no event frame within 10s',
+        ),
+      );
+    } finally {
+      watcher.close();
+    }
   } finally {
     if (taskId !== null) {
       await rest.send(

@@ -53,7 +53,10 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
   滚动位置与详情栏原样恢复。
 - 工作台写入：Kanban 页可新建任务、在列间移动状态（写入后重读快照回显）；Profiles 页可通过
   `PUT /api/profiles/{name}/model` 写入默认 provider/model 并回读就绪状态。均用专用 board/profile
-  探针验证并自动清理。未连接时保持 fixture 演示。
+  探针验证并自动清理。
+- Kanban 实时事件：每个打开的 board 通过独立 WebSocket 尾随 `/api/plugins/kanban/events`，重连重签
+  ticket 并用旧游标续上；切换 board 会关闭旧 watcher，迟到帧不会写入新 board；事件到达后防抖重读
+  快照，游标回退时从新尾部重新订阅。未连接时保持 fixture 演示。
 - Gateway WebSocket 客户端（`ws`）：一次性 ticket 握手、`gateway.ready` 首帧、zod 校验的 JSON-RPC 请求响应、类型化服务端事件，以及 ticket 复用/过期拒绝检查。已在测试部署验证：`profiles.list`、`client.capabilities` 与精确 Bot Chat 查询通过；复用与过期 ticket 被拒绝。
 
 ### 变更

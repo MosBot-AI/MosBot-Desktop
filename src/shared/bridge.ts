@@ -6,6 +6,7 @@ import type {
   CreateBotResult,
   KanbanBoard,
   KanbanBoardSummary,
+  KanbanWatchEvent,
   ModelReadiness,
   WorkbenchMessage,
   WorkbenchSession,
@@ -135,6 +136,11 @@ export interface MosBotDashboardBridge {
     provider: string,
     model: string,
   ): Promise<Result<{ provider: string; model: string }>>;
+  /** Tails one Kanban board's events from a cursor (board pinned per watcher). */
+  kanbanWatch(board: string, since: number): Promise<Result<void>>;
+  kanbanUnwatch(): Promise<Result<void>>;
+  /** Subscribes to Kanban board events; returns an unsubscribe function. */
+  onKanbanEvent(listener: (event: KanbanWatchEvent) => void): () => void;
   /** Resumes (or creates) the live Bot Chat session so prompts can be sent. */
   chatOpen(profileName: string, storedSessionId: string | null): Promise<Result<ChatOpenResult>>;
   /** Submits one prompt to the open session. */
@@ -191,6 +197,9 @@ export const DASHBOARD_CHANNELS = {
   kanbanCreateTask: 'mosbot:dashboard:kanbanCreateTask',
   kanbanSetTaskStatus: 'mosbot:dashboard:kanbanSetTaskStatus',
   setProfileModel: 'mosbot:dashboard:setProfileModel',
+  kanbanWatch: 'mosbot:dashboard:kanbanWatch',
+  kanbanUnwatch: 'mosbot:dashboard:kanbanUnwatch',
+  kanbanEvent: 'mosbot:dashboard:kanbanEvent',
   chatOpen: 'mosbot:dashboard:chatOpen',
   chatSend: 'mosbot:dashboard:chatSend',
   chatStop: 'mosbot:dashboard:chatStop',

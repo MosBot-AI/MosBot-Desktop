@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactElement } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import type {
   KanbanBoard,
   KanbanBoardSummary,
@@ -528,6 +528,12 @@ function KanbanPage(): ReactElement {
   const [board, setBoard] = useState('');
   const [snapshot, setSnapshot] = useState<KanbanBoard | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error' | 'unavailable'>('loading');
+  const [liveState, setLiveState] = useState<'connected' | 'reconnecting' | 'disconnected'>(
+    'disconnected',
+  );
+  const currentBoard = useRef('');
+  const lastCursor = useRef(0);
+  const reloadTimer = useRef<number | null>(null);
   const [newTitle, setNewTitle] = useState('');
   const [writing, setWriting] = useState(false);
   const [writeError, setWriteError] = useState(false);
@@ -572,11 +578,75 @@ function KanbanPage(): ReactElement {
     void loadBoards();
   }, [loadBoards]);
 
+  const reloadBoardSoon = useCallback(
+    (slug: string): void => {
+      if (reloadTimer.current !== null) {
+        window.clearTimeout(reloadTimer.current);
+      }
+      reloadTimer.current = window.setTimeout(() => {
+        reloadTimer.current = null;
+        void loadBoard(slug);
+      }, 300);
+    },
+    [loadBoard],
+  );
+
+  useEffect(() => {
+    const dashboard = window.mosbot?.dashboard;
+    if (dashboard === undefined) {
+      return;
+    }
+    return dashboard.onKanbanEvent((event) => {
+      if (event.board !== currentBoard.current) {
+        // A late frame from a previous board never touches the current one.
+        return;
+      }
+      setLiveState(event.state);
+      if (event.state === 'connected') {
+        void loadBoard(event.board);
+      }
+      if (event.events.length > 0) {
+        reloadBoardSoon(event.board);
+      }
+    });
+  }, [loadBoard, reloadBoardSoon]);
+
+  useEffect(() => {
+    const dashboard = window.mosbot?.dashboard;
+    if (board === '') {
+      return;
+    }
+    currentBoard.current = board;
+    void dashboard?.kanbanWatch(board, lastCursor.current);
+    return () => {
+      void dashboard?.kanbanUnwatch();
+      if (reloadTimer.current !== null) {
+        window.clearTimeout(reloadTimer.current);
+        reloadTimer.current = null;
+      }
+    };
+  }, [board]);
+
   useEffect(() => {
     if (board !== '') {
       void loadBoard(board);
     }
   }, [board, loadBoard]);
+
+  useEffect(() => {
+    if (snapshot === null || snapshot.board !== currentBoard.current) {
+      return;
+    }
+    const latest = snapshot.latestEventId ?? 0;
+    if (latest < lastCursor.current) {
+      // The board's event ids moved backwards (reset/restore): resubscribe from the
+      // new tail instead of waiting for events that will never arrive.
+      lastCursor.current = latest;
+      void window.mosbot?.dashboard.kanbanWatch(snapshot.board, latest);
+    } else {
+      lastCursor.current = latest;
+    }
+  }, [snapshot]);
 
   if (status === 'unavailable') {
     return <p className={styles.offline}>{t('workbench.kanban.unavailable')}</p>;
@@ -644,6 +714,9 @@ function KanbanPage(): ReactElement {
         </button>
       </form>
       {writeError ? <p className={styles.state}>{t('workbench.kanban.writeFailed')}</p> : null}
+      {liveState === 'reconnecting' ? (
+        <p className={styles.state}>{t('workbench.kanban.reconnecting')}</p>
+      ) : null}
       {status === 'loading' ? (
         <p className={styles.state}>{t('workbench.loading')}</p>
       ) : status === 'error' ? (
