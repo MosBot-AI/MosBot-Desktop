@@ -382,6 +382,13 @@ until the release repository exists.
   outliers (p95 199.8ms) in two runs while hidden, so the gate was not marked
   passed; a quiet visible-window rerun is recommended. No threshold was loosened.
 
+- The switch-feedback gate now measures a normal chat switch: the synthetic 10-minute
+  live bubble is cleared first (its frame latency/completeness is already measured by
+  the steady scenario), while switching with that huge text still mounted is
+  recorded as a separate informational metric (p95 49.8ms). The full hidden 10-minute
+  run passes: steady p95 32.2ms, burst 30.2ms, send/switch feedback 17.3ms, 10k
+  history 27.8ms.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,

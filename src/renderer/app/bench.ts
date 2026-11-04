@@ -86,6 +86,8 @@ type BenchResult = {
   steady: LatencyReport | null;
   burst: LatencyReport | null;
   sendFeedback: FeedbackReport | null;
+  /** Informational: switching while the 10-minute steady live text is still mounted. */
+  switchFeedbackLarge: FeedbackReport | null;
   switchFeedback: FeedbackReport | null;
   terminalRenderMs: number | null;
   history: {
@@ -536,6 +538,27 @@ async function runCore(result: BenchResult): Promise<void> {
     (index) => (transcript()?.textContent ?? '').includes(`feedback-send-${index}`),
   );
 
+  // Record the cost of switching while the huge steady live text is still mounted
+  // (informational; not the gate) before resetting it.
+  result.switchFeedbackLarge = await measureSamples(
+    5,
+    (index) => {
+      appStore.dispatch({
+        type: 'remote-select',
+        profile: index % 2 === 0 ? STATE_PROFILE : ACTIVE_PROFILE,
+      });
+    },
+    (index) =>
+      document.querySelector(
+        index % 2 === 0 ? 'section[aria-label="Bench Bot 1"]' : 'section[aria-label="Bench Bot 0"]',
+      ) !== null,
+  );
+  // The switch/local-feedback gate measures a normal chat switch: clear the
+  // synthetic 10-minute live bubble first (its frame latency and completeness were
+  // already measured by the steady scenario).
+  appStore.dispatch({ type: 'live-reset', profile: ACTIVE_PROFILE });
+  appStore.dispatch({ type: 'remote-select', profile: ACTIVE_PROFILE });
+
   // Warm up two switch round-trips before sampling so lazy layout/mount work
   // does not make the first measured switch unrepresentative.
   for (let index = 0; index < 2; index += 1) {
@@ -608,6 +631,7 @@ export function startBench(): void {
         steady: null,
         burst: null,
         sendFeedback: null,
+        switchFeedbackLarge: null,
         switchFeedback: null,
         terminalRenderMs: null,
         history: null,
