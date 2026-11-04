@@ -39,7 +39,11 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
   变化时重新拉取历史。
 - 后台审批：独立 Gateway watcher 轮询活跃会话列表，只读附加等待中的 canonical Bot Chat，把其待处理
   审批/澄清汇总为左栏「待确认」计数；窗口未聚焦时为每个请求发一次系统通知，点击恢复窗口并打开
-  对应 Bot。未连接时保持 fixture 演示。
+  对应 Bot。
+- M2 新建流程：连接状态下创建弹层提交真实 fresh profile（`no_skills`/`no_alias`、不继承凭据），
+  通过 `ui_meta['hermes-bots']` CAS 写入所选形状与颜色，创建后选中新 Bot；Dashboard 报告模型未就绪时
+  聊天内显示「完成配置 / 重新检查」并禁用发送。远端名单直接渲染 `ui_meta` 里的显示名与外观，外观写入
+  遇到 revision 冲突会提示重试。未连接时保持 fixture 演示。
 - Gateway WebSocket 客户端（`ws`）：一次性 ticket 握手、`gateway.ready` 首帧、zod 校验的 JSON-RPC 请求响应、类型化服务端事件，以及 ticket 复用/过期拒绝检查。已在测试部署验证：`profiles.list`、`client.capabilities` 与精确 Bot Chat 查询通过；复用与过期 ticket 被拒绝。
 
 ### 变更

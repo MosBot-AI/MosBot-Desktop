@@ -1,4 +1,4 @@
-import type { IpcMain, IpcMainInvokeEvent, WebContents } from 'electron';
+import { shell, type IpcMain, type IpcMainInvokeEvent, type WebContents } from 'electron';
 import { DASHBOARD_CHANNELS } from '../../shared/bridge';
 import {
   protocolError,
@@ -7,6 +7,9 @@ import {
   type DashboardStatus,
   type PreflightResult,
   type ProbeReport,
+  type AppearanceResult,
+  type CreateBotResult,
+  type ModelReadiness,
   type RemoteBot,
   type RemoteChat,
   type Result,
@@ -18,6 +21,10 @@ const MAX_PROVIDER_LENGTH = 64;
 
 function isBoundedString(value: unknown, maxLength: number): value is string {
   return typeof value === 'string' && value.length > 0 && value.length <= maxLength;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 /**
@@ -102,6 +109,106 @@ export function registerDashboardIpc(options: {
   handle<ProbeReport>(DASHBOARD_CHANNELS.probeNewBot, () => service.probeNewBot());
   handle<ProbeReport>(DASHBOARD_CHANNELS.probeKanbanWrite, () => service.probeKanbanWrite());
   handle<ProbeReport>(DASHBOARD_CHANNELS.probeChat, () => service.probeChat());
+  handle<ProbeReport>(DASHBOARD_CHANNELS.probeCreateBot, () => service.probeCreateBot());
+
+  handle<CreateBotResult>(DASHBOARD_CHANNELS.createBot, (input) => {
+    if (!isPlainObject(input) || !isBoundedString(input['name'], 64)) {
+      return { ok: false, error: protocolError('invalid_url', 'A Bot name is required.') };
+    }
+    if (input['description'] !== undefined && !isBoundedString(input['description'], 2000)) {
+      return { ok: false, error: protocolError('invalid_url', 'The description is too long.') };
+    }
+    if (input['shape'] !== undefined && !isBoundedString(input['shape'], 64)) {
+      return { ok: false, error: protocolError('invalid_url', 'The shape is not valid.') };
+    }
+    if (input['color'] !== undefined && !isBoundedString(input['color'], 64)) {
+      return { ok: false, error: protocolError('invalid_url', 'The colour is not valid.') };
+    }
+    return service.createBot({
+      name: input['name'],
+      ...(typeof input['description'] === 'string' ? { description: input['description'] } : {}),
+      ...(typeof input['shape'] === 'string' ? { shape: input['shape'] } : {}),
+      ...(typeof input['color'] === 'string' ? { color: input['color'] } : {}),
+    });
+  });
+
+  handle<AppearanceResult>(
+    DASHBOARD_CHANNELS.setBotAppearance,
+    (profileName, look, expectedRevision) => {
+      if (!isBoundedString(profileName, 128) || !isPlainObject(look)) {
+        return {
+          ok: false,
+          error: protocolError('invalid_url', 'The appearance request is not valid.'),
+        };
+      }
+      const shape = look['shape'];
+      const color = look['color'];
+      const title = look['title'];
+      if (!isBoundedString(shape, 64) || !isBoundedString(color, 64)) {
+        return {
+          ok: false,
+          error: protocolError('invalid_url', 'The appearance request is not valid.'),
+        };
+      }
+      if (title !== undefined && !isBoundedString(title, 64)) {
+        return { ok: false, error: protocolError('invalid_url', 'The title is not valid.') };
+      }
+      if (
+        typeof expectedRevision !== 'number' ||
+        !Number.isInteger(expectedRevision) ||
+        expectedRevision < 0 ||
+        expectedRevision > 1_000_000
+      ) {
+        return { ok: false, error: protocolError('invalid_url', 'The revision is not valid.') };
+      }
+      return service.setBotAppearance(
+        profileName,
+        {
+          shape,
+          color,
+          ...(typeof title === 'string' ? { title } : {}),
+        },
+        expectedRevision,
+      );
+    },
+  );
+
+  handle<{ profile: string; displayName: string }>(
+    DASHBOARD_CHANNELS.renameBot,
+    (profileName, newName) => {
+      if (!isBoundedString(profileName, 128) || !isBoundedString(newName, 64)) {
+        return { ok: false, error: protocolError('invalid_url', 'The new name is not valid.') };
+      }
+      return service.renameBot(profileName, newName);
+    },
+  );
+
+  handle<ModelReadiness>(DASHBOARD_CHANNELS.checkModelReady, (profileName) => {
+    if (!isBoundedString(profileName, 128)) {
+      return { ok: false, error: protocolError('invalid_url', 'A profile name is required.') };
+    }
+    return service.checkModelReady(profileName);
+  });
+
+  handle<void>(DASHBOARD_CHANNELS.openProfileConfig, async () => {
+    const url = service.configUrl();
+    if (!url.ok) {
+      return url;
+    }
+    try {
+      const parsed = new URL(url.data);
+      if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+        return { ok: false, error: protocolError('invalid_url', 'The config URL is not valid.') };
+      }
+      await shell.openExternal(parsed.toString());
+      return { ok: true, data: undefined };
+    } catch {
+      return {
+        ok: false,
+        error: protocolError('internal', 'The config page could not be opened.'),
+      };
+    }
+  });
   handle<ProbeReport>(DASHBOARD_CHANNELS.signOut, () => {
     const result = service.signOut();
     if (result.ok) {

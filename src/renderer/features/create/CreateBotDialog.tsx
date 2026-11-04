@@ -9,7 +9,7 @@ import {
 import { botColorSwatches, normalizeColor } from '../../../shared/color';
 import { BOT_SHAPES, type BotShape } from '../../../shared/domain';
 import { type MessageKey, useMessages } from '../../app/i18n';
-import { MAX_NAME_LENGTH, useAppState, useDispatch } from '../../app/store';
+import { MAX_NAME_LENGTH, isRemoteRoster, useAppState, useDispatch } from '../../app/store';
 import { BotLookFace } from '../bots/BotLookFace';
 import styles from './CreateBotDialog.module.css';
 
@@ -44,6 +44,7 @@ const SWATCHES: readonly string[] = botColorSwatches();
  */
 export function CreateBotDialog(): ReactElement | null {
   const create = useAppState((state) => state.create);
+  const remoteMode = useAppState((state) => isRemoteRoster(state));
   const dispatch = useDispatch();
   const t = useMessages();
 
@@ -54,7 +55,7 @@ export function CreateBotDialog(): ReactElement | null {
 
   const open = create.open;
   const error = create.error;
-  const canSubmit = create.name.trim() !== '';
+  const canSubmit = create.name.trim() !== '' && !create.busy;
   const seed = create.name === '' ? 'new-bot' : create.name;
 
   useEffect(() => {
@@ -100,6 +101,37 @@ export function CreateBotDialog(): ReactElement | null {
   }, [error]);
 
   const close = (): void => {
+    dispatch({ type: 'create-close' });
+  };
+
+  // Connected windows create the profile on the Dashboard (fresh credentials),
+  // then write its appearance and select it.
+  const submitRemote = async (): Promise<void> => {
+    const dashboard = window.mosbot?.dashboard;
+    const name = create.name.trim();
+    if (dashboard === undefined || name === '') {
+      return;
+    }
+    dispatch({ type: 'create-busy', busy: true });
+    const result = await dashboard.createBot({
+      name,
+      shape: create.shape,
+      color: create.color,
+    });
+    if (!result.ok) {
+      const duplicate = /exist|already/i.test(result.error.message);
+      dispatch({
+        type: 'create-remote-error',
+        message: duplicate ? t('create.error.duplicate') : t('create.error.remote'),
+      });
+      return;
+    }
+    dispatch({ type: 'remote-upsert-bot', bot: result.data.bot });
+    dispatch({
+      type: 'remote-model-ready',
+      profile: result.data.bot.profileName,
+      ready: result.data.modelReady,
+    });
     dispatch({ type: 'create-close' });
   };
 
@@ -179,6 +211,10 @@ export function CreateBotDialog(): ReactElement | null {
           noValidate
           onSubmit={(event) => {
             event.preventDefault();
+            if (remoteMode) {
+              void submitRemote();
+              return;
+            }
             dispatch({ type: 'create-submit' });
           }}
         >
@@ -216,6 +252,11 @@ export function CreateBotDialog(): ReactElement | null {
             {error === null ? null : (
               <p id={ERROR_ID} className={styles.error} role="alert">
                 {t(ERROR_KEYS[error])}
+              </p>
+            )}
+            {create.remoteError === null ? null : (
+              <p className={styles.error} role="alert">
+                {create.remoteError}
               </p>
             )}
           </div>
@@ -268,7 +309,7 @@ export function CreateBotDialog(): ReactElement | null {
               {t('common.cancel')}
             </button>
             <button type="submit" className={styles.submitButton} disabled={!canSubmit}>
-              {t('create.submit')}
+              {create.busy ? t('create.creating') : t('create.submit')}
             </button>
           </footer>
         </form>

@@ -9,6 +9,13 @@ import {
 } from '../../shared/protocol';
 import type { AuthManager } from './auth';
 import { createChatManager, type ChatManager } from './chat';
+import {
+  createRemoteBot,
+  readModelReadiness,
+  readRosterBot,
+  renameRemoteBot,
+  setRemoteAppearance,
+} from './profiles';
 import { connectGateway, type RpcClient } from './rpc';
 import { emptySchema } from './schemas';
 import type { DashboardChatEvent } from '../../shared/protocol';
@@ -963,6 +970,182 @@ export async function runChatProbe(deps: WriteProbeDeps): Promise<Result<ProbeRe
           '清理聊天探针 profile',
           deleted.ok ? 'pass' : 'fail',
           deleted.ok ? 'deleted' : errorDetail(deleted.error),
+        ),
+      );
+    }
+  }
+
+  return { ok: true, data: { generatedAt: now(), target: target.displayUrl, rows } };
+}
+
+/**
+ * M2 probe: create a marked profile with appearance, read it back, exercise the
+ * CAS appearance write and a stale-revision conflict, check model readiness and
+ * rename it, then delete it. Every write targets this run's marker object only.
+ */
+export async function runCreateBotProbe(deps: WriteProbeDeps): Promise<Result<ProbeReport>> {
+  const target = deps.auth.target();
+  if (target === null || !deps.auth.current().connected) {
+    return {
+      ok: false,
+      error: protocolError('unauthorized', 'Sign in to the Dashboard before running this probe.'),
+    };
+  }
+  const now = deps.now ?? (() => Date.now());
+  const marker = markerFor('mosbot-m2-probe', now());
+  const rest = createRest(deps, target);
+  const profileDeps = {
+    auth: deps.auth,
+    fetchImpl: deps.fetchImpl,
+    ...(deps.requestTimeoutMs === undefined ? {} : { requestTimeoutMs: deps.requestTimeoutMs }),
+  };
+  const rows: CapabilityRow[] = [];
+  let created = false;
+
+  try {
+    // Remove a marker profile left behind by an interrupted earlier run.
+    const existing = await rest.get('/api/profiles');
+    const existingRows = asArray(asRecord(dataOf(existing))?.['profiles']) ?? [];
+    for (const entry of existingRows) {
+      const name = stringField(asRecord(entry), 'name') ?? '';
+      const match = /^mosbot-m2-probe-(\d{14})(-r)?$/.exec(name);
+      if (match === null) {
+        continue;
+      }
+      const stamp = match[1] ?? '';
+      const parsed = Date.parse(
+        `${stamp.slice(0, 4)}-${stamp.slice(4, 6)}-${stamp.slice(6, 8)}T${stamp.slice(8, 10)}:${stamp.slice(10, 12)}:${stamp.slice(12, 14)}`,
+      );
+      if (Number.isFinite(parsed) && now() - parsed > 2 * 60_000) {
+        await rest.send('DELETE', `/api/profiles/${encodeURIComponent(name)}`);
+      }
+    }
+
+    const result = await createRemoteBot(profileDeps, {
+      name: marker,
+      description: 'MosBot M2 probe; safe to delete',
+      shape: 'circle',
+      color: '#4f86d6',
+    });
+    created = result.ok;
+    rows.push(
+      row(
+        'bot_create',
+        '新建 Bot（fresh profile + 外观）',
+        result.ok ? 'pass' : 'fail',
+        result.ok
+          ? `name=${marker} · display=${result.data.bot.displayName} · shape=${result.data.bot.shape ?? '(default)'} · color=${result.data.bot.color || '(default)'} · revision=${result.data.bot.metaRevision} · modelReady=${String(result.data.modelReady)} · appearanceApplied=${String(result.data.appearanceApplied)}`
+          : errorDetail(result.error),
+      ),
+    );
+    if (!result.ok) {
+      return { ok: true, data: { generatedAt: now(), target: target.displayUrl, rows } };
+    }
+
+    const createdBot = result.data.bot;
+    const appearance = await setRemoteAppearance(
+      profileDeps,
+      marker,
+      { shape: 'pill', color: '#e05c5c', title: marker },
+      createdBot.metaRevision,
+    );
+    // Roster reads can lag the profile.yaml write by a poll cycle; retry briefly.
+    let appearanceBot = null;
+    let readDebug = 'no-read';
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const read = await readRosterBot(profileDeps, marker);
+      readDebug = read.ok
+        ? `ok-${read.data === null ? 'missing' : 'found'}`
+        : `err-${read.error.code}`;
+      if (read.ok && read.data !== null) {
+        appearanceBot = read.data;
+        if (appearanceBot.shape === 'pill' && appearanceBot.color === '#e05c5c') {
+          break;
+        }
+      }
+      await sleep(300);
+    }
+    rows.push(
+      row(
+        'bot_appearance',
+        '外观写入（CAS）与回读',
+        appearance.ok &&
+          appearanceBot !== null &&
+          appearanceBot.shape === 'pill' &&
+          appearanceBot.color === '#e05c5c'
+          ? 'pass'
+          : 'fail',
+        appearance.ok
+          ? `revision=${appearance.data.revision} · readback shape=${appearanceBot?.shape ?? '—'} · color=${appearanceBot?.color || '—'} · read=${readDebug}`
+          : errorDetail(appearance.error),
+      ),
+    );
+
+    const stale = await setRemoteAppearance(
+      profileDeps,
+      marker,
+      { shape: 'cloud', color: '#5cb85c' },
+      Math.max(0, createdBot.metaRevision),
+    );
+    rows.push(
+      row(
+        'bot_appearance_conflict',
+        '过期 revision 冲突处理',
+        !stale.ok && stale.error.code === 'conflict' ? 'pass' : 'fail',
+        stale.ok
+          ? 'stale write unexpectedly accepted'
+          : `${stale.error.code} · ${errorDetail(stale.error)}`,
+      ),
+    );
+
+    const model = await readModelReadiness(profileDeps, marker);
+    rows.push(
+      row(
+        'bot_model_readiness',
+        '模型/授权状态回读',
+        model.ok ? 'pass' : 'fail',
+        model.ok
+          ? `ready=${String(model.data.ready)} · provider=${model.data.provider || '(none)'} · model=${model.data.model || '(none)'}`
+          : errorDetail(model.error),
+      ),
+    );
+
+    const newName = `${marker}-r`;
+    const renamed = await renameRemoteBot(profileDeps, marker, newName);
+    const rosterAfterRename = renamed.ok ? await readRosterBot(profileDeps, newName) : null;
+    rows.push(
+      row(
+        'bot_rename',
+        '改名并回读',
+        renamed.ok && rosterAfterRename !== null && rosterAfterRename.ok ? 'pass' : 'fail',
+        renamed.ok
+          ? `profile=${renamed.data.profile} · roster=${rosterAfterRename?.ok === true && rosterAfterRename.data !== null ? 'found' : 'missing'}`
+          : errorDetail(renamed.error),
+      ),
+    );
+  } finally {
+    if (created) {
+      const renamedName = `${marker}-r`;
+      const deleteRenamed = await rest.send(
+        'DELETE',
+        `/api/profiles/${encodeURIComponent(renamedName)}`,
+      );
+      const deleteOriginal = await rest.send(
+        'DELETE',
+        `/api/profiles/${encodeURIComponent(marker)}`,
+      );
+      const profiles = await rest.get('/api/profiles');
+      const remaining = asArray(asRecord(dataOf(profiles))?.['profiles']) ?? [];
+      const leftovers = remaining
+        .map((entry) => stringField(asRecord(entry), 'name') ?? '')
+        .filter((name) => name === marker || name === renamedName);
+      const gone = deleteRenamed.ok || deleteOriginal.ok;
+      rows.push(
+        row(
+          'cleanup',
+          '清理 M2 探针 profile',
+          gone && leftovers.length === 0 ? 'pass' : 'fail',
+          `deleted_renamed=${String(deleteRenamed.ok)} · deleted_original=${String(deleteOriginal.ok)} · leftovers=${leftovers.length}`,
         ),
       );
     }

@@ -23,6 +23,7 @@ export type ProtocolErrorCode =
   | 'auth_unavailable'
   | 'provider_required'
   | 'vault_unavailable'
+  | 'conflict'
   | 'internal';
 
 export interface ProtocolError {
@@ -225,6 +226,11 @@ export interface RemoteBot {
   readonly profileName: string;
   readonly displayName: string;
   readonly description: string;
+  /** Appearance from `ui_meta['hermes-bots']`; null when the Bot uses the MosBot default look. */
+  readonly shape: string | null;
+  readonly color: string;
+  /** `ui_meta_revisions['hermes-bots']` for compare-and-swap writes. */
+  readonly metaRevision: number;
   readonly model: string;
   readonly provider: string;
   readonly isDefault: boolean;
@@ -233,6 +239,36 @@ export interface RemoteBot {
   readonly canonicalSessionId: string | null;
   readonly lastActiveAt: number | null;
   readonly messageCount: number;
+}
+
+export interface CreateBotInput {
+  readonly name: string;
+  readonly description?: string;
+  readonly shape?: string;
+  readonly color?: string;
+}
+
+export interface CreateBotResult {
+  readonly bot: RemoteBot;
+  readonly modelReady: boolean;
+  readonly configUrl: string;
+  readonly appearanceApplied: boolean;
+}
+
+export interface AppearanceInput {
+  readonly shape: string;
+  readonly color: string;
+  readonly title?: string;
+}
+
+export interface AppearanceResult {
+  readonly revision: number;
+}
+
+export interface ModelReadiness {
+  readonly ready: boolean;
+  readonly provider: string;
+  readonly model: string;
 }
 
 export interface RemoteMessage {

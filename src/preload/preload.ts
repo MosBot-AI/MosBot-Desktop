@@ -6,7 +6,12 @@ import {
   type MosBotBridge,
 } from '../shared/bridge';
 import type {
+  AppearanceInput,
+  AppearanceResult,
   ChatOpenResult,
+  CreateBotInput,
+  CreateBotResult,
+  ModelReadiness,
   ConnectionSnapshot,
   DashboardChatEvent,
   DashboardPendingEvent,
@@ -63,6 +68,39 @@ const bridge: Omit<MosBotBridge, 'openExternal' | 'local'> = {
       return ipcRenderer.invoke(DASHBOARD_CHANNELS.listBots) as Promise<
         Result<readonly RemoteBot[]>
       >;
+    },
+    createBot(input: CreateBotInput): Promise<Result<CreateBotResult>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.createBot, input) as Promise<
+        Result<CreateBotResult>
+      >;
+    },
+    setBotAppearance(
+      profileName: string,
+      look: AppearanceInput,
+      expectedRevision: number,
+    ): Promise<Result<AppearanceResult>> {
+      return ipcRenderer.invoke(
+        DASHBOARD_CHANNELS.setBotAppearance,
+        profileName,
+        look,
+        expectedRevision,
+      ) as Promise<Result<AppearanceResult>>;
+    },
+    renameBot(
+      profileName: string,
+      newName: string,
+    ): Promise<Result<{ profile: string; displayName: string }>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.renameBot, profileName, newName) as Promise<
+        Result<{ profile: string; displayName: string }>
+      >;
+    },
+    checkModelReady(profileName: string): Promise<Result<ModelReadiness>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.checkModelReady, profileName) as Promise<
+        Result<ModelReadiness>
+      >;
+    },
+    openProfileConfig(): Promise<Result<void>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.openProfileConfig) as Promise<Result<void>>;
     },
     loadOlderChat(
       profileName: string,
@@ -136,6 +174,9 @@ const bridge: Omit<MosBotBridge, 'openExternal' | 'local'> = {
     },
     probeChat(): Promise<Result<ProbeReport>> {
       return ipcRenderer.invoke(DASHBOARD_CHANNELS.probeChat) as Promise<Result<ProbeReport>>;
+    },
+    probeCreateBot(): Promise<Result<ProbeReport>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.probeCreateBot) as Promise<Result<ProbeReport>>;
     },
     signOut(): Promise<Result<ProbeReport>> {
       return ipcRenderer.invoke(DASHBOARD_CHANNELS.signOut) as Promise<Result<ProbeReport>>;

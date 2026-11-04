@@ -70,6 +70,8 @@
   （`session.events.since` + seq 去重 + open_requests 重投）已实现，真实网络断开场景待构造。
   未打开 Bot 的待处理请求由后台 watcher 轮询 `session.active_list` 发现（只读附加 + `open_requests`），
   应用内计数与系统通知已实现；真实审批触发与通知展示待自然条件复验。
+- M2 新建/外观后端已接入真实服务并验证：fresh `profiles.create`、`ui_meta['hermes-bots']` 外观 CAS、
+  过期 revision 冲突、改名、`/api/model/info` 就绪回读；创建弹层真实提交与模型引导已接入。
   证据：`docs/evidence/m1-roster-and-history.md`、`docs/evidence/m1-chat-streaming.md`。
 - 未连接时仍使用 fixture，M0a 演示不受影响。
 

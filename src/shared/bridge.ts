@@ -1,5 +1,10 @@
 import type {
+  AppearanceInput,
+  AppearanceResult,
   ChatOpenResult,
+  CreateBotInput,
+  CreateBotResult,
+  ModelReadiness,
   LocalState,
   ConnectionSnapshot,
   DashboardChatEvent,
@@ -56,6 +61,8 @@ export interface MosBotDashboardBridge {
   probeKanbanWrite(): Promise<Result<ProbeReport>>;
   /** M1 chat probe: dedicated profile, real send/stream/stop, cleanup. */
   probeChat(): Promise<Result<ProbeReport>>;
+  /** M2 probe: dedicated profile create/appearance/rename/cleanup. */
+  probeCreateBot(): Promise<Result<ProbeReport>>;
   /** Clears local credentials and reports what survived. */
   signOut(): Promise<Result<ProbeReport>>;
   status(): Promise<Result<DashboardStatus>>;
@@ -69,6 +76,23 @@ export interface MosBotDashboardBridge {
     storedSessionId: string,
     offset: number,
   ): Promise<Result<RemoteChat>>;
+  /** M2: create a fresh Bot, write its appearance and read readiness back. */
+  createBot(input: CreateBotInput): Promise<Result<CreateBotResult>>;
+  /** CAS-protected appearance write. */
+  setBotAppearance(
+    profileName: string,
+    look: AppearanceInput,
+    expectedRevision: number,
+  ): Promise<Result<AppearanceResult>>;
+  /** Renames a profile (REST PATCH). */
+  renameBot(
+    profileName: string,
+    newName: string,
+  ): Promise<Result<{ profile: string; displayName: string }>>;
+  /** Model/authorisation readiness for one profile. */
+  checkModelReady(profileName: string): Promise<Result<ModelReadiness>>;
+  /** Opens the Dashboard page where a Bot's model is configured. */
+  openProfileConfig(): Promise<Result<void>>;
   /** Resumes (or creates) the live Bot Chat session so prompts can be sent. */
   chatOpen(profileName: string, storedSessionId: string | null): Promise<Result<ChatOpenResult>>;
   /** Submits one prompt to the open session. */
@@ -106,11 +130,17 @@ export const DASHBOARD_CHANNELS = {
   probeNewBot: 'mosbot:dashboard:probeNewBot',
   probeKanbanWrite: 'mosbot:dashboard:probeKanbanWrite',
   probeChat: 'mosbot:dashboard:probeChat',
+  probeCreateBot: 'mosbot:dashboard:probeCreateBot',
   signOut: 'mosbot:dashboard:signOut',
   status: 'mosbot:dashboard:status',
   listBots: 'mosbot:dashboard:listBots',
   openChat: 'mosbot:dashboard:openChat',
   loadOlderChat: 'mosbot:dashboard:loadOlderChat',
+  createBot: 'mosbot:dashboard:createBot',
+  setBotAppearance: 'mosbot:dashboard:setBotAppearance',
+  renameBot: 'mosbot:dashboard:renameBot',
+  checkModelReady: 'mosbot:dashboard:checkModelReady',
+  openProfileConfig: 'mosbot:dashboard:openProfileConfig',
   chatOpen: 'mosbot:dashboard:chatOpen',
   chatSend: 'mosbot:dashboard:chatSend',
   chatStop: 'mosbot:dashboard:chatStop',

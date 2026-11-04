@@ -21,6 +21,7 @@ const ERROR_KEYS: Record<ProtocolErrorCode, MessageKey> = {
   auth_unavailable: 'connection.error.auth_unavailable',
   provider_required: 'connection.error.provider_required',
   vault_unavailable: 'connection.error.vault_unavailable',
+  conflict: 'connection.error.conflict',
   internal: 'connection.error.internal',
 };
 

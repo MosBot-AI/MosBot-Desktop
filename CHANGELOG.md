@@ -84,8 +84,14 @@ until the release repository exists.
   attaches read-only to waiting canonical Bot Chats, surfaces their pending
   approval/clarify requests as an attention count, and raises one system
   notification per request when the window is not focused. Clicking the
-  notification restores the window and opens that Bot. Fixture windows keep the
-  offline demo.
+  notification restores the window and opens that Bot.
+- M2 create flow: the create dialog submits a real fresh profile
+  (`no_skills`/`no_alias`, no inherited credentials), writes the chosen shape and
+  colour through the `ui_meta['hermes-bots']` compare-and-swap, selects the new Bot
+  and shows a "finish setup / check again" banner while the Dashboard reports the
+  model as not ready. Remote rows now render the appearance and title stored in
+  `ui_meta`, and the appearance write reports revision conflicts. Fixture windows
+  keep the offline demo.
 - Gateway WebSocket client (`ws`): one-time ticket handshake, `gateway.ready` first
   frame, JSON-RPC request/response with zod validation, typed server events, and
   ticket replay/expiry rejection checks. Verified against the test deployment:

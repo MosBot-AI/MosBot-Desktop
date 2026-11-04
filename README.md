@@ -18,7 +18,9 @@ gateway connection, older history pages load in place, and a dropped socket reco
 missed events and re-delivers pending requests. Drafts, the selected Bot, the
 details column and language/appearance preferences survive a restart. A background
 watcher finds approvals/questions waiting in Bot Chats you have not opened, shows
-an attention count and sends a system notification (clicking it opens that Bot). Without a connection the window
+an attention count and sends a system notification (clicking it opens that Bot). Creating a Bot in a connected window now
+runs the real fresh-profile flow (name, shape, colour), selects it and guides model
+setup when the Dashboard reports it is not ready yet. Without a connection the window
 keeps using fixtures. No signed installer or upgrade path
 exists yet. See
 [`docs/evidence/m0a-design-slice.md`](docs/evidence/m0a-design-slice.md) and

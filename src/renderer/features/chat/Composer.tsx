@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, type ReactElement } from 'react';
 import type { BotProfile } from '../../../shared/domain';
 import { useMessages } from '../../app/i18n';
-import { isRemoteRoster, useAppState, useDispatch } from '../../app/store';
+import { isRemoteRoster, selectModelReady, useAppState, useDispatch } from '../../app/store';
 import { IconPaperclip, IconSend, IconStop } from '../../components/icons';
 import styles from './ChatView.module.css';
 
@@ -23,6 +23,7 @@ export function Composer({ bot }: ComposerProps): ReactElement {
   const remoteMode = useAppState((state) => isRemoteRoster(state));
   const livePhase = useAppState((state) => state.live.phase);
   const liveConnection = useAppState((state) => state.live.connection);
+  const modelReady = useAppState(selectModelReady);
   const fixtureReplying = useAppState(
     (state) => state.pendingReply?.botId === bot.id || bot.presence === 'replying',
   );
@@ -72,7 +73,7 @@ export function Composer({ bot }: ComposerProps): ReactElement {
   };
 
   const placeholder = t('chat.composer.placeholder', { name: bot.name });
-  const disabled = remoteMode && liveConnection === 'disconnected';
+  const disabled = remoteMode && (liveConnection === 'disconnected' || modelReady === false);
 
   return (
     <div className={styles.composerWrap}>

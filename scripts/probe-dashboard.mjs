@@ -24,6 +24,7 @@ const WS_ONLY = MODE === 'ws';
 const WORKBENCH_ONLY = MODE === 'workbench';
 const ROSTER_ONLY = MODE === 'roster';
 const CHAT_ONLY = MODE === 'chat';
+const CREATEBOT_ONLY = MODE === 'createbot';
 const NEWBOT_ONLY = MODE === 'newbot';
 const KANBAN_ONLY = MODE === 'kanban';
 const WRITES_ONLY = MODE === 'writes';
@@ -38,7 +39,8 @@ const RUN_AUTH_PROBE =
   !KANBAN_ONLY &&
   !WRITES_ONLY &&
   !ROSTER_ONLY &&
-  !CHAT_ONLY;
+  !CHAT_ONLY &&
+  !CREATEBOT_ONLY;
 const SIGN_OUT = process.env.MOSBOT_PROBE_SIGN_OUT === '1';
 const APP = path.resolve(
   'out',
@@ -343,6 +345,29 @@ async function main() {
       `${JSON.stringify({ generatedAt: new Date().toISOString(), target: URL_FROM_ENV, rows: report.data.rows }, null, 2)}\n`,
     );
     console.log(`\n聊天报告已写入 ${reportPath}`);
+    await application.close();
+    return;
+  }
+
+  if (CREATEBOT_ONLY) {
+    const report = await page.evaluate(() => window.mosbot.dashboard.probeCreateBot());
+    if (!report.ok) {
+      console.error(`\nCreate-Bot probe failed: [${report.error.code}] ${report.error.message}`);
+      await application.close();
+      process.exitCode = 11;
+      return;
+    }
+    printRows('M2 · 新建 / 外观 / 改名（专用 profile，自动清理）', report.data.rows);
+    mkdirSync(OUT_DIR, { recursive: true });
+    const reportPath = path.join(
+      OUT_DIR,
+      `dashboard-createbot-${new Date().toISOString().replace(/[:.]/g, '-')}.json`,
+    );
+    writeFileSync(
+      reportPath,
+      `${JSON.stringify({ generatedAt: new Date().toISOString(), target: URL_FROM_ENV, rows: report.data.rows }, null, 2)}\n`,
+    );
+    console.log(`\nM2 报告已写入 ${reportPath}`);
     await application.close();
     return;
   }

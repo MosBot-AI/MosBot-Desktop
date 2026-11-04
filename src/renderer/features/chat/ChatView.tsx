@@ -3,6 +3,7 @@ import { useMessages } from '../../app/i18n';
 import {
   isRemoteRoster,
   selectChatMessages,
+  selectModelReady,
   selectSelectedBot,
   useAppState,
   useDispatch,
@@ -34,6 +35,7 @@ export function ChatView(): ReactElement {
   const livePhase = state.live.phase;
   const liveError = state.live.error;
   const liveTextLength = state.live.botText.length;
+  const modelReady = selectModelReady(state);
   const timelineRef = useRef<HTMLDivElement | null>(null);
   const lastBotRef = useRef(state.selectedBotId);
   const lastCountRef = useRef(messages.length);
@@ -127,6 +129,43 @@ export function ChatView(): ReactElement {
               ? t('chat.connection.reconnecting')
               : t('chat.connection.disconnected')}
         </p>
+      ) : null}
+
+      {remoteMode && modelReady === false ? (
+        <div className={styles.modelBanner} role="status">
+          <span className={styles.modelBannerText}>{t('chat.modelNotReady')}</span>
+          <button
+            type="button"
+            className={styles.modelBannerAction}
+            onClick={() => {
+              void window.mosbot?.dashboard.openProfileConfig();
+            }}
+          >
+            {t('chat.configureModel')}
+          </button>
+          <button
+            type="button"
+            className={styles.modelBannerAction}
+            onClick={() => {
+              const dashboard = window.mosbot?.dashboard;
+              const profile = state.remote.selectedProfile;
+              if (dashboard === undefined || profile === null) {
+                return;
+              }
+              void dashboard.checkModelReady(profile).then((result) => {
+                if (result.ok) {
+                  dispatch({
+                    type: 'remote-model-ready',
+                    profile,
+                    ready: result.data.ready,
+                  });
+                }
+              });
+            }}
+          >
+            {t('chat.recheckModel')}
+          </button>
+        </div>
       ) : null}
 
       <div

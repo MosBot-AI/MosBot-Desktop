@@ -286,6 +286,9 @@ describe('remote roster', () => {
       profileName: 'default',
       displayName: 'Default',
       description: 'Main profile',
+      shape: 'circle',
+      color: '#4f86d6',
+      metaRevision: 2,
       model: 'gpt-6-luna-900k',
       provider: 'openai-codex',
       isDefault: true,
@@ -298,6 +301,9 @@ describe('remote roster', () => {
       profileName: 'writer',
       displayName: 'Writer',
       description: '',
+      shape: null,
+      color: '',
+      metaRevision: 0,
       model: '',
       provider: '',
       isDefault: false,
@@ -340,6 +346,41 @@ describe('remote roster', () => {
     const reset = reduceAppState(withChat, { type: 'remote-reset' });
     expect(isRemoteRoster(reset)).toBe(false);
     expect(selectChatMessages(reset, 'bot-project').length).toBeGreaterThan(0);
+  });
+
+  it('tracks remote create state and model readiness', () => {
+    let state = reduceAppState(build(), { type: 'remote-ready', bots: [...bots] });
+    state = reduceAppState(state, { type: 'create-busy', busy: true });
+    expect(state.create.busy).toBe(true);
+    state = reduceAppState(state, { type: 'create-remote-error', message: 'nope' });
+    expect(state.create.busy).toBe(false);
+    expect(state.create.remoteError).toBe('nope');
+    state = reduceAppState(state, {
+      type: 'remote-upsert-bot',
+      bot: {
+        profileName: 'new-bot',
+        displayName: 'New Bot',
+        description: '',
+        shape: 'circle',
+        color: '#4f86d6',
+        metaRevision: 1,
+        model: '',
+        provider: '',
+        isDefault: false,
+        summary: '',
+        canonicalSessionId: null,
+        lastActiveAt: null,
+        messageCount: 0,
+      },
+    });
+    expect(state.remote.bots.some((bot) => bot.profileName === 'new-bot')).toBe(true);
+    expect(state.remote.selectedProfile).toBe('new-bot');
+    state = reduceAppState(state, {
+      type: 'remote-model-ready',
+      profile: 'new-bot',
+      ready: false,
+    });
+    expect(state.remote.modelReady['new-bot']).toBe(false);
   });
 
   it('tracks pending requests discovered for other Bots', () => {

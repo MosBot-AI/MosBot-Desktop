@@ -48,6 +48,10 @@ export interface CreateState {
   readonly shape: BotShape;
   readonly color: string;
   readonly error: CreateError;
+  /** Real-backend create in flight. */
+  readonly busy: boolean;
+  /** Server-side failure message for the remote path (already user-readable). */
+  readonly remoteError: string | null;
 }
 
 export type ConnectionStage =
@@ -69,6 +73,8 @@ export interface RemoteState {
   readonly selectedProfile: string | null;
   readonly error: ProtocolError | null;
   readonly loadingOlder: boolean;
+  /** Per-profile model readiness; null while unknown. */
+  readonly modelReady: Readonly<Record<string, boolean | null>>;
 }
 
 export interface LiveRequest {
@@ -166,6 +172,10 @@ export type AppAction =
   | { type: 'create-shape'; shape: BotShape }
   | { type: 'create-color'; color: string }
   | { type: 'create-submit' }
+  | { type: 'create-busy'; busy: boolean }
+  | { type: 'create-remote-error'; message: string | null }
+  | { type: 'remote-upsert-bot'; bot: RemoteBot }
+  | { type: 'remote-model-ready'; profile: string; ready: boolean | null }
   | { type: 'set-draft'; botId: string; text: string }
   | { type: 'send-message'; botId: string; text: string; at: number }
   | { type: 'deliver-reply'; botId: string; text: string; at: number }
@@ -376,6 +386,8 @@ export function createInitialState(seed: FixtureSeed, bootstrap: Bootstrap): App
       shape: DEFAULT_CREATE_SHAPE,
       color: DEFAULT_CREATE_COLOR,
       error: null,
+      busy: false,
+      remoteError: null,
     },
     theme: 'system',
     resolvedTheme: bootstrap.resolvedTheme,
@@ -403,6 +415,7 @@ export function createInitialState(seed: FixtureSeed, bootstrap: Bootstrap): App
       selectedProfile: null,
       error: null,
       loadingOlder: false,
+      modelReady: {},
     },
     live: {
       profile: null,
@@ -507,6 +520,8 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
           shape: DEFAULT_CREATE_SHAPE,
           color: DEFAULT_CREATE_COLOR,
           error: null,
+          busy: false,
+          remoteError: null,
         },
       };
     case 'create-close':
@@ -518,6 +533,8 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
           shape: DEFAULT_CREATE_SHAPE,
           color: DEFAULT_CREATE_COLOR,
           error: null,
+          busy: false,
+          remoteError: null,
         },
       };
     case 'create-name':
@@ -574,6 +591,8 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
           shape: DEFAULT_CREATE_SHAPE,
           color: DEFAULT_CREATE_COLOR,
           error: null,
+          busy: false,
+          remoteError: null,
         },
       };
     }
@@ -851,6 +870,7 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
           selectedProfile: null,
           error: null,
           loadingOlder: false,
+          modelReady: {},
         },
       };
     case 'live-reset':
@@ -1071,6 +1091,36 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
       delete items[action.requestId];
       return { ...state, pending: { items } };
     }
+    case 'create-busy':
+      return { ...state, create: { ...state.create, busy: action.busy } };
+    case 'create-remote-error':
+      return { ...state, create: { ...state.create, remoteError: action.message, busy: false } };
+    case 'remote-upsert-bot': {
+      const exists = state.remote.bots.some((bot) => bot.profileName === action.bot.profileName);
+      return {
+        ...state,
+        remote: {
+          ...state.remote,
+          status: 'ready',
+          bots: exists
+            ? state.remote.bots.map((bot) =>
+                bot.profileName === action.bot.profileName ? action.bot : bot,
+              )
+            : [...state.remote.bots, action.bot],
+          selectedProfile: action.bot.profileName,
+          error: null,
+        },
+        selectedBotId: action.bot.profileName,
+      };
+    }
+    case 'remote-model-ready':
+      return {
+        ...state,
+        remote: {
+          ...state.remote,
+          modelReady: { ...state.remote.modelReady, [action.profile]: action.ready },
+        },
+      };
     case 'set-footer-menu':
       return state.footerMenuOpen === action.open && !state.pinnedMenuOpen
         ? state
@@ -1212,8 +1262,11 @@ export function synthesizeRemoteBot(bot: RemoteBot, now: number): BotProfile {
   return {
     id: bot.profileName,
     name: bot.displayName,
-    shape: 'blobatar',
-    color: profileColor(bot.displayName) || normalizeColor('hsl(210 68% 58%)', '#4f86d6'),
+    shape: (bot.shape as BotShape | null) ?? 'blobatar',
+    color:
+      bot.color !== ''
+        ? bot.color
+        : profileColor(bot.displayName) || normalizeColor('hsl(210 68% 58%)', '#4f86d6'),
     useMosbotDefault: bot.isDefault,
     sectionId: REMOTE_SECTION_ID,
     pinnedIndex: null,
@@ -1488,6 +1541,15 @@ export function selectPendingBotId(state: AppState): string | null {
     }
   }
   return null;
+}
+
+/** Model readiness of the selected Bot: null unknown, false needs configuration. */
+export function selectModelReady(state: AppState): boolean | null {
+  const profile = state.remote.selectedProfile;
+  if (profile === null) {
+    return null;
+  }
+  return state.remote.modelReady[profile] ?? null;
 }
 
 /** Pending approvals/clarifies: remote discovery when connected, fixtures otherwise. */

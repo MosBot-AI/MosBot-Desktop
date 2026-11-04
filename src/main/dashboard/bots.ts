@@ -73,6 +73,25 @@ export function extractMessageText(content: unknown): string {
   return texts.join('\n').trim();
 }
 
+function uiMetaOf(row: Record<string, unknown>): {
+  title: string;
+  shape: string | null;
+  color: string;
+  revision: number;
+} {
+  const uiMeta = asRecord(row['ui_meta']);
+  const botsMeta = asRecord(uiMeta?.['hermes-bots']);
+  const revisions = asRecord(row['ui_meta_revisions']);
+  const revision = revisions?.['hermes-bots'];
+  return {
+    title: str(botsMeta?.['title']),
+    shape: str(botsMeta?.['shape']) === '' ? null : str(botsMeta?.['shape']),
+    color: str(botsMeta?.['color']),
+    revision:
+      typeof revision === 'number' && Number.isInteger(revision) && revision >= 0 ? revision : 0,
+  };
+}
+
 /** Maps one `profiles.list` row; unknown/older payloads degrade to a readable row. */
 export function mapProfileRow(value: unknown): RemoteBot | null {
   const row = asRecord(value);
@@ -80,6 +99,7 @@ export function mapProfileRow(value: unknown): RemoteBot | null {
   if (row === null || profileName === '') {
     return null;
   }
+  const appearance = uiMetaOf(row);
   const canonical = asRecord(row['canonical_session']);
   const lastSession = asRecord(row['last_session']);
   const workerSession = asRecord(row['worker_session']);
@@ -90,11 +110,14 @@ export function mapProfileRow(value: unknown): RemoteBot | null {
     secondsToMillis(lastSession?.['last_active']),
     secondsToMillis(workerSession?.['last_active']),
   ].filter((value): value is number => value !== null);
-  const displayName = str(row['display_name']) || profileName;
+  const displayName = appearance.title || str(row['display_name']) || profileName;
   return {
     profileName,
     displayName,
     description: str(row['description']),
+    shape: appearance.shape,
+    color: appearance.color,
+    metaRevision: appearance.revision,
     model: str(row['model']),
     provider: str(row['provider']),
     isDefault: row['is_default'] === true,

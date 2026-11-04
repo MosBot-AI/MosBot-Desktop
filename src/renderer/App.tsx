@@ -282,6 +282,39 @@ export function App(): ReactElement {
     });
   }, [connected, selectedProfile, remoteChat, liveProfile, dispatch]);
 
+  // Model readiness follows the selected Bot; re-check when the window regains focus
+  // (the person may have finished configuring it in the browser).
+  const remoteStatus = useAppState((state) => state.remote.status);
+  useEffect(() => {
+    if (remoteStatus !== 'ready' || selectedProfile === null) {
+      return;
+    }
+    const dashboard = window.mosbot?.dashboard;
+    if (dashboard === undefined) {
+      return;
+    }
+    let cancelled = false;
+    const check = async (): Promise<void> => {
+      const result = await dashboard.checkModelReady(selectedProfile);
+      if (!cancelled && result.ok) {
+        dispatch({
+          type: 'remote-model-ready',
+          profile: selectedProfile,
+          ready: result.data.ready,
+        });
+      }
+    };
+    void check();
+    const onFocus = (): void => {
+      void check();
+    };
+    window.addEventListener('focus', onFocus);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [selectedProfile, remoteStatus, dispatch]);
+
   // A replay gap means the live transcript is stale: refetch the page and reset it.
   const staleReason = useAppState((state) => state.live.staleReason);
   useEffect(() => {

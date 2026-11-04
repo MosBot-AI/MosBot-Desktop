@@ -8,11 +8,23 @@ import type {
   RemoteBot,
   RemoteChat,
   Result,
+  AppearanceInput,
+  AppearanceResult,
+  CreateBotInput,
+  CreateBotResult,
+  ModelReadiness,
 } from '../../shared/protocol';
 import { parseDashboardTarget, protocolError } from '../../shared/protocol';
 import type { AuthManager } from './auth';
 import { listRemoteBots, loadOlderRemoteChat, openRemoteChat } from './bots';
-import { runChatProbe } from './probe-writes';
+import {
+  createRemoteBot,
+  profileConfigUrl,
+  readModelReadiness,
+  renameRemoteBot,
+  setRemoteAppearance,
+} from './profiles';
+import { runChatProbe, runCreateBotProbe } from './probe-writes';
 import { createProbeService, type ProbeService } from './probe';
 import type { TransportFetch } from './transport';
 
@@ -35,6 +47,8 @@ export interface DashboardService {
   probeKanbanWrite(): Promise<Result<ProbeReport>>;
   /** M1 chat: dedicated profile, real send/stream/stop through the chat manager. */
   probeChat(): Promise<Result<ProbeReport>>;
+  /** M2: dedicated profile create/appearance/rename/cleanup probe. */
+  probeCreateBot(): Promise<Result<ProbeReport>>;
   /** Local sign-out plus what it verified. */
   signOut(): Result<ProbeReport>;
   /** Aborts a pending browser sign-in. */
@@ -49,6 +63,23 @@ export interface DashboardService {
     storedSessionId: string,
     offset: number,
   ): Promise<Result<RemoteChat>>;
+  /** M2: create a fresh Bot profile, write its appearance and read readiness back. */
+  createBot(input: CreateBotInput): Promise<Result<CreateBotResult>>;
+  /** CAS-protected appearance write. */
+  setBotAppearance(
+    profileName: string,
+    look: AppearanceInput,
+    expectedRevision: number,
+  ): Promise<Result<AppearanceResult>>;
+  /** Renames a profile (REST PATCH). */
+  renameBot(
+    profileName: string,
+    newName: string,
+  ): Promise<Result<{ profile: string; displayName: string }>>;
+  /** Model/authorisation readiness for one profile. */
+  checkModelReady(profileName: string): Promise<Result<ModelReadiness>>;
+  /** Dashboard page for configuring a Bot's model. */
+  configUrl(): Result<string>;
   /** Non-secret connection preferences. */
   settings(): Result<DashboardSettings>;
   saveAddress(address: string | null): Result<void>;
@@ -83,6 +114,14 @@ function toProtocolError(error: unknown): ProtocolError {
  * The IPC-facing facade. It owns parsing addresses, keeping secrets inside the
  * main process and turning failures into structured results the UI can render.
  */
+function profileDeps(deps: DashboardServiceDeps) {
+  return {
+    auth: deps.auth,
+    fetchImpl: deps.fetchImpl,
+    ...(deps.requestTimeoutMs === undefined ? {} : { requestTimeoutMs: deps.requestTimeoutMs }),
+  };
+}
+
 export function createDashboardService(deps: DashboardServiceDeps): DashboardService {
   const now = deps.now ?? (() => Date.now());
   const probe: ProbeService = createProbeService({
@@ -169,6 +208,42 @@ export function createDashboardService(deps: DashboardServiceDeps): DashboardSer
 
     async probeKanbanWrite() {
       return probe.runKanbanWrite();
+    },
+
+    async createBot(input) {
+      return createRemoteBot(profileDeps(deps), input);
+    },
+
+    async setBotAppearance(profileName, look, expectedRevision) {
+      return setRemoteAppearance(profileDeps(deps), profileName, look, expectedRevision);
+    },
+
+    async renameBot(profileName, newName) {
+      return renameRemoteBot(profileDeps(deps), profileName, newName);
+    },
+
+    async checkModelReady(profileName) {
+      return readModelReadiness(profileDeps(deps), profileName);
+    },
+
+    configUrl() {
+      const target = deps.auth.target();
+      if (target === null || !deps.auth.current().connected) {
+        return {
+          ok: false,
+          error: protocolError('unauthorized', 'Sign in to the Dashboard first.'),
+        };
+      }
+      return { ok: true, data: profileConfigUrl(target) };
+    },
+
+    async probeCreateBot() {
+      return runCreateBotProbe({
+        auth: deps.auth,
+        fetchImpl: deps.fetchImpl,
+        ...(deps.requestTimeoutMs === undefined ? {} : { requestTimeoutMs: deps.requestTimeoutMs }),
+        ...(deps.now === undefined ? {} : { now: deps.now }),
+      });
     },
 
     async probeChat() {
