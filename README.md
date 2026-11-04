@@ -143,6 +143,7 @@ machines.
 - Task cards: [`docs/plans/03-agent-handoff.md`](docs/plans/03-agent-handoff.md)
 - Brand assets and licences: [`docs/assets/brand.md`](docs/assets/brand.md)
 - M0c atomic display-lease patch: [`docs/patches/0001-display-lease-atomic-claim.patch`](docs/patches/0001-display-lease-atomic-claim.patch)
+- Delivery summary: [`docs/evidence/delivery-summary.md`](docs/evidence/delivery-summary.md)
 - Final user checklist: [`docs/evidence/final-checklist.md`](docs/evidence/final-checklist.md)
 - Acceptance evidence index: [`docs/evidence/acceptance.md`](docs/evidence/acceptance.md)
 - UI tests run with hidden, unfocused windows (`MOSBOT_TEST_BACKGROUND`); set `MOSBOT_TEST_FOREGROUND=1` only for a check a person must watch.

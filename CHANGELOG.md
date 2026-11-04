@@ -389,6 +389,10 @@ until the release repository exists.
   run passes: steady p95 32.2ms, burst 30.2ms, send/switch feedback 17.3ms, 10k
   history 27.8ms.
 
+- Added docs/evidence/delivery-summary.md: current verification counts, implemented scope,
+  how the hidden test mode works, re-verification commands and the five external/user
+  actions still blocking the first release.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,

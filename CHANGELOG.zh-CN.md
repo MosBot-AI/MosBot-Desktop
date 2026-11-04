@@ -244,6 +244,9 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
   steady 单独测量），把“大文本仍挂载时的切换”单独记为信息指标（p95 49.8ms）。隐藏模式完整
   10 分钟通过：steady p95 32.2ms、burst 30.2ms、send/switch 反馈 17.3ms、10k 历史 27.8ms。
 
+- 新增 `docs/evidence/delivery-summary.md`：当前验证计数、已实现范围、隐藏测试模式说明、复验命令，
+  以及仍阻塞首版的 5 项外部/用户动作。
+
 ### 变更
 
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。
