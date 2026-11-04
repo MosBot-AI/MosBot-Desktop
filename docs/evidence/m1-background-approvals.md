@@ -59,5 +59,12 @@
     2. 跳回时远端 chat 缓存里的 `storedSessionId` 仍是 null（会话创建后未回写），导致打开新建
        空会话而非审批所在会话。
   - 另修复输入条在“已连接但会话未就绪”时可发送导致的 `session is not ready` 竞态。
-  - 修复后：内联审批 + 后台提醒已复现；完整“跳回→拒绝→回执”GUI 流程仍受服务端残留测试对象
-    干扰，未作为通过项；以探针结果为准。通知横幅展示与跨客户端回执仍待办。
+  - **修复后完整 GUI 链路全绿**（`scripts/gui-approval-walkthrough.mjs`）：新建专用 Bot →
+    创建探针文件 → `chmod 666` 触发**内联审批卡** → 切走 → 后台 **「待确认 · 1」** → 点击跳回 →
+    **审批卡在 canonical 会话中重投** → 点「拒绝」→ **「已拒绝」回执** → 角标清除。
+    截图：`screens/m5/approval-inline-real.png`、`screens/m5/approval-reopened-real.png`；
+    报告：`docs/evidence/tmp/approval-gui-2026-11-04T08-11-04-079Z.json`。
+  - 本轮因 GUI 复验修复的真实缺陷：事件游标跨会话未重置导致 false history-stale 清空请求；
+    审批回执被 reducer 删除请求导致卡片直接消失；输入条未校验 live 会话属于当前 Bot（可能把
+    消息发到上一个 Bot）；已连接会话重开不重发事件；canonical 会话 id 未回写缓存。
+  - 系统通知横幅展示/点击、双客户端跨端回执仍待办。

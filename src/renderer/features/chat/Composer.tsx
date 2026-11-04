@@ -24,6 +24,7 @@ export function Composer({ bot }: ComposerProps): ReactElement {
   const livePhase = useAppState((state) => state.live.phase);
   const liveConnection = useAppState((state) => state.live.connection);
   const liveSessionReady = useAppState((state) => state.live.runtimeSessionId !== null);
+  const liveProfile = useAppState((state) => state.live.profile);
   const modelReady = useAppState(selectModelReady);
   const attachments = useAppState((state) => state.attachments[bot.id] ?? []);
   const fixtureReplying = useAppState(
@@ -47,6 +48,9 @@ export function Composer({ bot }: ComposerProps): ReactElement {
   const send = (): void => {
     const text = draft.trim();
     if (text === '' || replying) {
+      return;
+    }
+    if (remoteMode && liveProfile !== bot.id) {
       return;
     }
     if (remoteMode) {
@@ -90,8 +94,15 @@ export function Composer({ bot }: ComposerProps): ReactElement {
   };
 
   const placeholder = t('chat.composer.placeholder', { name: bot.name });
+  // The live session must belong to the selected Bot: right after creating or
+  // switching Bots the previous chat can still be connected, and sending then
+  // would deliver the prompt to the wrong Bot.
   const disabled =
-    remoteMode && (liveConnection !== 'connected' || !liveSessionReady || modelReady === false);
+    remoteMode &&
+    (liveConnection !== 'connected' ||
+      liveProfile !== bot.id ||
+      !liveSessionReady ||
+      modelReady === false);
 
   return (
     <div className={styles.composerWrap}>

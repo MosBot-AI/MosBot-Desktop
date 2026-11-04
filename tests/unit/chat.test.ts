@@ -272,6 +272,43 @@ describe('chat manager', () => {
     manager.close();
   });
 
+  it('does not replay the previous session cursor after switching Bots', async () => {
+    const gateways: FakeGateway[] = [];
+    const manager = createChatManager({
+      auth: fakeAuth,
+      fetchImpl: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => '{"ticket":"t","ttl_seconds":30}',
+      }),
+      connect: async (options) => {
+        const gateway = createFakeGateway(
+          options,
+          gateways.length === 1 ? { events: [], truncated: true } : undefined,
+        );
+        gateways.push(gateway);
+        return { ok: true, data: gateway.client };
+      },
+    });
+    const received: Array<{ type: string; reason?: string }> = [];
+    manager.subscribe((event) => {
+      received.push(event as { type: string; reason?: string });
+    });
+
+    expect((await manager.open('bot-a', 'stored-a')).ok).toBe(true);
+    gateways[0]?.emit('message.delta', { text: 'one' }, 7);
+    await new Promise((resolve) => setTimeout(resolve, 40));
+
+    // The second session has a truncated replay ring; using the old cursor would
+    // emit history-stale and wipe freshly re-delivered requests.
+    expect((await manager.open('bot-b', 'stored-b')).ok).toBe(true);
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    expect(received.some((event) => event.type === 'history-stale')).toBe(false);
+    expect(gateways[1]?.calls.some((call) => call.method === 'session.events.since')).toBe(false);
+    manager.close();
+  });
+
   it('replays missed events and re-delivers open requests after a reconnect', async () => {
     const gateways: FakeGateway[] = [];
     const manager = createChatManager({
@@ -589,11 +626,13 @@ describe('live transcript', () => {
     state = reduceAppState(state, {
       type: 'live-request-resolved',
       requestId: 'srq-1',
-      receipt: 'allow',
+      receipt: 'deny',
     });
     messages = selectChatMessages(state, 'default');
+    // The answered request folds into a receipt instead of disappearing.
+    expect(messages[0]?.kind).toBe('approval');
     if (messages[0]?.kind === 'approval') {
-      expect(messages[0].approval.resolution?.action).toBe('allow');
+      expect(messages[0].approval.resolution?.action).toBe('deny');
     }
   });
 

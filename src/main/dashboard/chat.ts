@@ -488,7 +488,11 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
         }
         // Switching sessions drops any text still waiting in the coalescing
         // window; it belongs to the previous Bot and the transcript is reset.
+        // The event cursor is per session: keeping the previous one would replay
+        // the new session from the old seq and can flag a false history-stale
+        // (which wipes the just re-delivered open requests in the renderer).
         deltaBatcher.reset();
+        lastSeenSeq = 0;
         if (client !== null) {
           client.close();
           client = null;

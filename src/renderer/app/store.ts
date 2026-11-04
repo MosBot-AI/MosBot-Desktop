@@ -1091,11 +1091,13 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
         },
       };
     case 'live-request-resolved':
+      // Keep the request so the transcript can fold it into its receipt; the
+      // resolution map drives the resolved card. Removing it made the answered
+      // request disappear without the "allowed/denied" confirmation.
       return {
         ...state,
         live: {
           ...state.live,
-          requests: state.live.requests.filter((request) => request.id !== action.requestId),
           receipts: { ...state.live.receipts, [action.requestId]: action.receipt },
         },
       };

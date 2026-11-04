@@ -218,6 +218,14 @@ until the release repository exists.
   not executed), allow and the terminal status are verified on the test
   deployment. Evidence: docs/evidence/m1-background-approvals.md.
 
+- Real approval was verified through the GUI as well: a dedicated Bot created in
+  the app receives an inline approval card, the background "needs you" chip
+  appears after switching away, the chip jumps back to the canonical session and
+  re-delivers the card, and denying folds it into a receipt and clears the chip.
+  The walkthrough also fixed a per-session event cursor leak that produced false
+  history-stale resets, approval receipts being dropped with the request, and the
+  composer accepting input before its own Bot's session was live.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,
