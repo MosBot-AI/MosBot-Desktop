@@ -278,7 +278,13 @@ export function App(): ReactElement {
     }
     dispatch({ type: 'live-reset', profile: selectedProfile });
     void dashboard.chatOpen(selectedProfile, remoteChat.storedSessionId).then((result) => {
-      if (!result.ok) {
+      if (result.ok) {
+        dispatch({
+          type: 'remote-workspace',
+          profile: selectedProfile,
+          workspace: result.data.workspace,
+        });
+      } else {
         dispatch({ type: 'live-error', message: result.error.message });
       }
     });

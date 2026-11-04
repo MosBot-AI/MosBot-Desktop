@@ -395,6 +395,23 @@ export type DashboardPendingEvent =
   | { readonly type: 'remove'; readonly requestId: string }
   | { readonly type: 'open'; readonly profile: string };
 
+export interface BotArtifact {
+  readonly name: string;
+  readonly path: string;
+  readonly size: number;
+  readonly mimeType: string;
+  readonly kind: 'image' | 'text' | 'pdf' | 'other';
+  readonly modifiedAt: number;
+}
+
+export interface BotArtifactContent {
+  readonly name: string;
+  readonly path: string;
+  readonly size: number;
+  readonly mimeType: string;
+  readonly dataUrl: string;
+}
+
 export interface DisplayLease {
   readonly holder: string;
   readonly since: number | null;
@@ -424,6 +441,8 @@ export interface ChatOpenResult {
   readonly profile: string;
   readonly storedSessionId: string | null;
   readonly runtimeSessionId: string | null;
+  /** The Bot Chat workspace, used as the artifact library root. */
+  readonly workspace: string | null;
 }
 
 /** Read-only Bot Chat history for one profile (M1 transcript prefetch). */

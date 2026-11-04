@@ -1,5 +1,6 @@
-import { useMemo, type ReactElement } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactElement } from 'react';
 import type { Artifact, ArtifactState, ChatMessage } from '../../../shared/domain';
+import type { BotArtifact, BotArtifactContent } from '../../../shared/protocol';
 import { formatRelativeMinutes } from '../../app/format';
 import { type MessageKey, useMessages } from '../../app/i18n';
 import { useAppState } from '../../app/store';
@@ -22,6 +23,16 @@ const STATE_TONES: Record<UnreadyArtifactState, string | undefined> = {
   denied: styles.badgeDanger,
   deleted: styles.badgeMuted,
 };
+
+function formatBytes(size: number): string {
+  if (size < 1024) {
+    return `${size} B`;
+  }
+  if (size < 1024 * 1024) {
+    return `${(size / 1024).toFixed(1)} KB`;
+  }
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 /** The file extension is the honest, locale-neutral stand-in for the item type. */
 function fileType(name: string): string | null {
@@ -70,6 +81,140 @@ export function LibraryTab({ botId }: LibraryTabProps): ReactElement {
     () => allArtifacts.filter((artifact: Artifact) => artifact.profileId === botId),
     [allArtifacts, botId],
   );
+  const remote = useAppState(
+    (state) => state.remote.status === 'ready' && state.remote.bots.length > 0,
+  );
+  const [remoteArtifacts, setRemoteArtifacts] = useState<readonly BotArtifact[]>([]);
+  const [remoteStatus, setRemoteStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [preview, setPreview] = useState<BotArtifactContent | null>(null);
+  const [previewText, setPreviewText] = useState<string | null>(null);
+  const [savedPath, setSavedPath] = useState<string | null>(null);
+  const workspace = useAppState((state) => state.remote.workspaces[botId] ?? null);
+
+  const loadRemote = useCallback(async (): Promise<void> => {
+    const dashboard = window.mosbot?.dashboard;
+    if (dashboard === undefined) {
+      return;
+    }
+    const result = await dashboard.listArtifacts(botId, workspace);
+    if (!result.ok) {
+      setRemoteStatus('error');
+      return;
+    }
+    setRemoteArtifacts(result.data);
+    setRemoteStatus('ready');
+  }, [botId, workspace]);
+
+  useEffect(() => {
+    if (!remote) {
+      return;
+    }
+    setRemoteStatus('loading');
+    setPreview(null);
+    setPreviewText(null);
+    setSavedPath(null);
+    void loadRemote();
+  }, [remote, loadRemote]);
+
+  if (remote) {
+    const open = async (artifact: BotArtifact): Promise<void> => {
+      const dashboard = window.mosbot?.dashboard;
+      if (dashboard === undefined) {
+        return;
+      }
+      setSavedPath(null);
+      const content = await dashboard.readArtifact(artifact.path);
+      if (!content.ok) {
+        setRemoteStatus('error');
+        return;
+      }
+      setPreview(content.data);
+      if (artifact.kind === 'text' && content.data.dataUrl.length < 400_000) {
+        const match = /^data:[^;,]*;base64,(.*)$/s.exec(content.data.dataUrl);
+        if (match !== null) {
+          try {
+            const binary = atob(match[1] ?? '');
+            const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+            setPreviewText(new TextDecoder().decode(bytes));
+          } catch {
+            setPreviewText(null);
+          }
+        }
+      } else {
+        setPreviewText(null);
+      }
+    };
+
+    return (
+      <div className={styles.tabContent}>
+        <p className={styles.hint}>{t('inspector.library.remote.workspace')}</p>
+        {remoteStatus === 'loading' ? (
+          <p className={styles.hint}>{t('inspector.library.remote.loading')}</p>
+        ) : remoteStatus === 'error' ? (
+          <p className={styles.hint}>{t('inspector.library.remote.error')}</p>
+        ) : remoteArtifacts.length === 0 ? (
+          <p className={styles.empty}>{t('inspector.library.empty')}</p>
+        ) : (
+          <ul className={styles.artifactList}>
+            {remoteArtifacts.map((artifact) => (
+              <li key={artifact.path} className={styles.artifact}>
+                <button
+                  type="button"
+                  className={styles.artifactHead}
+                  aria-current={preview?.path === artifact.path ? 'true' : undefined}
+                  onClick={() => {
+                    void open(artifact);
+                  }}
+                >
+                  <span className={styles.artifactName} title={artifact.name}>
+                    {artifact.name}
+                  </span>
+                  <span className={styles.typeChip}>{artifact.kind.toUpperCase()}</span>
+                </button>
+                <div className={styles.artifactMeta}>
+                  <span>{formatBytes(artifact.size)}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+        {preview === null ? null : (
+          <section className={styles.artifactPreview}>
+            {previewText !== null ? (
+              <pre className={styles.previewText}>{previewText}</pre>
+            ) : preview.mimeType.startsWith('image/') ? (
+              <img className={styles.computerFrame} src={preview.dataUrl} alt={preview.name} />
+            ) : (
+              <p className={styles.hint}>{t('inspector.library.remote.pdfHint')}</p>
+            )}
+            <button
+              type="button"
+              className={styles.wakeButton}
+              onClick={() => {
+                const dashboard = window.mosbot?.dashboard;
+                if (dashboard === undefined) {
+                  return;
+                }
+                void dashboard.saveArtifact(preview.path, preview.name).then((result) => {
+                  if (result.ok) {
+                    setSavedPath(result.data);
+                  } else {
+                    setSavedPath(null);
+                    setRemoteStatus('error');
+                  }
+                });
+              }}
+            >
+              {t('inspector.library.remote.save')}
+            </button>
+            {savedPath === null ? null : (
+              <p className={styles.hint}>{t('inspector.library.remote.saved')}</p>
+            )}
+          </section>
+        )}
+      </div>
+    );
+  }
 
   if (artifacts.length === 0) {
     return <p className={styles.empty}>{t('inspector.library.empty')}</p>;

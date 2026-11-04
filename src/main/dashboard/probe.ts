@@ -15,6 +15,7 @@ import {
   wsTicketSchema,
 } from './schemas';
 import { runKanbanWriteProbe, runNewBotProbe } from './probe-writes';
+import { listBotArtifacts, readBotArtifact } from './artifacts';
 import { requestJson, type TransportFetch } from './transport';
 
 const MASK_VISIBLE = 4;
@@ -735,6 +736,50 @@ export function createProbeService(deps: ProbeDeps): ProbeService {
           cron.ok ? `jobs=${cronRows?.length ?? '—'}` : cron.error.message,
         ),
       );
+
+      const artifacts = await listBotArtifacts(
+        {
+          auth: deps.auth,
+          fetchImpl: deps.fetchImpl,
+          ...(deps.requestTimeoutMs === undefined
+            ? {}
+            : { requestTimeoutMs: deps.requestTimeoutMs }),
+        },
+        activeProfile || 'default',
+      );
+      rows.push(
+        row(
+          'library_artifacts',
+          '资料库索引 /api/files',
+          artifacts.ok ? 'pass' : 'fail',
+          artifacts.ok
+            ? `artifacts=${artifacts.data.length} · kinds=${[...new Set(artifacts.data.map((entry) => entry.kind))].join(',') || '(none)'}`
+            : artifacts.error.message,
+        ),
+      );
+      const firstArtifact = artifacts.ok ? artifacts.data[0] : undefined;
+      if (firstArtifact !== undefined) {
+        const read = await readBotArtifact(
+          {
+            auth: deps.auth,
+            fetchImpl: deps.fetchImpl,
+            ...(deps.requestTimeoutMs === undefined
+              ? {}
+              : { requestTimeoutMs: deps.requestTimeoutMs }),
+          },
+          firstArtifact.path,
+        );
+        rows.push(
+          row(
+            'library_artifact_read',
+            '产物读取（预览/保存数据源）',
+            read.ok && read.data.dataUrl !== '' ? 'pass' : 'fail',
+            read.ok
+              ? `name=${read.data.name} · mime=${read.data.mimeType} · bytes=${read.data.dataUrl.length}`
+              : read.error.message,
+          ),
+        );
+      }
 
       const boards = await get('/api/plugins/kanban/boards');
       const boardsRecord = asRecord(boards.ok ? boards.data : null);

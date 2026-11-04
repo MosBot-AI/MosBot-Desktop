@@ -6,6 +6,8 @@ import type {
   CreateBotResult,
   KanbanBoard,
   KanbanBoardSummary,
+  BotArtifact,
+  BotArtifactContent,
   DisplaySnapshot,
   DisplayThumbnail,
   KanbanWatchEvent,
@@ -144,6 +146,15 @@ export interface MosBotDashboardBridge {
   displayThumbnail(): Promise<Result<DisplayThumbnail>>;
   /** Remote computer: explicit wake. */
   displayStart(): Promise<Result<DisplaySnapshot>>;
+  /** Library: files in the Bot Chat workspace. */
+  listArtifacts(
+    profile: string,
+    workspace?: string | null,
+  ): Promise<Result<readonly BotArtifact[]>>;
+  /** Library: read one artifact as a data URL. */
+  readArtifact(artifactPath: string): Promise<Result<BotArtifactContent>>;
+  /** Library: save one artifact to Downloads and open it. */
+  saveArtifact(artifactPath: string, name: string): Promise<Result<string>>;
   /** Tails one Kanban board's events from a cursor (board pinned per watcher). */
   kanbanWatch(board: string, since: number): Promise<Result<void>>;
   kanbanUnwatch(): Promise<Result<void>>;
@@ -210,6 +221,9 @@ export const DASHBOARD_CHANNELS = {
   displayStatus: 'mosbot:dashboard:displayStatus',
   displayThumbnail: 'mosbot:dashboard:displayThumbnail',
   displayStart: 'mosbot:dashboard:displayStart',
+  listArtifacts: 'mosbot:dashboard:listArtifacts',
+  readArtifact: 'mosbot:dashboard:readArtifact',
+  saveArtifact: 'mosbot:dashboard:saveArtifact',
   kanbanWatch: 'mosbot:dashboard:kanbanWatch',
   kanbanUnwatch: 'mosbot:dashboard:kanbanUnwatch',
   kanbanEvent: 'mosbot:dashboard:kanbanEvent',

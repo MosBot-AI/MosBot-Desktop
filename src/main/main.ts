@@ -9,7 +9,8 @@ import {
   session,
   shell,
 } from 'electron';
-import { readFile, stat } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { readFile, stat, writeFile } from 'node:fs/promises';
 import { DASHBOARD_CHANNELS, SHELL_CHANNELS } from '../shared/bridge';
 import { protocolError, type Result } from '../shared/protocol';
 import path from 'node:path';
@@ -298,6 +299,57 @@ function registerDashboard(): void {
         return chat.attachFile(path.basename(filePath), dataUrl);
       } catch {
         return { ok: false, error: protocolError('internal', 'The file could not be read.') };
+      }
+    },
+  );
+
+  ipcMain.handle(
+    DASHBOARD_CHANNELS.saveArtifact,
+    async (event, artifactPath: unknown, name: unknown): Promise<Result<string>> => {
+      if (
+        !trusted(event) ||
+        typeof artifactPath !== 'string' ||
+        artifactPath.length === 0 ||
+        artifactPath.length > 4096 ||
+        typeof name !== 'string' ||
+        name.length === 0 ||
+        name.length > 200
+      ) {
+        return {
+          ok: false,
+          error: protocolError('invalid_url', 'The artifact request is not valid.'),
+        };
+      }
+      const content = await service.readArtifact(artifactPath);
+      if (!content.ok) {
+        return content;
+      }
+      const match = /^data:[^;,]*;base64,(.*)$/s.exec(content.data.dataUrl);
+      if (match === null) {
+        return {
+          ok: false,
+          error: protocolError('malformed_response', 'The artifact payload is not valid.'),
+        };
+      }
+      try {
+        const downloads = app.getPath('downloads');
+        const safeName =
+          path
+            .basename(name)
+            .split('')
+            .filter((character) => character.charCodeAt(0) > 31)
+            .join('') || 'artifact';
+        let destination = path.join(downloads, safeName);
+        if (existsSync(destination)) {
+          const extension = path.extname(safeName);
+          const stem = safeName.slice(0, safeName.length - extension.length);
+          destination = path.join(downloads, `${stem}-${Date.now()}${extension}`);
+        }
+        await writeFile(destination, Buffer.from(match[1] ?? '', 'base64'));
+        await shell.openPath(destination);
+        return { ok: true, data: destination };
+      } catch {
+        return { ok: false, error: protocolError('internal', 'The artifact could not be saved.') };
       }
     },
   );

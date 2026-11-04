@@ -28,6 +28,8 @@ by the Dashboard's REST APIs; returning to Bots keeps the chat, draft and scroll
 position untouched. Attachments are picked with the system dialog, staged through
 `file.attach` and sent with the prompt; the computer tab reads real status and a
 preview and offers an explicit wake action (the watch/control window is next).
+The library indexes the Bot Chat workspace through `/api/files`, previews text
+and images and saves artifacts to Downloads before opening them explicitly.
 The Kanban page can create tasks and move them between
 columns, Profiles can write the default model/provider and read readiness back, and
 an open board keeps itself current through the Kanban event WebSocket (re-signed

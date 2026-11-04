@@ -31,6 +31,7 @@ export interface ChatState {
   readonly runtimeSessionId: string | null;
   readonly approvalMode: string | null;
   readonly serverRequests: readonly string[];
+  readonly workspaceCwd: string | null;
   readonly connection: 'connected' | 'reconnecting' | 'disconnected';
 }
 
@@ -83,6 +84,7 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
   let runtimeSessionId: string | null = null;
   let approvalMode: string | null = null;
   let serverRequests: string[] = [];
+  let workspaceCwd: string | null = null;
   let replayEpoch: string | null = null;
   let runningTurn = false;
   let lastSeenSeq = 0;
@@ -285,6 +287,8 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
         runtimeSessionId = str(record?.['session_id']) || null;
         storedSessionId = str(record?.['session_key']) || storedSessionId;
         approvalMode = str(asRecord(record?.['info'])?.['approval_mode']) || approvalMode;
+        workspaceCwd = str(asRecord(record?.['info'])?.['cwd']) || workspaceCwd;
+        workspaceCwd = str(asRecord(record?.['info'])?.['cwd']) || workspaceCwd;
         runningTurn = record?.['running'] === true;
         // Resume carries unanswered requests for reconnecting clients.
         const openRequests = Array.isArray(record?.['open_requests'])
@@ -303,7 +307,7 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
         }
         return {
           ok: true,
-          data: { profile, storedSessionId, runtimeSessionId },
+          data: { profile, storedSessionId, runtimeSessionId, workspace: workspaceCwd },
         };
       }
       return resumed as Result<ChatOpenResult>;
@@ -327,6 +331,7 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
     runtimeSessionId = str(record?.['session_id']) || null;
     storedSessionId = str(record?.['stored_session_id']) || null;
     approvalMode = str(asRecord(record?.['info'])?.['approval_mode']) || approvalMode;
+    workspaceCwd = str(asRecord(record?.['info'])?.['cwd']) || workspaceCwd;
     if (runtimeSessionId === null) {
       return {
         ok: false,
@@ -340,7 +345,10 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
         emptySchema,
       );
     }
-    return { ok: true, data: { profile, storedSessionId, runtimeSessionId } };
+    return {
+      ok: true,
+      data: { profile, storedSessionId, runtimeSessionId, workspace: workspaceCwd },
+    };
   };
 
   const connect = async (): Promise<Result<ChatOpenResult>> => {
@@ -439,7 +447,15 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
       }
       const run = async (): Promise<Result<ChatOpenResult>> => {
         if (client !== null && profile === profileName && storedSessionId === stored) {
-          return { ok: true, data: { profile: profileName, storedSessionId, runtimeSessionId } };
+          return {
+            ok: true,
+            data: {
+              profile: profileName,
+              storedSessionId,
+              runtimeSessionId,
+              workspace: workspaceCwd,
+            },
+          };
         }
         if (client !== null) {
           client.close();
@@ -542,6 +558,7 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
       storedSessionId = null;
       runtimeSessionId = null;
       approvalMode = null;
+      workspaceCwd = null;
       serverRequests = [];
       replayEpoch = null;
       lastSeenSeq = 0;
@@ -556,6 +573,7 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
         runtimeSessionId,
         approvalMode,
         serverRequests,
+        workspaceCwd,
         connection,
       };
     },

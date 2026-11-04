@@ -12,6 +12,8 @@ import type {
   AppearanceResult,
   CreateBotInput,
   CreateBotResult,
+  BotArtifact,
+  BotArtifactContent,
   DisplaySnapshot,
   DisplayThumbnail,
   KanbanBoard,
@@ -33,6 +35,7 @@ import {
   setRemoteAppearance,
 } from './profiles';
 import { runChatProbe, runCreateBotProbe } from './probe-writes';
+import { listBotArtifacts, readBotArtifact } from './artifacts';
 import { readDisplayStatus, readDisplayThumbnail, startDisplay } from './display';
 import {
   createKanbanTask,
@@ -141,6 +144,13 @@ export interface DashboardService {
   displayThumbnail(): Promise<Result<DisplayThumbnail>>;
   /** Remote computer: explicit wake. */
   displayStart(): Promise<Result<DisplaySnapshot>>;
+  /** Library: files in the Bot Chat workspace. */
+  listArtifacts(
+    profile: string,
+    workspace?: string | null,
+  ): Promise<Result<readonly BotArtifact[]>>;
+  /** Library: one artifact as a data URL (read-only). */
+  readArtifact(artifactPath: string): Promise<Result<BotArtifactContent>>;
   /** Non-secret connection preferences. */
   settings(): Result<DashboardSettings>;
   saveAddress(address: string | null): Result<void>;
@@ -345,6 +355,14 @@ export function createDashboardService(deps: DashboardServiceDeps): DashboardSer
 
     async displayStart() {
       return startDisplay(displayDeps(deps));
+    },
+
+    async listArtifacts(profile, workspace) {
+      return listBotArtifacts(displayDeps(deps), profile, workspace ?? null);
+    },
+
+    async readArtifact(artifactPath) {
+      return readBotArtifact(displayDeps(deps), artifactPath);
     },
 
     configUrl() {

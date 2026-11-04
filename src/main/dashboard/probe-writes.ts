@@ -20,6 +20,7 @@ import {
   setProfileModel,
   setRemoteAppearance,
 } from './profiles';
+import { listBotArtifacts, readBotArtifact } from './artifacts';
 import { watchKanbanBoard, type KanbanWatchEvent } from './kanban-events';
 import { connectGateway, type RpcClient } from './rpc';
 import { emptySchema } from './schemas';
@@ -982,6 +983,70 @@ export async function runChatProbe(deps: WriteProbeDeps): Promise<Result<ProbeRe
             : attachSend.ok
               ? 'no terminal event within 120s'
               : errorDetail(attachSend.error),
+        ),
+      );
+    }
+
+    // Artifact path: ask the Bot to write a file, then index and read it back.
+    const artifactToken = `MOSBOT-ARTIFACT-${Math.random().toString(36).slice(2, 10).toUpperCase()}`;
+    events.length = 0;
+    const artifactPrompt = await chat.send(
+      `请在当前工作区创建文件 mosbot-probe-artifact.txt，内容只写 ${artifactToken}，完成后回复 done。`,
+    );
+    const artifactDone = await waitFor(
+      () => events.some((event) => event.type === 'turn-complete'),
+      120_000,
+    );
+    const artifactDeps = {
+      auth: deps.auth,
+      fetchImpl: deps.fetchImpl,
+      ...(deps.requestTimeoutMs === undefined ? {} : { requestTimeoutMs: deps.requestTimeoutMs }),
+    };
+    const artifacts = await listBotArtifacts(
+      artifactDeps,
+      marker,
+      opened.ok ? opened.data.workspace : null,
+    );
+    const produced = artifacts.ok
+      ? artifacts.data.find((artifact) => artifact.name.includes('mosbot-probe-artifact'))
+      : undefined;
+    rows.push(
+      row(
+        'chat_artifact_index',
+        'Bot 产物索引（工作区）',
+        artifactDone && produced !== undefined ? 'pass' : 'unverified',
+        produced !== undefined
+          ? `name=${produced.name} · kind=${produced.kind} · bytes=${produced.size}`
+          : artifactDone
+            ? `no matching artifact in ${artifacts.ok ? artifacts.data.length : '?'} entries`
+            : artifactPrompt.ok
+              ? 'turn did not finish within 120s'
+              : errorDetail(artifactPrompt.error),
+      ),
+    );
+    if (produced !== undefined) {
+      const read = await readBotArtifact(artifactDeps, produced.path);
+      const payload = read.ok ? read.data.dataUrl : '';
+      const decoded =
+        payload === ''
+          ? ''
+          : (() => {
+              try {
+                return Buffer.from(payload.split(',')[1] ?? '', 'base64').toString('utf8');
+              } catch {
+                return '';
+              }
+            })();
+      rows.push(
+        row(
+          'chat_artifact_read',
+          '产物读取（预览/保存数据源）',
+          read.ok && decoded.includes(artifactToken) ? 'pass' : 'unverified',
+          read.ok
+            ? decoded.includes(artifactToken)
+              ? `mime=${read.data.mimeType} · token echoed`
+              : 'read succeeded but content did not contain the token'
+            : errorDetail(read.error),
         ),
       );
     }

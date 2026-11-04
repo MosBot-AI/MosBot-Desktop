@@ -8,6 +8,8 @@ import {
   type PreflightResult,
   type ProbeReport,
   type AppearanceResult,
+  type BotArtifact,
+  type BotArtifactContent,
   type DisplaySnapshot,
   type DisplayThumbnail,
   type KanbanBoard,
@@ -246,6 +248,23 @@ export function registerDashboardIpc(options: {
   handle<DisplaySnapshot>(DASHBOARD_CHANNELS.displayStatus, () => service.displayStatus());
   handle<DisplayThumbnail>(DASHBOARD_CHANNELS.displayThumbnail, () => service.displayThumbnail());
   handle<DisplaySnapshot>(DASHBOARD_CHANNELS.displayStart, () => service.displayStart());
+
+  handle<readonly BotArtifact[]>(DASHBOARD_CHANNELS.listArtifacts, (profileName, workspace) => {
+    if (!isBoundedString(profileName, 128)) {
+      return { ok: false, error: protocolError('invalid_url', 'A profile name is required.') };
+    }
+    if (workspace !== undefined && workspace !== null && !isBoundedString(workspace, 4096)) {
+      return { ok: false, error: protocolError('invalid_url', 'The workspace path is not valid.') };
+    }
+    return service.listArtifacts(profileName, typeof workspace === 'string' ? workspace : null);
+  });
+
+  handle<BotArtifactContent>(DASHBOARD_CHANNELS.readArtifact, (artifactPath) => {
+    if (!isBoundedString(artifactPath, 4096)) {
+      return { ok: false, error: protocolError('invalid_url', 'The artifact path is not valid.') };
+    }
+    return service.readArtifact(artifactPath);
+  });
 
   handle<KanbanBoard>(DASHBOARD_CHANNELS.kanbanBoard, (board) => {
     if (!isBoundedString(board, 128)) {

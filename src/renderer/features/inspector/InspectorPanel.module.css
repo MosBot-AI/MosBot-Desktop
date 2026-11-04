@@ -637,3 +637,21 @@
 .wakeButton:disabled {
   color: var(--text-tertiary);
 }
+
+.artifactPreview {
+  margin-top: var(--space-3);
+  padding: var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+
+.previewText {
+  max-height: 220px;
+  margin: 0 0 var(--space-2);
+  overflow: auto;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  white-space: pre-wrap;
+}

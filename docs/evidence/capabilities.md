@@ -79,8 +79,9 @@
   Kanban 新建任务/改状态（专用 board 验证、游标 0→2）、WS 实时事件（事件帧、cursor 3、connected）
   与模型配置写入（专用 profile 写入并回读）已通过。
 - M4 第一块：附件上传（`file.attach` data URL）与真实推理读取已打通；电脑 `display.status`、
-  `display.thumbnail`（休眠时无帧、不伪造）与显式唤醒入口已接入。产物索引/保存/打开、观看/接管窗口
-  与租约待下一段。
+  `display.thumbnail`（休眠时无帧、不伪造）与显式唤醒入口已接入。资料库按 Bot Chat 工作区索引
+  产物（`/api/files`），文本/图片预览与「保存并打开」已实现；专用 profile 真实验证 Bot 创建文件 →
+  索引 → 读取 token。观看/接管窗口与租约待下一段。
   证据：`docs/evidence/m1-roster-and-history.md`、`docs/evidence/m1-chat-streaming.md`。
 - 未连接时仍使用 fixture，M0a 演示不受影响。
 

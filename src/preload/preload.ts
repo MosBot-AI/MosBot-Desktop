@@ -13,6 +13,8 @@ import type {
   CreateBotResult,
   KanbanBoard,
   KanbanBoardSummary,
+  BotArtifact,
+  BotArtifactContent,
   DisplaySnapshot,
   DisplayThumbnail,
   KanbanWatchEvent,
@@ -191,6 +193,24 @@ const bridge: Omit<MosBotBridge, 'openExternal' | 'local'> = {
     displayStart(): Promise<Result<DisplaySnapshot>> {
       return ipcRenderer.invoke(DASHBOARD_CHANNELS.displayStart) as Promise<
         Result<DisplaySnapshot>
+      >;
+    },
+    listArtifacts(
+      profile: string,
+      workspace?: string | null,
+    ): Promise<Result<readonly BotArtifact[]>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.listArtifacts, profile, workspace) as Promise<
+        Result<readonly BotArtifact[]>
+      >;
+    },
+    readArtifact(artifactPath: string): Promise<Result<BotArtifactContent>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.readArtifact, artifactPath) as Promise<
+        Result<BotArtifactContent>
+      >;
+    },
+    saveArtifact(artifactPath: string, name: string): Promise<Result<string>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.saveArtifact, artifactPath, name) as Promise<
+        Result<string>
       >;
     },
     kanbanWatch(board: string, since: number): Promise<Result<void>> {

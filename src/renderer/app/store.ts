@@ -79,6 +79,8 @@ export interface RemoteState {
   readonly loadingOlder: boolean;
   /** Per-profile model readiness; null while unknown. */
   readonly modelReady: Readonly<Record<string, boolean | null>>;
+  /** Bot Chat workspace per profile (artifact library root). */
+  readonly workspaces: Readonly<Record<string, string | null>>;
 }
 
 export interface LiveRequest {
@@ -204,6 +206,7 @@ export type AppAction =
   | { type: 'create-remote-error'; message: string | null }
   | { type: 'remote-upsert-bot'; bot: RemoteBot }
   | { type: 'remote-model-ready'; profile: string; ready: boolean | null }
+  | { type: 'remote-workspace'; profile: string; workspace: string | null }
   | { type: 'org-toggle-pin'; profile: string }
   | { type: 'org-toggle-section'; sectionId: string }
   | { type: 'org-create-section'; title: string }
@@ -459,6 +462,7 @@ export function createInitialState(seed: FixtureSeed, bootstrap: Bootstrap): App
       error: null,
       loadingOlder: false,
       modelReady: {},
+      workspaces: {},
     },
     live: {
       profile: null,
@@ -924,6 +928,7 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
           error: null,
           loadingOlder: false,
           modelReady: {},
+          workspaces: {},
         },
         remoteOrg: { pinned: [], sections: [], unsortedCollapsed: false },
       };
@@ -1233,6 +1238,14 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
         selectedBotId: action.bot.profileName,
       };
     }
+    case 'remote-workspace':
+      return {
+        ...state,
+        remote: {
+          ...state.remote,
+          workspaces: { ...state.remote.workspaces, [action.profile]: action.workspace },
+        },
+      };
     case 'remote-model-ready':
       return {
         ...state,

@@ -116,7 +116,12 @@ until the release repository exists.
   inference read the uploaded file back in a dedicated-profile probe. The computer
   tab polls `display.status`, shows the `display.thumbnail` preview (hidden while
   someone else holds the lease), and offers an explicit wake via `display.start`.
-  Fixture windows keep the offline demo.
+- Artifact library: the details library indexes the open Bot Chat workspace through
+  `/api/files`, shows name/type/size, previews text and images from
+  `/api/files/read` data URLs, and saves a chosen artifact into Downloads before
+  opening it explicitly. Verified with a dedicated-profile probe where the Bot
+  created a file that the index found and read back. Fixture windows keep the
+  offline demo.
 - Gateway WebSocket client (`ws`): one-time ticket handshake, `gateway.ready` first
   frame, JSON-RPC request/response with zod validation, typed server events, and
   ticket replay/expiry rejection checks. Verified against the test deployment:
