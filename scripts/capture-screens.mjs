@@ -122,6 +122,11 @@ async function main() {
   await page.getByRole('button', { name: '连接 Dashboard…' }).click();
   await shot('12-connection');
   await page.keyboard.press('Escape');
+  await page.locator('#sidebar-connection').click();
+  await page.getByRole('button', { name: 'Hermes 工作台' }).click();
+  await page.waitForTimeout(200);
+  await shot('13-workbench');
+  await page.keyboard.press('Escape');
 
   await application.close();
 }

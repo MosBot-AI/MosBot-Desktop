@@ -46,7 +46,11 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
   遇到 revision 冲突会提示重试。
 - M2 整理：连接后的 Bot 可置顶、建命名分区（重命名/删除、移入移出、折叠），并编辑外观与名称
   （同一 CAS 外观写入 + REST 改名）。整理结果与折叠状态写入本地状态文档；schema 升级为 v2 并自动
-  迁移 v1。未连接时保持 fixture 演示。
+  迁移 v1。
+- M3 工作台：左下菜单打开全窗口 Hermes 工作台，含 Profiles / Sessions / Kanban 三个子页。
+  Profiles 显示真实名单与模型就绪；Sessions 支持 `/api/sessions` 分页、搜索与只读历史；Kanban 列出
+  看板并渲染带 `latest_event_id` 的快照，插件不可用时有专用空态。聊天外壳保持挂载，返回时 Bot、草稿、
+  滚动位置与详情栏原样恢复。未连接时保持 fixture 演示。
 - Gateway WebSocket 客户端（`ws`）：一次性 ticket 握手、`gateway.ready` 首帧、zod 校验的 JSON-RPC 请求响应、类型化服务端事件，以及 ticket 复用/过期拒绝检查。已在测试部署验证：`profiles.list`、`client.capabilities` 与精确 Bot Chat 查询通过；复用与过期 ticket 被拒绝。
 
 ### 变更

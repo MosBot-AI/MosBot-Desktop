@@ -131,6 +131,21 @@ export function ChatView(): ReactElement {
         </p>
       ) : null}
 
+      {state.notice === null ? null : (
+        <div className={styles.noticeBanner} role="status">
+          <span className={styles.modelBannerText}>{state.notice}</span>
+          <button
+            type="button"
+            className={styles.modelBannerAction}
+            onClick={() => {
+              dispatch({ type: 'set-notice', notice: null });
+            }}
+          >
+            {t('common.dismiss')}
+          </button>
+        </div>
+      )}
+
       {remoteMode && modelReady === false ? (
         <div className={styles.modelBanner} role="status">
           <span className={styles.modelBannerText}>{t('chat.modelNotReady')}</span>

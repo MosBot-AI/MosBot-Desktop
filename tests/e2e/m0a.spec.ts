@@ -159,6 +159,18 @@ test.describe('M0a design slice', () => {
     await expect(page.locator('#sidebar-connection')).toBeFocused();
   });
 
+  test('opens the Hermes workbench and returns with the draft intact', async () => {
+    const page = app.page;
+    const composer = page.getByRole('textbox', { name: /发消息/ });
+    await composer.fill('工作台返回后还要在');
+    await page.locator('#sidebar-connection').click();
+    await page.getByRole('button', { name: 'Hermes 工作台' }).click();
+    await expect(page.getByRole('region', { name: 'Hermes 工作台' })).toBeVisible();
+    await expect(page.getByText('连接 Dashboard 后查看工作台。')).toBeVisible();
+    await page.getByRole('button', { name: /返回 Bots/ }).click();
+    await expect(composer).toHaveValue('工作台返回后还要在');
+  });
+
   test('uses the overlay details panel and the empty chat in a narrow window', async () => {
     const page = app.page;
     await resizeWindow(app.application, 720, 500);

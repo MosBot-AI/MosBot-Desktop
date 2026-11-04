@@ -1,3 +1,7 @@
+.appHidden {
+  display: none;
+}
+
 .app {
   display: flex;
   height: 100vh;

@@ -186,6 +186,9 @@ export function CreateBotDialog(): ReactElement | null {
       profile: result.data.bot.profileName,
       ready: result.data.modelReady,
     });
+    if (!result.data.appearanceApplied) {
+      dispatch({ type: 'set-notice', notice: t('create.warning.appearance') });
+    }
     dispatch({ type: 'create-close' });
   };
 

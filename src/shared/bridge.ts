@@ -4,7 +4,12 @@ import type {
   ChatOpenResult,
   CreateBotInput,
   CreateBotResult,
+  KanbanBoard,
+  KanbanBoardSummary,
   ModelReadiness,
+  WorkbenchMessage,
+  WorkbenchSession,
+  WorkbenchSessionPage,
   LocalState,
   ConnectionSnapshot,
   DashboardChatEvent,
@@ -63,6 +68,8 @@ export interface MosBotDashboardBridge {
   probeChat(): Promise<Result<ProbeReport>>;
   /** M2 probe: dedicated profile create/appearance/rename/cleanup. */
   probeCreateBot(): Promise<Result<ProbeReport>>;
+  /** M3 probe: workbench REST (sessions, search, messages, Kanban). */
+  probeWorkbench(): Promise<Result<ProbeReport>>;
   /** Clears local credentials and reports what survived. */
   signOut(): Promise<Result<ProbeReport>>;
   status(): Promise<Result<DashboardStatus>>;
@@ -93,6 +100,24 @@ export interface MosBotDashboardBridge {
   checkModelReady(profileName: string): Promise<Result<ModelReadiness>>;
   /** Opens the Dashboard page where a Bot's model is configured. */
   openProfileConfig(): Promise<Result<void>>;
+  /** Workbench: recent sessions for one profile. */
+  workbenchSessions(
+    profile: string,
+    offset: number,
+    limit?: number,
+  ): Promise<Result<WorkbenchSessionPage>>;
+  /** Workbench: session search by id and message content. */
+  workbenchSearch(profile: string, query: string): Promise<Result<readonly WorkbenchSession[]>>;
+  /** Workbench: read-only transcript for one stored session. */
+  workbenchMessages(
+    profile: string,
+    sessionId: string,
+    offset: number,
+  ): Promise<Result<{ messages: readonly WorkbenchMessage[]; hasMore: boolean }>>;
+  /** Workbench: Kanban boards (plugin may be absent). */
+  kanbanBoards(): Promise<Result<readonly KanbanBoardSummary[]>>;
+  /** Workbench: Kanban board snapshot. */
+  kanbanBoard(board: string): Promise<Result<KanbanBoard>>;
   /** Resumes (or creates) the live Bot Chat session so prompts can be sent. */
   chatOpen(profileName: string, storedSessionId: string | null): Promise<Result<ChatOpenResult>>;
   /** Submits one prompt to the open session. */
@@ -141,6 +166,11 @@ export const DASHBOARD_CHANNELS = {
   renameBot: 'mosbot:dashboard:renameBot',
   checkModelReady: 'mosbot:dashboard:checkModelReady',
   openProfileConfig: 'mosbot:dashboard:openProfileConfig',
+  workbenchSessions: 'mosbot:dashboard:workbenchSessions',
+  workbenchSearch: 'mosbot:dashboard:workbenchSearch',
+  workbenchMessages: 'mosbot:dashboard:workbenchMessages',
+  kanbanBoards: 'mosbot:dashboard:kanbanBoards',
+  kanbanBoard: 'mosbot:dashboard:kanbanBoard',
   chatOpen: 'mosbot:dashboard:chatOpen',
   chatSend: 'mosbot:dashboard:chatSend',
   chatStop: 'mosbot:dashboard:chatStop',

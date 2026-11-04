@@ -22,7 +22,10 @@ an attention count and sends a system notification (clicking it opens that Bot).
 runs the real fresh-profile flow (name, shape, colour), selects it and guides model
 setup when the Dashboard reports it is not ready yet. Connected Bots can be pinned, grouped
 into named sections (create/rename/delete), moved between them, and their look and name
-edited through the compare-and-swap appearance write; the arrangement persists locally. Without a connection the window
+edited through the compare-and-swap appearance write; the arrangement persists locally.
+The footer opens a Hermes workbench with Profiles, Sessions and Kanban pages backed
+by the Dashboard's REST APIs; returning to Bots keeps the chat, draft and scroll
+position untouched. Without a connection the window
 keeps using fixtures. No signed installer or upgrade path
 exists yet. See
 [`docs/evidence/m0a-design-slice.md`](docs/evidence/m0a-design-slice.md) and

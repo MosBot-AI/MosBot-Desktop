@@ -86,6 +86,8 @@ export interface LiveRequest {
   readonly payload: Readonly<Record<string, unknown>>;
 }
 
+export type WorkbenchTab = 'profiles' | 'sessions' | 'kanban';
+
 export interface RemoteSection {
   readonly id: string;
   readonly title: string;
@@ -157,6 +159,12 @@ export interface AppState {
   readonly localState: LocalState | null;
   readonly savedSelectedProfile: string | null;
   readonly remoteOrg: RemoteOrganization;
+  /** One-line, dismissible notice shown above the transcript. */
+  readonly notice: string | null;
+  readonly workbench: {
+    readonly open: boolean;
+    readonly tab: WorkbenchTab;
+  };
   readonly pending: {
     readonly items: Readonly<
       Record<
@@ -261,7 +269,11 @@ export type AppAction =
       method: 'approval' | 'clarify';
       title: string;
     }
-  | { type: 'pending-remove'; requestId: string };
+  | { type: 'pending-remove'; requestId: string }
+  | { type: 'set-notice'; notice: string | null }
+  | { type: 'workbench-open'; tab?: WorkbenchTab }
+  | { type: 'workbench-tab'; tab: WorkbenchTab }
+  | { type: 'workbench-close' };
 
 export interface Bootstrap {
   readonly resolvedTheme: ResolvedTheme;
@@ -462,6 +474,8 @@ export function createInitialState(seed: FixtureSeed, bootstrap: Bootstrap): App
     savedSelectedProfile: null,
     remoteOrg: { pinned: [], sections: [], unsortedCollapsed: false },
     pending: { items: {} },
+    notice: null,
+    workbench: { open: false, tab: 'profiles' },
   };
 }
 
@@ -1117,6 +1131,17 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
         savedSelectedProfile: savedProfile,
       };
     }
+    case 'set-notice':
+      return { ...state, notice: action.notice };
+    case 'workbench-open':
+      return {
+        ...state,
+        workbench: { open: true, tab: action.tab ?? state.workbench.tab },
+      };
+    case 'workbench-tab':
+      return { ...state, workbench: { ...state.workbench, tab: action.tab } };
+    case 'workbench-close':
+      return { ...state, workbench: { ...state.workbench, open: false } };
     case 'pending-add':
       return {
         ...state,

@@ -11,7 +11,12 @@ import type {
   ChatOpenResult,
   CreateBotInput,
   CreateBotResult,
+  KanbanBoard,
+  KanbanBoardSummary,
   ModelReadiness,
+  WorkbenchMessage,
+  WorkbenchSession,
+  WorkbenchSessionPage,
   ConnectionSnapshot,
   DashboardChatEvent,
   DashboardPendingEvent,
@@ -58,9 +63,6 @@ const bridge: Omit<MosBotBridge, 'openExternal' | 'local'> = {
     probeWebSocket(): Promise<Result<ProbeReport>> {
       return ipcRenderer.invoke(DASHBOARD_CHANNELS.probeWebSocket) as Promise<Result<ProbeReport>>;
     },
-    probeWorkbench(): Promise<Result<ProbeReport>> {
-      return ipcRenderer.invoke(DASHBOARD_CHANNELS.probeWorkbench) as Promise<Result<ProbeReport>>;
-    },
     cancelLogin(): Promise<Result<void>> {
       return ipcRenderer.invoke(DASHBOARD_CHANNELS.cancelLogin) as Promise<Result<void>>;
     },
@@ -101,6 +103,45 @@ const bridge: Omit<MosBotBridge, 'openExternal' | 'local'> = {
     },
     openProfileConfig(): Promise<Result<void>> {
       return ipcRenderer.invoke(DASHBOARD_CHANNELS.openProfileConfig) as Promise<Result<void>>;
+    },
+    workbenchSessions(
+      profile: string,
+      offset: number,
+      limit?: number,
+    ): Promise<Result<WorkbenchSessionPage>> {
+      return ipcRenderer.invoke(
+        DASHBOARD_CHANNELS.workbenchSessions,
+        profile,
+        offset,
+        limit,
+      ) as Promise<Result<WorkbenchSessionPage>>;
+    },
+    workbenchSearch(profile: string, query: string): Promise<Result<readonly WorkbenchSession[]>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.workbenchSearch, profile, query) as Promise<
+        Result<readonly WorkbenchSession[]>
+      >;
+    },
+    workbenchMessages(
+      profile: string,
+      sessionId: string,
+      offset: number,
+    ): Promise<Result<{ messages: readonly WorkbenchMessage[]; hasMore: boolean }>> {
+      return ipcRenderer.invoke(
+        DASHBOARD_CHANNELS.workbenchMessages,
+        profile,
+        sessionId,
+        offset,
+      ) as Promise<Result<{ messages: readonly WorkbenchMessage[]; hasMore: boolean }>>;
+    },
+    kanbanBoards(): Promise<Result<readonly KanbanBoardSummary[]>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.kanbanBoards) as Promise<
+        Result<readonly KanbanBoardSummary[]>
+      >;
+    },
+    kanbanBoard(board: string): Promise<Result<KanbanBoard>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.kanbanBoard, board) as Promise<
+        Result<KanbanBoard>
+      >;
     },
     loadOlderChat(
       profileName: string,
@@ -177,6 +218,9 @@ const bridge: Omit<MosBotBridge, 'openExternal' | 'local'> = {
     },
     probeCreateBot(): Promise<Result<ProbeReport>> {
       return ipcRenderer.invoke(DASHBOARD_CHANNELS.probeCreateBot) as Promise<Result<ProbeReport>>;
+    },
+    probeWorkbench(): Promise<Result<ProbeReport>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.probeWorkbench) as Promise<Result<ProbeReport>>;
     },
     signOut(): Promise<Result<ProbeReport>> {
       return ipcRenderer.invoke(DASHBOARD_CHANNELS.signOut) as Promise<Result<ProbeReport>>;

@@ -8,11 +8,16 @@ import {
   type PreflightResult,
   type ProbeReport,
   type AppearanceResult,
+  type KanbanBoard,
+  type KanbanBoardSummary,
   type CreateBotResult,
   type ModelReadiness,
   type RemoteBot,
   type RemoteChat,
   type Result,
+  type WorkbenchMessage,
+  type WorkbenchSession,
+  type WorkbenchSessionPage,
 } from '../../shared/protocol';
 import type { DashboardService } from './service';
 
@@ -188,6 +193,59 @@ export function registerDashboardIpc(options: {
       return { ok: false, error: protocolError('invalid_url', 'A profile name is required.') };
     }
     return service.checkModelReady(profileName);
+  });
+
+  handle<WorkbenchSessionPage>(
+    DASHBOARD_CHANNELS.workbenchSessions,
+    (profileName, offset, limit) => {
+      if (!isBoundedString(profileName, 128)) {
+        return { ok: false, error: protocolError('invalid_url', 'A profile name is required.') };
+      }
+      if (
+        typeof offset !== 'number' ||
+        !Number.isInteger(offset) ||
+        offset < 0 ||
+        (limit !== undefined &&
+          (typeof limit !== 'number' || !Number.isInteger(limit) || limit < 1 || limit > 100))
+      ) {
+        return { ok: false, error: protocolError('invalid_url', 'The page offset is not valid.') };
+      }
+      return service.workbenchSessions(profileName, offset, limit);
+    },
+  );
+
+  handle<readonly WorkbenchSession[]>(DASHBOARD_CHANNELS.workbenchSearch, (profileName, query) => {
+    if (!isBoundedString(profileName, 128) || !isBoundedString(query, 200)) {
+      return { ok: false, error: protocolError('invalid_url', 'The search request is not valid.') };
+    }
+    return service.workbenchSearch(profileName, query);
+  });
+
+  handle<{ messages: readonly WorkbenchMessage[]; hasMore: boolean }>(
+    DASHBOARD_CHANNELS.workbenchMessages,
+    (profileName, sessionId, offset) => {
+      if (!isBoundedString(profileName, 128) || !isBoundedString(sessionId, 128)) {
+        return {
+          ok: false,
+          error: protocolError('invalid_url', 'The session request is not valid.'),
+        };
+      }
+      if (typeof offset !== 'number' || !Number.isInteger(offset) || offset < 0) {
+        return { ok: false, error: protocolError('invalid_url', 'The page offset is not valid.') };
+      }
+      return service.workbenchMessages(profileName, sessionId, offset);
+    },
+  );
+
+  handle<readonly KanbanBoardSummary[]>(DASHBOARD_CHANNELS.kanbanBoards, () =>
+    service.kanbanBoards(),
+  );
+
+  handle<KanbanBoard>(DASHBOARD_CHANNELS.kanbanBoard, (board) => {
+    if (!isBoundedString(board, 128)) {
+      return { ok: false, error: protocolError('invalid_url', 'A board is required.') };
+    }
+    return service.kanbanBoard(board);
   });
 
   handle<void>(DASHBOARD_CHANNELS.openProfileConfig, async () => {

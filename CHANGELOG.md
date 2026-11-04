@@ -95,7 +95,14 @@ until the release repository exists.
   (create/rename/delete, move in and out, collapse), and edited (look and name)
   through the same CAS appearance write plus the REST rename. The arrangement,
   including collapsed sections, is stored in the local-state document, which is
-  now schema v2 with automatic v1 migration. Fixture windows keep the offline demo.
+  now schema v2 with automatic v1 migration.
+- M3 workbench: a full-window Hermes workbench (footer menu) with Profiles,
+  Sessions and Kanban pages. Profiles show the real roster and model readiness;
+  Sessions page through `/api/sessions`, search and read transcripts; Kanban lists
+  boards and renders the board snapshot with its `latest_event_id`, with dedicated
+  empty states when the plugin is unavailable. The chat shell stays mounted, so
+  returning restores the Bot, draft, scroll position and details column. Fixture
+  windows keep the offline demo.
 - Gateway WebSocket client (`ws`): one-time ticket handshake, `gateway.ready` first
   frame, JSON-RPC request/response with zod validation, typed server events, and
   ticket replay/expiry rejection checks. Verified against the test deployment:

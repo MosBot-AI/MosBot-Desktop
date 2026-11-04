@@ -328,6 +328,16 @@ export function BotSidebar(): ReactElement {
                   ? t('connection.menuItem')
                   : t('connection.menuConnected', { name: connectedName })}
               </button>
+              <button
+                type="button"
+                className={styles.connectionItem}
+                onClick={() => {
+                  dispatch({ type: 'workbench-open', tab: 'profiles' });
+                  dispatch({ type: 'set-footer-menu', open: false });
+                }}
+              >
+                {t('sidebar.menu.workbench')}
+              </button>
             </div>
             <div className={styles.menuSection}>
               <span className={styles.menuLabel}>{t('sidebar.menu.appearance')}</span>

@@ -13,7 +13,8 @@ REST 传输、RFC 8252 PKCE 登录、safeStorage 凭据库、IPC 桥）已经实
 由后台 watcher 发现，左栏显示待确认计数并在后台时发系统通知（点击直达该 Bot）。连接状态下新建
 Bot 走真实 fresh profile 流程（名称、形状、颜色），创建后自动选中，未配置模型时引导完成配置。
 连接后的 Bot 可置顶、建分区（重命名/删除）、在分区间移动，并编辑外观与名称（CAS 写入）；整理结果
-保存在本地并重启恢复。未连接时仍使用 fixture。
+保存在本地并重启恢复。左下菜单可打开 Hermes 工作台（Profiles / Sessions / Kanban），三个子页使用
+真实 REST；返回 Bots 时聊天、草稿与滚动位置保持不变。未连接时仍使用 fixture。
 尚无签名安装包和升级路径。详见
 [`docs/evidence/m0a-design-slice.md`](docs/evidence/m0a-design-slice.md) 与
 [`docs/evidence/capabilities.md`](docs/evidence/capabilities.md)。

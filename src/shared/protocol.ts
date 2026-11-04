@@ -241,6 +241,58 @@ export interface RemoteBot {
   readonly messageCount: number;
 }
 
+export interface WorkbenchSession {
+  readonly id: string;
+  readonly title: string;
+  readonly profile: string;
+  readonly updatedAt: number;
+  readonly messageCount: number;
+  readonly pinned: boolean;
+  readonly archived: boolean;
+  readonly preview: string;
+}
+
+export interface WorkbenchSessionPage {
+  readonly sessions: readonly WorkbenchSession[];
+  readonly total: number;
+  readonly hasMore: boolean;
+}
+
+export interface WorkbenchMessage {
+  readonly id: string;
+  readonly role: 'user' | 'assistant';
+  readonly text: string;
+  readonly at: number;
+}
+
+export interface KanbanBoardSummary {
+  readonly slug: string;
+  readonly name: string;
+  readonly isCurrent: boolean;
+  readonly total: number;
+}
+
+export interface KanbanTask {
+  readonly id: string;
+  readonly title: string;
+  readonly status: string;
+  readonly priority: number;
+  readonly assignee: string;
+  readonly updatedAt: number;
+  readonly latestSummary: string;
+}
+
+export interface KanbanColumn {
+  readonly name: string;
+  readonly tasks: readonly KanbanTask[];
+}
+
+export interface KanbanBoard {
+  readonly board: string;
+  readonly columns: readonly KanbanColumn[];
+  readonly latestEventId: number | null;
+}
+
 export interface CreateBotInput {
   readonly name: string;
   readonly description?: string;

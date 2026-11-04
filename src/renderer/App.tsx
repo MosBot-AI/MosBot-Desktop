@@ -12,6 +12,7 @@ import {
 import { BotSidebar } from './features/bots/BotSidebar';
 import { ChatView } from './features/chat/ChatView';
 import { ConnectionDialog } from './features/connection/ConnectionDialog';
+import { Workbench } from './features/workbench/Workbench';
 import { restoreConnectionOnStartup } from './features/connection/useConnection';
 import { CreateBotDialog } from './features/create/CreateBotDialog';
 import { InspectorPanel } from './features/inspector/InspectorPanel';
@@ -28,6 +29,7 @@ export function App(): ReactElement {
   const language = useAppState((state) => state.language);
   const reduceMotion = useAppState((state) => state.reduceMotion);
   const inspectorOpen = useAppState((state) => state.inspector.open);
+  const workbenchOpen = useAppState((state) => state.workbench.open);
   const pendingReply = useAppState((state) => state.pendingReply);
   const wakingProfileId = useAppState(
     (state) =>
@@ -363,15 +365,21 @@ export function App(): ReactElement {
   }, [dispatch]);
 
   return (
-    <div className={styles.app} data-inspector-open={inspectorOpen ? 'true' : 'false'}>
-      <BotSidebar />
-      <div className={styles.main}>
-        <ChatView />
-        <InspectorPanel />
+    <>
+      <div
+        className={workbenchOpen ? styles.appHidden : styles.app}
+        data-inspector-open={inspectorOpen ? 'true' : 'false'}
+      >
+        <BotSidebar />
+        <div className={styles.main}>
+          <ChatView />
+          <InspectorPanel />
+        </div>
       </div>
       <SearchOverlay />
       <CreateBotDialog />
       <ConnectionDialog />
-    </div>
+      <Workbench />
+    </>
   );
 }

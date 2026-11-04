@@ -83,6 +83,19 @@
   cursor: default;
 }
 
+.noticeBanner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 var(--space-4) var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-code);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
 .modelBanner {
   display: flex;
   align-items: center;
@@ -665,6 +678,19 @@
   .loadOlder:disabled {
     color: var(--text-tertiary);
     cursor: default;
+  }
+
+  .noticeBanner {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0 var(--space-4) var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--surface-code);
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
   }
 
   .modelBanner {

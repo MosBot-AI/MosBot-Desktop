@@ -12,7 +12,12 @@ import type {
   AppearanceResult,
   CreateBotInput,
   CreateBotResult,
+  KanbanBoard,
+  KanbanBoardSummary,
   ModelReadiness,
+  WorkbenchMessage,
+  WorkbenchSession,
+  WorkbenchSessionPage,
 } from '../../shared/protocol';
 import { parseDashboardTarget, protocolError } from '../../shared/protocol';
 import type { AuthManager } from './auth';
@@ -25,6 +30,13 @@ import {
   setRemoteAppearance,
 } from './profiles';
 import { runChatProbe, runCreateBotProbe } from './probe-writes';
+import {
+  listKanbanBoards,
+  listWorkbenchSessions,
+  readKanbanBoard,
+  readWorkbenchMessages,
+  searchWorkbenchSessions,
+} from './workbench';
 import { createProbeService, type ProbeService } from './probe';
 import type { TransportFetch } from './transport';
 
@@ -49,6 +61,8 @@ export interface DashboardService {
   probeChat(): Promise<Result<ProbeReport>>;
   /** M2: dedicated profile create/appearance/rename/cleanup probe. */
   probeCreateBot(): Promise<Result<ProbeReport>>;
+  /** M3: workbench REST probe (sessions, search, messages, Kanban). */
+  probeWorkbench(): Promise<Result<ProbeReport>>;
   /** Local sign-out plus what it verified. */
   signOut(): Result<ProbeReport>;
   /** Aborts a pending browser sign-in. */
@@ -80,6 +94,24 @@ export interface DashboardService {
   checkModelReady(profileName: string): Promise<Result<ModelReadiness>>;
   /** Dashboard page for configuring a Bot's model. */
   configUrl(): Result<string>;
+  /** Workbench: recent sessions for one profile. */
+  workbenchSessions(
+    profile: string,
+    offset: number,
+    limit?: number,
+  ): Promise<Result<WorkbenchSessionPage>>;
+  /** Workbench: session search by id and message content. */
+  workbenchSearch(profile: string, query: string): Promise<Result<readonly WorkbenchSession[]>>;
+  /** Workbench: read-only transcript for one stored session. */
+  workbenchMessages(
+    profile: string,
+    sessionId: string,
+    offset: number,
+  ): Promise<Result<{ messages: readonly WorkbenchMessage[]; hasMore: boolean }>>;
+  /** Workbench: Kanban boards (plugin may be absent). */
+  kanbanBoards(): Promise<Result<readonly KanbanBoardSummary[]>>;
+  /** Workbench: Kanban board snapshot. */
+  kanbanBoard(board: string): Promise<Result<KanbanBoard>>;
   /** Non-secret connection preferences. */
   settings(): Result<DashboardSettings>;
   saveAddress(address: string | null): Result<void>;
@@ -114,6 +146,14 @@ function toProtocolError(error: unknown): ProtocolError {
  * The IPC-facing facade. It owns parsing addresses, keeping secrets inside the
  * main process and turning failures into structured results the UI can render.
  */
+function workbenchDeps(deps: DashboardServiceDeps) {
+  return {
+    auth: deps.auth,
+    fetchImpl: deps.fetchImpl,
+    ...(deps.requestTimeoutMs === undefined ? {} : { requestTimeoutMs: deps.requestTimeoutMs }),
+  };
+}
+
 function profileDeps(deps: DashboardServiceDeps) {
   return {
     auth: deps.auth,
@@ -224,6 +264,26 @@ export function createDashboardService(deps: DashboardServiceDeps): DashboardSer
 
     async checkModelReady(profileName) {
       return readModelReadiness(profileDeps(deps), profileName);
+    },
+
+    async workbenchSessions(profile, offset, limit) {
+      return listWorkbenchSessions(workbenchDeps(deps), profile, offset, limit ?? 50);
+    },
+
+    async workbenchSearch(profile, query) {
+      return searchWorkbenchSessions(workbenchDeps(deps), profile, query);
+    },
+
+    async workbenchMessages(profile, sessionId, offset) {
+      return readWorkbenchMessages(workbenchDeps(deps), profile, sessionId, offset);
+    },
+
+    async kanbanBoards() {
+      return listKanbanBoards(workbenchDeps(deps));
+    },
+
+    async kanbanBoard(board) {
+      return readKanbanBoard(workbenchDeps(deps), board);
     },
 
     configUrl() {
