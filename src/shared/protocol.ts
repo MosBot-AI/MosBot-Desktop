@@ -395,6 +395,14 @@ export type DashboardPendingEvent =
   | { readonly type: 'remove'; readonly requestId: string }
   | { readonly type: 'open'; readonly profile: string };
 
+export interface CronJob {
+  readonly id: string;
+  readonly name: string;
+  readonly schedule: string;
+  readonly enabled: boolean;
+  readonly lastRunAt: number | null;
+}
+
 export interface BotArtifact {
   readonly name: string;
   readonly path: string;

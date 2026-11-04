@@ -17,6 +17,7 @@ import type {
   ComputerBootstrap,
   DisplayLease,
   BotArtifactContent,
+  CronJob,
   DisplaySnapshot,
   DisplayThumbnail,
   KanbanWatchEvent,
@@ -195,6 +196,11 @@ const bridge: Omit<MosBotBridge, 'openExternal' | 'local' | 'computer'> = {
     displayStart(): Promise<Result<DisplaySnapshot>> {
       return ipcRenderer.invoke(DASHBOARD_CHANNELS.displayStart) as Promise<
         Result<DisplaySnapshot>
+      >;
+    },
+    listCronJobs(profile: string): Promise<Result<readonly CronJob[]>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.listCronJobs, profile) as Promise<
+        Result<readonly CronJob[]>
       >;
     },
     listArtifacts(

@@ -66,7 +66,9 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
 - 电脑观看窗口：`display.observe` 取得一次性 RFB ticket 与 server viewer id，独立窗口用 noVNC 渲染画面；
   控制条显示「仅观看 / 你正在控制 / 他人控制」，显式 `display.lease.acquire/release`，跟随 lease 广播，
   关闭窗口时归还控制权。真实探针验证 observe ticket、acquire（holder=human）、持租约预览抑制、
-  release（holder=agent）。未连接时保持 fixture 演示。
+  release（holder=agent）。
+- 详情栏例行任务：连接后读取 `/api/cron/jobs?profile=`，列出任务名、调度与停用状态，替代 fixture 数据。
+  未连接时保持 fixture 演示。
 - Gateway WebSocket 客户端（`ws`）：一次性 ticket 握手、`gateway.ready` 首帧、zod 校验的 JSON-RPC 请求响应、类型化服务端事件，以及 ticket 复用/过期拒绝检查。已在测试部署验证：`profiles.list`、`client.capabilities` 与精确 Bot Chat 查询通过；复用与过期 ticket 被拒绝。
 
 ### 变更

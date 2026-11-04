@@ -127,7 +127,10 @@ until the release repository exists.
   acquires and releases the display lease explicitly, follows lease broadcasts,
   and releases control when the window closes. Verified with a real probe
   (observe ticket, acquire holder=human, preview suppressed while held, release
-  holder=agent). Fixture windows keep the offline demo.
+  holder=agent).
+- Details routines: connected Bots read `/api/cron/jobs?profile=` and list each
+  job's name, schedule and disabled state instead of the fixture routines. Fixture
+  windows keep the offline demo.
 - Gateway WebSocket client (`ws`): one-time ticket handshake, `gateway.ready` first
   frame, JSON-RPC request/response with zod validation, typed server events, and
   ticket replay/expiry rejection checks. Verified against the test deployment:

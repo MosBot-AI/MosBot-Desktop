@@ -1,5 +1,6 @@
-import { useState, type ReactElement } from 'react';
+import { useEffect, useState, type ReactElement } from 'react';
 import type { BotProfile } from '../../../shared/domain';
+import type { CronJob } from '../../../shared/protocol';
 import { formatRelativeMinutes, presenceKey } from '../../app/format';
 import { useMessages } from '../../app/i18n';
 import { isRemoteRoster, selectRoutinesFor, useAppState, useDispatch } from '../../app/store';
@@ -20,6 +21,25 @@ export function DetailsTab({ bot }: DetailsTabProps): ReactElement {
   const remote = useAppState(isRemoteRoster);
   const organization = useAppState((state) => state.remoteOrg);
   const [newSection, setNewSection] = useState('');
+  const [cronJobs, setCronJobs] = useState<readonly CronJob[] | null>(null);
+  useEffect(() => {
+    if (!remote) {
+      return;
+    }
+    const dashboard = window.mosbot?.dashboard;
+    if (dashboard === undefined) {
+      return;
+    }
+    let cancelled = false;
+    void dashboard.listCronJobs(bot.id).then((result) => {
+      if (!cancelled) {
+        setCronJobs(result.ok ? result.data : []);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [remote, bot.id]);
   const pinned = organization.pinned.includes(bot.id);
   const currentSection = organization.sections.find((section) => section.botIds.includes(bot.id));
 
@@ -131,7 +151,25 @@ export function DetailsTab({ bot }: DetailsTabProps): ReactElement {
 
       <section className={styles.section}>
         <h3 className={styles.sectionTitle}>{t('inspector.details.routines')}</h3>
-        {routines.length === 0 ? (
+        {remote ? (
+          cronJobs === null ? (
+            <p className={styles.empty}>{t('workbench.loading')}</p>
+          ) : cronJobs.length === 0 ? (
+            <p className={styles.empty}>{t('inspector.details.routinesEmpty')}</p>
+          ) : (
+            <ul className={styles.routineList}>
+              {cronJobs.map((job) => (
+                <li key={job.id} className={styles.routine}>
+                  <span className={styles.routineName}>{job.name}</span>
+                  <span className={styles.routineMeta}>
+                    {job.schedule}
+                    {job.enabled ? '' : ` · ${t('inspector.routine.disabled')}`}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )
+        ) : routines.length === 0 ? (
           <p className={styles.empty}>{t('inspector.details.routinesEmpty')}</p>
         ) : (
           <ul className={styles.routineList}>

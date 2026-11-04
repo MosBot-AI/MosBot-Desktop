@@ -14,6 +14,7 @@ import type {
   CreateBotResult,
   BotArtifact,
   BotArtifactContent,
+  CronJob,
   DisplaySnapshot,
   DisplayThumbnail,
   KanbanBoard,
@@ -36,6 +37,7 @@ import {
 } from './profiles';
 import { runChatProbe, runComputerProbe, runCreateBotProbe } from './probe-writes';
 import { listBotArtifacts, readBotArtifact } from './artifacts';
+import { listCronJobs } from './cron';
 import { readDisplayStatus, readDisplayThumbnail, startDisplay } from './display';
 import {
   createKanbanTask,
@@ -153,6 +155,8 @@ export interface DashboardService {
   ): Promise<Result<readonly BotArtifact[]>>;
   /** Library: one artifact as a data URL (read-only). */
   readArtifact(artifactPath: string): Promise<Result<BotArtifactContent>>;
+  /** Details: read-only cron jobs for one profile. */
+  listCronJobs(profile: string): Promise<Result<readonly CronJob[]>>;
   /** Non-secret connection preferences. */
   settings(): Result<DashboardSettings>;
   saveAddress(address: string | null): Result<void>;
@@ -365,6 +369,10 @@ export function createDashboardService(deps: DashboardServiceDeps): DashboardSer
 
     async readArtifact(artifactPath) {
       return readBotArtifact(displayDeps(deps), artifactPath);
+    },
+
+    async listCronJobs(profile) {
+      return listCronJobs(displayDeps(deps), profile);
     },
 
     configUrl() {

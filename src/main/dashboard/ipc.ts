@@ -9,6 +9,7 @@ import {
   type ProbeReport,
   type AppearanceResult,
   type BotArtifact,
+  type CronJob,
   type BotArtifactContent,
   type DisplaySnapshot,
   type DisplayThumbnail,
@@ -249,6 +250,13 @@ export function registerDashboardIpc(options: {
   handle<DisplaySnapshot>(DASHBOARD_CHANNELS.displayStatus, () => service.displayStatus());
   handle<DisplayThumbnail>(DASHBOARD_CHANNELS.displayThumbnail, () => service.displayThumbnail());
   handle<DisplaySnapshot>(DASHBOARD_CHANNELS.displayStart, () => service.displayStart());
+
+  handle<readonly CronJob[]>(DASHBOARD_CHANNELS.listCronJobs, (profileName) => {
+    if (!isBoundedString(profileName, 128)) {
+      return { ok: false, error: protocolError('invalid_url', 'A profile name is required.') };
+    }
+    return service.listCronJobs(profileName);
+  });
 
   handle<readonly BotArtifact[]>(DASHBOARD_CHANNELS.listArtifacts, (profileName, workspace) => {
     if (!isBoundedString(profileName, 128)) {

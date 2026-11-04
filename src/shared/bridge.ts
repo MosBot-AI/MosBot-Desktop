@@ -9,6 +9,7 @@ import type {
   KanbanBoardSummary,
   BotArtifact,
   BotArtifactContent,
+  CronJob,
   DisplaySnapshot,
   DisplayThumbnail,
   DisplayLease,
@@ -169,6 +170,8 @@ export interface MosBotDashboardBridge {
   readArtifact(artifactPath: string): Promise<Result<BotArtifactContent>>;
   /** Library: save one artifact to Downloads and open it. */
   saveArtifact(artifactPath: string, name: string): Promise<Result<string>>;
+  /** Details: read-only cron jobs for one profile. */
+  listCronJobs(profile: string): Promise<Result<readonly CronJob[]>>;
   /** Opens the independent remote-computer viewer window for one profile. */
   openComputerViewer(profile: string): Promise<Result<void>>;
   /** Tails one Kanban board's events from a cursor (board pinned per watcher). */
@@ -239,6 +242,7 @@ export const DASHBOARD_CHANNELS = {
   displayThumbnail: 'mosbot:dashboard:displayThumbnail',
   displayStart: 'mosbot:dashboard:displayStart',
   listArtifacts: 'mosbot:dashboard:listArtifacts',
+  listCronJobs: 'mosbot:dashboard:listCronJobs',
   readArtifact: 'mosbot:dashboard:readArtifact',
   saveArtifact: 'mosbot:dashboard:saveArtifact',
   openComputerViewer: 'mosbot:dashboard:openComputerViewer',
