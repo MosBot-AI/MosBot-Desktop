@@ -34,7 +34,7 @@ import {
   setProfileModel,
   setRemoteAppearance,
 } from './profiles';
-import { runChatProbe, runCreateBotProbe } from './probe-writes';
+import { runChatProbe, runComputerProbe, runCreateBotProbe } from './probe-writes';
 import { listBotArtifacts, readBotArtifact } from './artifacts';
 import { readDisplayStatus, readDisplayThumbnail, startDisplay } from './display';
 import {
@@ -72,6 +72,8 @@ export interface DashboardService {
   probeCreateBot(): Promise<Result<ProbeReport>>;
   /** M3: workbench REST probe (sessions, search, messages, Kanban). */
   probeWorkbench(): Promise<Result<ProbeReport>>;
+  /** M4: computer wake/observe/lease/cleanup probe. */
+  probeComputer(): Promise<Result<ProbeReport>>;
   /** Local sign-out plus what it verified. */
   signOut(): Result<ProbeReport>;
   /** Aborts a pending browser sign-in. */
@@ -374,6 +376,15 @@ export function createDashboardService(deps: DashboardServiceDeps): DashboardSer
         };
       }
       return { ok: true, data: profileConfigUrl(target) };
+    },
+
+    async probeComputer() {
+      return runComputerProbe({
+        auth: deps.auth,
+        fetchImpl: deps.fetchImpl,
+        ...(deps.requestTimeoutMs === undefined ? {} : { requestTimeoutMs: deps.requestTimeoutMs }),
+        ...(deps.now === undefined ? {} : { now: deps.now }),
+      });
     },
 
     async probeCreateBot() {

@@ -16,7 +16,7 @@ const contentSecurityPolicy: Plugin = {
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data:",
       "font-src 'self' data:",
-      "connect-src 'self'",
+      "connect-src 'self' ws: wss:",
       "object-src 'none'",
       "base-uri 'none'",
       "form-action 'none'",

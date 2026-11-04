@@ -1339,3 +1339,143 @@ export async function runCreateBotProbe(deps: WriteProbeDeps): Promise<Result<Pr
 
   return { ok: true, data: { generatedAt: now(), target: target.displayUrl, rows } };
 }
+
+/** M4 probe: remote-computer status, explicit wake, observe ticket, lease and cleanup. */
+export async function runComputerProbe(deps: WriteProbeDeps): Promise<Result<ProbeReport>> {
+  const target = deps.auth.target();
+  if (target === null || !deps.auth.current().connected) {
+    return {
+      ok: false,
+      error: protocolError('unauthorized', 'Sign in to the Dashboard before running this probe.'),
+    };
+  }
+  const rows: CapabilityRow[] = [];
+  const now = deps.now ?? (() => Date.now());
+  const connection = await connectGateway({
+    fetchImpl: deps.fetchImpl,
+    target,
+    getAccessToken: () => deps.auth.accessToken(),
+    requestTimeoutMs: deps.requestTimeoutMs ?? 30_000,
+  });
+  if (!connection.ok) {
+    return connection;
+  }
+  const client = connection.data;
+  const call = (method: string, params: Record<string, unknown>) =>
+    client.call(method, params, emptySchema);
+  let startedByProbe = false;
+  let viewerId: string | null = null;
+  try {
+    const before = await call('display.status', {});
+    const beforeRecord = asRecord(before.ok ? before.data : null);
+    const wasRunning = beforeRecord?.['running'] === true;
+    rows.push(
+      row(
+        'computer_status',
+        '电脑状态 display.status',
+        before.ok ? 'pass' : 'not-supported',
+        before.ok
+          ? `running=${String(wasRunning)} · supported=${String(beforeRecord?.['supported'])} · installed=${String(beforeRecord?.['installed'])} · geometry=${stringField(beforeRecord, 'geometry') ?? '—'} · blocker=${stringField(beforeRecord, 'blocker') ?? '(none)'}`
+          : errorDetail(before.error),
+      ),
+    );
+    if (!before.ok) {
+      return { ok: true, data: { generatedAt: now(), target: target.displayUrl, rows } };
+    }
+
+    if (!wasRunning) {
+      const started = await call('display.start', {});
+      startedByProbe = started.ok;
+      rows.push(
+        row(
+          'computer_start',
+          '显式唤醒 display.start',
+          started.ok ? 'pass' : 'unverified',
+          started.ok
+            ? `running=${String(asRecord(started.data)?.['running'])} · blocker=${stringField(asRecord(started.data), 'blocker') ?? '(none)'}`
+            : errorDetail(started.error),
+        ),
+      );
+      if (!started.ok) {
+        return { ok: true, data: { generatedAt: now(), target: target.displayUrl, rows } };
+      }
+      for (let attempt = 0; attempt < 15; attempt += 1) {
+        const status = await call('display.status', {});
+        if (status.ok && asRecord(status.data)?.['running'] === true) {
+          break;
+        }
+        await sleep(1_000);
+      }
+    }
+
+    const observed = await call('display.observe', {});
+    const observedRecord = asRecord(observed.ok ? observed.data : null);
+    viewerId = stringField(observedRecord, 'viewer_id');
+    rows.push(
+      row(
+        'computer_observe',
+        '观看票据 display.observe',
+        observed.ok && viewerId !== null ? 'pass' : 'fail',
+        observed.ok
+          ? `ticket=${observedRecord?.['ticket'] === undefined ? 'absent' : 'present'} · viewer_id=${viewerId === null ? 'absent' : 'present'} · path=${stringField(observedRecord, 'path') ?? '—'}`
+          : errorDetail(observed.error),
+      ),
+    );
+
+    if (viewerId !== null) {
+      const acquired = await call('display.lease.acquire', {
+        viewer_id: viewerId,
+        reason: 'mosbot-probe',
+      });
+      const lease = acquired.ok ? asRecord(asRecord(acquired.data)?.['lease']) : null;
+      rows.push(
+        row(
+          'computer_lease_acquire',
+          '取得控制权 display.lease.acquire',
+          acquired.ok && lease?.['holder'] === 'human' ? 'pass' : 'fail',
+          acquired.ok
+            ? `holder=${String(lease?.['holder'])} · viewer_hash=${stringField(lease, 'viewer_hash') === null ? 'absent' : 'present'}`
+            : errorDetail(acquired.error),
+        ),
+      );
+      const suppressedThumb = await call('display.thumbnail', {});
+      const suppressedRecord = asRecord(suppressedThumb.ok ? suppressedThumb.data : null);
+      rows.push(
+        row(
+          'computer_thumbnail_suppressed',
+          '他人持租约时预览抑制',
+          suppressedThumb.ok && suppressedRecord?.['suppressed'] === 'human_has_control'
+            ? 'pass'
+            : 'unverified',
+          suppressedThumb.ok
+            ? `data_url=${suppressedRecord?.['data_url'] === null ? 'null' : 'present'} · suppressed=${stringField(suppressedRecord, 'suppressed') ?? '(none)'}`
+            : errorDetail(suppressedThumb.error),
+        ),
+      );
+      const released = await call('display.lease.release', { viewer_id: viewerId });
+      const releasedLease = released.ok ? asRecord(asRecord(released.data)?.['lease']) : null;
+      rows.push(
+        row(
+          'computer_lease_release',
+          '归还控制权 display.lease.release',
+          released.ok && releasedLease?.['holder'] !== 'human' ? 'pass' : 'fail',
+          released.ok ? `holder=${String(releasedLease?.['holder'])}` : errorDetail(released.error),
+        ),
+      );
+    }
+  } finally {
+    if (startedByProbe) {
+      const stopped = await call('display.stop', { force: true });
+      rows.push(
+        row(
+          'computer_cleanup',
+          '清理：停止本探针唤醒的电脑',
+          stopped.ok ? 'pass' : 'unverified',
+          stopped.ok ? 'stopped' : errorDetail(stopped.error),
+        ),
+      );
+    }
+    client.close();
+  }
+  return { ok: true, data: { generatedAt: now(), target: target.displayUrl, rows } };
+}

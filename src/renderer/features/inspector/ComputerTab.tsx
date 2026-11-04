@@ -172,7 +172,15 @@ export function ComputerTab({ profileId, botName }: ComputerTabProps): ReactElem
                 </p>
               )}
               {snapshot.running ? (
-                <p className={styles.hint}>{t('inspector.computer.remote.viewerNext')}</p>
+                <button
+                  type="button"
+                  className={styles.wakeButton}
+                  onClick={() => {
+                    void window.mosbot?.dashboard.openComputerViewer(profileId);
+                  }}
+                >
+                  {t('inspector.computer.remote.open')}
+                </button>
               ) : (
                 <button
                   type="button"

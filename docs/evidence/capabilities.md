@@ -81,7 +81,8 @@
 - M4 第一块：附件上传（`file.attach` data URL）与真实推理读取已打通；电脑 `display.status`、
   `display.thumbnail`（休眠时无帧、不伪造）与显式唤醒入口已接入。资料库按 Bot Chat 工作区索引
   产物（`/api/files`），文本/图片预览与「保存并打开」已实现；专用 profile 真实验证 Bot 创建文件 →
-  索引 → 读取 token。观看/接管窗口与租约待下一段。
+  索引 → 读取 token。电脑独立 RFB 观看窗口（noVNC + display ticket）与租约取得/归还已实现；真实探针验证
+  observe ticket、lease acquire（holder=human）、持租约时预览抑制与 release（holder=agent）。
   证据：`docs/evidence/m1-roster-and-history.md`、`docs/evidence/m1-chat-streaming.md`。
 - 未连接时仍使用 fixture，M0a 演示不受影响。
 

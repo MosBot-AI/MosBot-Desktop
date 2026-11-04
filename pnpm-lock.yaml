@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@novnc/novnc':
+        specifier: 1.4.0
+        version: 1.4.0
       marked:
         specifier: 18.1.2
         version: 18.1.2
@@ -245,6 +248,9 @@ packages:
   '@malept/cross-spawn-promise@2.0.0':
     resolution: {integrity: sha512-1DpKU0Z5ThltBwjNySMC14g0CkbyhCaz9FkhxqNsZI6uAPJXFS8cMXlBKo26FJ8ZuW6S9GCMcR9IO5k2X5/9Fg==}
     engines: {node: '>= 12.13.0'}
+
+  '@novnc/novnc@1.4.0':
+    resolution: {integrity: sha512-kW6ALMc5BuH08e/ond/I1naYcfjc19JYMN1EdtmgjjjzPGCjW8fMtVM3MwM6q7YLRjPlQ3orEvoKMgSS7RkEVQ==}
 
   '@oxc-project/types@0.156.0':
     resolution: {integrity: sha512-1Duyg48TdJNdyhEB8Xn1L36bT9Pv6GUtlKjHxOys8xkaF/rQq3XJE+bAurSK/AgIz5mGFsb77cn9Pb20+WCScw==}
@@ -1760,6 +1766,8 @@ snapshots:
   '@malept/cross-spawn-promise@2.0.0':
     dependencies:
       cross-spawn: 7.0.6
+
+  '@novnc/novnc@1.4.0': {}
 
   '@oxc-project/types@0.156.0': {}
 

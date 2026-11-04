@@ -115,6 +115,7 @@ export function registerDashboardIpc(options: {
   handle<ProbeReport>(DASHBOARD_CHANNELS.probe, () => service.probe());
   handle<ProbeReport>(DASHBOARD_CHANNELS.probeWebSocket, () => service.probeWebSocket());
   handle<ProbeReport>(DASHBOARD_CHANNELS.probeWorkbench, () => service.probeWorkbench());
+  handle<ProbeReport>(DASHBOARD_CHANNELS.probeComputer, () => service.probeComputer());
   handle<ProbeReport>(DASHBOARD_CHANNELS.probeNewBot, () => service.probeNewBot());
   handle<ProbeReport>(DASHBOARD_CHANNELS.probeKanbanWrite, () => service.probeKanbanWrite());
   handle<ProbeReport>(DASHBOARD_CHANNELS.probeChat, () => service.probeChat());

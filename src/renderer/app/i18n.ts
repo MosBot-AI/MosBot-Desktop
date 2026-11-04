@@ -175,6 +175,16 @@ const zhHans = {
   'inspector.computer.remote.waking': '正在唤醒…',
   'inspector.computer.remote.otherViewer': '有人正在使用这台电脑，预览已暂停。',
   'inspector.computer.remote.viewerNext': '观看与控制窗口将在下一段接入。',
+  'inspector.computer.remote.open': '打开观看窗口',
+  'computer.viewer.screen': '远端电脑画面',
+  'computer.viewer.connecting': '正在连接画面…',
+  'computer.viewer.disconnected': '画面连接已断开。',
+  'computer.viewer.viewOnly': '仅观看 · 取得控制权',
+  'computer.viewer.controlling': '你正在控制',
+  'computer.viewer.otherViewer': '其他人正在控制这台电脑。',
+  'computer.viewer.acquire': '取得控制权',
+  'computer.viewer.release': '归还控制',
+  'computer.viewer.close': '关闭',
 
   'search.title': '搜索',
   'search.placeholder': '搜索 Bot',
@@ -429,6 +439,16 @@ const en: Record<MessageKey, string> = {
   'inspector.computer.remote.otherViewer':
     'Someone else is using this computer; the preview is paused.',
   'inspector.computer.remote.viewerNext': 'The watch/control window arrives in the next slice.',
+  'inspector.computer.remote.open': 'Open viewer',
+  'computer.viewer.screen': 'Remote computer screen',
+  'computer.viewer.connecting': 'Connecting to the screen…',
+  'computer.viewer.disconnected': 'The screen connection closed.',
+  'computer.viewer.viewOnly': 'View only · Take control',
+  'computer.viewer.controlling': 'You are controlling',
+  'computer.viewer.otherViewer': 'Someone else is controlling this computer.',
+  'computer.viewer.acquire': 'Take control',
+  'computer.viewer.release': 'Return control',
+  'computer.viewer.close': 'Close',
   'inspector.computer.pending':
     'Computer viewing and takeover arrive in M4; no wake action is offered yet.',
 

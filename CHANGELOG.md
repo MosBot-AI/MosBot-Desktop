@@ -120,8 +120,14 @@ until the release repository exists.
   `/api/files`, shows name/type/size, previews text and images from
   `/api/files/read` data URLs, and saves a chosen artifact into Downloads before
   opening it explicitly. Verified with a dedicated-profile probe where the Bot
-  created a file that the index found and read back. Fixture windows keep the
-  offline demo.
+  created a file that the index found and read back.
+- Remote-computer viewer: `display.observe` mints a single-use RFB ticket and a
+  server viewer id, and a separate window renders the screen through noVNC. The
+  control bar shows view-only / you-are-controlling / someone-else-controlling,
+  acquires and releases the display lease explicitly, follows lease broadcasts,
+  and releases control when the window closes. Verified with a real probe
+  (observe ticket, acquire holder=human, preview suppressed while held, release
+  holder=agent). Fixture windows keep the offline demo.
 - Gateway WebSocket client (`ws`): one-time ticket handshake, `gateway.ready` first
   frame, JSON-RPC request/response with zod validation, typed server events, and
   ticket replay/expiry rejection checks. Verified against the test deployment:

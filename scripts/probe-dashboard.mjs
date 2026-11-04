@@ -22,6 +22,7 @@ const RESTORE_ONLY = MODE === 'restore';
 const FORCE_LOGIN = MODE === 'login';
 const WS_ONLY = MODE === 'ws';
 const WORKBENCH_ONLY = MODE === 'workbench';
+const COMPUTER_ONLY = MODE === 'computer';
 const ROSTER_ONLY = MODE === 'roster';
 const CHAT_ONLY = MODE === 'chat';
 const CREATEBOT_ONLY = MODE === 'createbot';
@@ -310,6 +311,29 @@ async function main() {
       return;
     }
     printRows('第 2 步 · WS 与名单', webSocket.data.rows);
+  }
+
+  if (COMPUTER_ONLY) {
+    const report = await page.evaluate(() => window.mosbot.dashboard.probeComputer());
+    if (!report.ok) {
+      console.error(`\nComputer probe failed: [${report.error.code}] ${report.error.message}`);
+      await application.close();
+      process.exitCode = 13;
+      return;
+    }
+    printRows('M4 · 电脑唤醒 / 观看票据 / 控制权租约（探针唤醒后清理）', report.data.rows);
+    mkdirSync(OUT_DIR, { recursive: true });
+    const reportPath = path.join(
+      OUT_DIR,
+      `dashboard-computer-${new Date().toISOString().replace(/[:.]/g, '-')}.json`,
+    );
+    writeFileSync(
+      reportPath,
+      `${JSON.stringify({ generatedAt: new Date().toISOString(), target: URL_FROM_ENV, rows: report.data.rows }, null, 2)}\n`,
+    );
+    console.log(`\nM4 电脑报告已写入 ${reportPath}`);
+    await application.close();
+    return;
   }
 
   let workbench = null;

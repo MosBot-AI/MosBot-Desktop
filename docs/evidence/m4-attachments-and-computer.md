@@ -1,8 +1,8 @@
 # M4 · 附件与电脑（第一块）· 证据
 
 - 卡片：M4（附件收发、电脑状态/预览/唤醒；产物索引与观看/接管窗口待下一段）
-- 状态：**附件上传/真实推理读取、资料库产物索引/预览/保存并打开、电脑状态/预览/显式唤醒均已接入**；
-  独立观看窗口与租约接管待下一段
+- 状态：**附件上传/真实推理读取、资料库产物索引/预览/保存并打开、电脑状态/预览/唤醒、独立 RFB 观看窗口
+  与租约取得/归还均已接入**；观看窗口的真实画面验收待用户在场确认
 - 记录时间：2026-11-04
 - 目标服务：`192.168.2.171:9119`（v0.22.5 / `bf0203a794`）
 
@@ -34,19 +34,22 @@
 - 运行时读取 `display.thumbnail` 显示 16:10 预览；服务端 `suppressed`（他人持有租约）时隐藏画面并提示，
   不显示旧帧；
 - 休眠时提供显式「唤醒」按钮（`display.start`），完成后 1.5 s 重读权威状态；阻塞时禁用并显示原因；
-- 独立观看/控制窗口（RFB/noVNC + `display.observe` 一次性 ticket + 租约 acquire/release）尚未接入，
-  界面明确标注下一段。
+- 独立观看窗口：主进程 `display.observe` 取得一次性 display ticket 与 server-minted viewer id，打开独立
+  BrowserWindow（noVNC RFB 直连 `/api/display/ws?display_ticket=`）；控制条显示「仅观看 / 你正在控制 /
+  他人控制」，`display.lease.acquire/release` 取得/归还控制权，lease 广播与操作结果同步；关闭窗口或注销时
+  自动归还租约并关闭连接。RFB 窗口初始只读，取得控制后才发送输入。
 
 ## 验证
 
-| 检查                                | 结果                                                                       |
-| ----------------------------------- | -------------------------------------------------------------------------- |
-| 真实附件探针（专用 profile）        | ✅ 上传 staged、模型回显附件 token、profile 清理                           |
-| 真实 `display.status`               | ✅ supported/installed/running/lease 等字段可读                            |
-| 真实 `display.thumbnail`            | ✅ 读取成功；电脑休眠时 `data_url=null`、无帧、无 suppressed（不伪造画面） |
-| `pnpm test`                         | 133 通过                                                                   |
-| `pnpm test:e2e`                     | 12 通过（fixture 路径不受影响）                                            |
-| typecheck / lint / format / package | 通过                                                                       |
+| 检查                                | 结果                                                                                                                              |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| 真实附件探针（专用 profile）        | ✅ 上传 staged、模型回显附件 token、profile 清理                                                                                  |
+| 真实 `display.status`               | ✅ supported/installed/running/lease 等字段可读                                                                                   |
+| 真实 `display.thumbnail`            | ✅ 读取成功；电脑休眠时 `data_url=null`、无帧、无 suppressed（不伪造画面）                                                        |
+| 真实电脑探针（唤醒/票据/租约）      | ✅ running=true · observe ticket+viewer_id · acquire holder=human · 持租约时预览抑制（`human_has_control`）· release holder=agent |
+| `pnpm test`                         | 133 通过                                                                                                                          |
+| `pnpm test:e2e`                     | 12 通过（fixture 路径不受影响）                                                                                                   |
+| typecheck / lint / format / package | 通过                                                                                                                              |
 
 ## 未完成 / 下一段
 

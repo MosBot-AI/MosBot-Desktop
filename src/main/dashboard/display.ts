@@ -51,6 +51,9 @@ function mapSnapshot(value: unknown): DisplaySnapshot {
         : {
             holder: str(lease['holder']),
             since: num(lease['since']),
+            viewerHash: str(lease['viewer_hash']) || null,
+            reason: str(lease['reason']),
+            mine: false,
           },
   };
 }

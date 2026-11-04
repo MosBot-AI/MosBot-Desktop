@@ -19,6 +19,7 @@ import { createChatManager } from './dashboard/chat';
 import { registerChatIpc } from './dashboard/chat-ipc';
 import { watchKanbanBoard, type KanbanWatcher } from './dashboard/kanban-events';
 import { createPendingWatcher } from './dashboard/pending';
+import { createComputerViewer } from './computer-viewer';
 import { registerLocalIpc } from './local/ipc';
 import { createTrustedSenderCheck, registerDashboardIpc } from './dashboard/ipc';
 import { createDashboardService } from './dashboard/service';
@@ -389,6 +390,17 @@ function registerDashboard(): void {
     },
   });
   const trusted = createTrustedSenderCheck(() => mainWindow?.webContents ?? null);
+  const computerViewer = createComputerViewer({
+    auth,
+    fetchImpl,
+    preloadPath: path.join(__dirname, 'preload.cjs'),
+    rendererDevUrl:
+      typeof MAIN_WINDOW_VITE_DEV_SERVER_URL === 'string' ? MAIN_WINDOW_VITE_DEV_SERVER_URL : null,
+    rendererIndex: path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
+    getParent: () => mainWindow,
+    isTrustedEvent: trusted,
+  });
+
   registerDashboardIpc({
     ipcMain,
     service,
@@ -397,6 +409,7 @@ function registerDashboard(): void {
       chat.close();
       watcher.stop();
       stopKanbanWatcher();
+      computerViewer.dispose();
     },
     onSessionReady: () => {
       watcher.start();
@@ -418,6 +431,7 @@ function registerDashboard(): void {
     chat.close();
     watcher.stop();
     stopKanbanWatcher();
+    computerViewer.dispose();
   });
   watcher.start();
 }

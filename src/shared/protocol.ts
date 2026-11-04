@@ -415,6 +415,17 @@ export interface BotArtifactContent {
 export interface DisplayLease {
   readonly holder: string;
   readonly since: number | null;
+  readonly viewerHash: string | null;
+  readonly reason: string;
+  /** True when this viewer window holds the human lease. */
+  readonly mine: boolean;
+}
+
+export interface ComputerBootstrap {
+  readonly wsUrl: string;
+  readonly viewerId: string;
+  readonly profile: string;
+  readonly botName: string;
 }
 
 export interface DisplaySnapshot {

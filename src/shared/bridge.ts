@@ -1,5 +1,6 @@
 import type {
   AppearanceInput,
+  ComputerBootstrap,
   AppearanceResult,
   ChatOpenResult,
   CreateBotInput,
@@ -10,6 +11,7 @@ import type {
   BotArtifactContent,
   DisplaySnapshot,
   DisplayThumbnail,
+  DisplayLease,
   KanbanWatchEvent,
   ModelReadiness,
   WorkbenchMessage,
@@ -43,6 +45,16 @@ export interface MosBotBridge {
   openExternal(url: string): Promise<boolean>;
   /** Versioned, non-secret local state (drafts, selection, preferences). */
   readonly local: MosBotLocalBridge;
+  /** Viewer-window only: RFB bootstrap and control lease. */
+  readonly computer: MosBotComputerBridge;
+}
+
+export interface MosBotComputerBridge {
+  onBootstrap(listener: (payload: ComputerBootstrap) => void): () => void;
+  onLease(listener: (lease: DisplayLease | null) => void): () => void;
+  acquire(): Promise<Result<void>>;
+  release(): Promise<Result<void>>;
+  close(): Promise<void>;
 }
 
 export interface MosBotLocalBridge {
@@ -75,6 +87,8 @@ export interface MosBotDashboardBridge {
   probeCreateBot(): Promise<Result<ProbeReport>>;
   /** M3 probe: workbench REST (sessions, search, messages, Kanban). */
   probeWorkbench(): Promise<Result<ProbeReport>>;
+  /** M4 probe: computer wake/observe/lease/cleanup. */
+  probeComputer(): Promise<Result<ProbeReport>>;
   /** Clears local credentials and reports what survived. */
   signOut(): Promise<Result<ProbeReport>>;
   status(): Promise<Result<DashboardStatus>>;
@@ -155,6 +169,8 @@ export interface MosBotDashboardBridge {
   readArtifact(artifactPath: string): Promise<Result<BotArtifactContent>>;
   /** Library: save one artifact to Downloads and open it. */
   saveArtifact(artifactPath: string, name: string): Promise<Result<string>>;
+  /** Opens the independent remote-computer viewer window for one profile. */
+  openComputerViewer(profile: string): Promise<Result<void>>;
   /** Tails one Kanban board's events from a cursor (board pinned per watcher). */
   kanbanWatch(board: string, since: number): Promise<Result<void>>;
   kanbanUnwatch(): Promise<Result<void>>;
@@ -196,6 +212,7 @@ export const DASHBOARD_CHANNELS = {
   probe: 'mosbot:dashboard:probe',
   probeWebSocket: 'mosbot:dashboard:probeWebSocket',
   probeWorkbench: 'mosbot:dashboard:probeWorkbench',
+  probeComputer: 'mosbot:dashboard:probeComputer',
   probeNewBot: 'mosbot:dashboard:probeNewBot',
   probeKanbanWrite: 'mosbot:dashboard:probeKanbanWrite',
   probeChat: 'mosbot:dashboard:probeChat',
@@ -224,6 +241,12 @@ export const DASHBOARD_CHANNELS = {
   listArtifacts: 'mosbot:dashboard:listArtifacts',
   readArtifact: 'mosbot:dashboard:readArtifact',
   saveArtifact: 'mosbot:dashboard:saveArtifact',
+  openComputerViewer: 'mosbot:dashboard:openComputerViewer',
+  computerBootstrap: 'mosbot:computer:bootstrap',
+  computerLease: 'mosbot:computer:lease',
+  computerAcquire: 'mosbot:computer:acquire',
+  computerRelease: 'mosbot:computer:release',
+  computerClose: 'mosbot:computer:close',
   kanbanWatch: 'mosbot:dashboard:kanbanWatch',
   kanbanUnwatch: 'mosbot:dashboard:kanbanUnwatch',
   kanbanEvent: 'mosbot:dashboard:kanbanEvent',

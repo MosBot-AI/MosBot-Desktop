@@ -17,7 +17,7 @@ Bot 走真实 fresh profile 流程（名称、形状、颜色），创建后自�
 真实 REST；Kanban 可新建任务、修改状态，Profiles 可写入默认模型/提供方并回读就绪状态；
 Kanban 打开时通过事件 WebSocket 保持实时（重连重签票、旧游标续传、缺口重读快照）。附件经系统选择器
 与 `file.attach` 上传后随消息发送；资料库通过 `/api/files` 索引 Bot Chat 工作区，支持文本/图片预览与
-「保存并打开」；电脑页读取真实状态与预览，并提供显式唤醒入口（观看/控制窗口下一段接入）。返回 Bots 时聊天、草稿与滚动位置保持不变。未连接时仍使用 fixture。
+「保存并打开」；电脑页读取真实状态与预览，并提供显式唤醒入口；独立观看窗口渲染 RFB 画面，可显式取得/归还控制权。返回 Bots 时聊天、草稿与滚动位置保持不变。未连接时仍使用 fixture。
 尚无签名安装包和升级路径。详见
 [`docs/evidence/m0a-design-slice.md`](docs/evidence/m0a-design-slice.md) 与
 [`docs/evidence/capabilities.md`](docs/evidence/capabilities.md)。

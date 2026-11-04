@@ -14,6 +14,8 @@ import type {
   KanbanBoard,
   KanbanBoardSummary,
   BotArtifact,
+  ComputerBootstrap,
+  DisplayLease,
   BotArtifactContent,
   DisplaySnapshot,
   DisplayThumbnail,
@@ -40,7 +42,7 @@ import type {
  * beyond the preload-safe `process` snapshot; every Dashboard call is a
  * validated IPC invoke handled in the main process.
  */
-const bridge: Omit<MosBotBridge, 'openExternal' | 'local'> = {
+const bridge: Omit<MosBotBridge, 'openExternal' | 'local' | 'computer'> = {
   platform: process.platform,
   versions: {
     electron: process.versions.electron,
@@ -208,6 +210,11 @@ const bridge: Omit<MosBotBridge, 'openExternal' | 'local'> = {
         Result<BotArtifactContent>
       >;
     },
+    openComputerViewer(profile: string): Promise<Result<void>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.openComputerViewer, profile) as Promise<
+        Result<void>
+      >;
+    },
     saveArtifact(artifactPath: string, name: string): Promise<Result<string>> {
       return ipcRenderer.invoke(DASHBOARD_CHANNELS.saveArtifact, artifactPath, name) as Promise<
         Result<string>
@@ -314,6 +321,9 @@ const bridge: Omit<MosBotBridge, 'openExternal' | 'local'> = {
     probeWorkbench(): Promise<Result<ProbeReport>> {
       return ipcRenderer.invoke(DASHBOARD_CHANNELS.probeWorkbench) as Promise<Result<ProbeReport>>;
     },
+    probeComputer(): Promise<Result<ProbeReport>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.probeComputer) as Promise<Result<ProbeReport>>;
+    },
     signOut(): Promise<Result<ProbeReport>> {
       return ipcRenderer.invoke(DASHBOARD_CHANNELS.signOut) as Promise<Result<ProbeReport>>;
     },
@@ -335,6 +345,41 @@ const localBridge: MosBotBridge['local'] = {
   },
 };
 
-const fullBridge: MosBotBridge = { ...bridge, openExternal: shellBridge, local: localBridge };
+const computerBridge: MosBotBridge['computer'] = {
+  onBootstrap(listener: (payload: ComputerBootstrap) => void): () => void {
+    const wrapped = (_event: Electron.IpcRendererEvent, payload: ComputerBootstrap): void => {
+      listener(payload);
+    };
+    ipcRenderer.on(DASHBOARD_CHANNELS.computerBootstrap, wrapped);
+    return () => {
+      ipcRenderer.removeListener(DASHBOARD_CHANNELS.computerBootstrap, wrapped);
+    };
+  },
+  onLease(listener: (lease: DisplayLease | null) => void): () => void {
+    const wrapped = (_event: Electron.IpcRendererEvent, lease: DisplayLease | null): void => {
+      listener(lease);
+    };
+    ipcRenderer.on(DASHBOARD_CHANNELS.computerLease, wrapped);
+    return () => {
+      ipcRenderer.removeListener(DASHBOARD_CHANNELS.computerLease, wrapped);
+    };
+  },
+  acquire(): Promise<Result<void>> {
+    return ipcRenderer.invoke(DASHBOARD_CHANNELS.computerAcquire) as Promise<Result<void>>;
+  },
+  release(): Promise<Result<void>> {
+    return ipcRenderer.invoke(DASHBOARD_CHANNELS.computerRelease) as Promise<Result<void>>;
+  },
+  close(): Promise<void> {
+    return ipcRenderer.invoke(DASHBOARD_CHANNELS.computerClose) as Promise<void>;
+  },
+};
+
+const fullBridge: MosBotBridge = {
+  ...bridge,
+  openExternal: shellBridge,
+  local: localBridge,
+  computer: computerBridge,
+};
 
 contextBridge.exposeInMainWorld('mosbot', fullBridge);

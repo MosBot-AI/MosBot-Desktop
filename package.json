@@ -32,6 +32,7 @@
     "screenshot:connected": "node scripts/capture-connected.mjs"
   },
   "dependencies": {
+    "@novnc/novnc": "1.4.0",
     "marked": "18.1.2",
     "react": "19.3.1",
     "react-dom": "19.3.1",
