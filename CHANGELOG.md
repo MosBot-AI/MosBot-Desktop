@@ -320,6 +320,13 @@ until the release repository exists.
   probe board (kept for the walkthrough, removed by the next probe run): a second
   client creates a task and the first client sees it after clicking Refresh.
 
+- Fixed: answering an approval locally did not remove the request from the
+  cross-client reconciliation set, so a later `session.resume` could overwrite the
+  local receipt with "handled in another window". Local answers now leave the set
+  first; two unit tests cover the remote-reconcile and local-answer paths, and the
+  concurrent-approval walkthrough confirms each window keeps its own receipt (the
+  remaining mismatch is the server's missing "who won" event).
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,

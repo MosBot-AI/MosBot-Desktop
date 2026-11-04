@@ -670,6 +670,10 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
           error: protocolError('unauthorized', 'The chat session is not connected.'),
         };
       }
+      // Answered here: the reconciliation poll must not turn it into a
+      // "handled elsewhere" receipt just because the request leaves open_requests.
+      openRequestIds.delete(requestId);
+      stopRequestPollIfIdle();
       client.respond(requestId, { ...result });
       return { ok: true, data: undefined };
     },

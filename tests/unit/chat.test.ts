@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createChatManager } from '../../src/main/dashboard/chat';
 import type { GatewayOptions, RpcClient } from '../../src/main/dashboard/rpc';
 import type { AuthManager } from '../../src/main/dashboard/auth';
@@ -40,6 +40,8 @@ interface FakeGateway {
   emit(type: string, payload: Record<string, unknown>, seq?: number): void;
   request(id: string, method: string, params: Record<string, unknown>): void;
   closeSocket(): void;
+  /** Controls what the next `session.resume` reports as still-open requests. */
+  setOpenRequests(requests: readonly Record<string, unknown>[]): void;
 }
 
 interface FakeReplay {
@@ -51,6 +53,7 @@ interface FakeReplay {
 function createFakeGateway(options: GatewayOptions, replay?: FakeReplay): FakeGateway {
   const calls: Array<{ method: string; params: Record<string, unknown> }> = [];
   const responses: Array<{ id: string; result: Record<string, unknown> }> = [];
+  let openRequests = replay?.openRequests;
 
   const payloadFor = (method: string): unknown => {
     if (method === 'session.create') {
@@ -60,7 +63,7 @@ function createFakeGateway(options: GatewayOptions, replay?: FakeReplay): FakeGa
       return {
         session_id: 'runtime-1',
         session_key: 'stored-1',
-        ...(replay?.openRequests === undefined ? {} : { open_requests: replay.openRequests }),
+        ...(openRequests === undefined ? {} : { open_requests: openRequests }),
       };
     }
     if (method === 'session.list') {
@@ -126,6 +129,9 @@ function createFakeGateway(options: GatewayOptions, replay?: FakeReplay): FakeGa
     },
     closeSocket() {
       options.onClose?.(1006, 'test-close');
+    },
+    setOpenRequests(requests) {
+      openRequests = requests;
     },
   };
 }
@@ -227,6 +233,83 @@ describe('chat manager', () => {
 
     await manager.answer('srq-1', { choice: 'once' });
     expect(captured.gateway?.responses).toContainEqual({ id: 'srq-1', result: { choice: 'once' } });
+  });
+
+  it('reconciles a request answered in another window through session.resume', async () => {
+    vi.useFakeTimers();
+    try {
+      const captured: { gateway: FakeGateway | null } = { gateway: null };
+      const manager = createChatManager({
+        auth: fakeAuth,
+        fetchImpl: async () => ({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          text: async () => '{"ticket":"t","ttl_seconds":30}',
+        }),
+        connect: async (options) => {
+          captured.gateway = createFakeGateway(options);
+          return { ok: true, data: captured.gateway.client };
+        },
+      });
+      const received: Array<{ type?: string; requestId?: string; reason?: string }> = [];
+      manager.subscribe((event) => {
+        received.push(event as { type?: string; requestId?: string; reason?: string });
+      });
+      await manager.open('project-bot', 'stored-1');
+      captured.gateway?.request('srq-remote', 'approval', {
+        choices: ['deny'],
+        command: 'chmod 777 x',
+      });
+      // Another client answered it: the request disappears from open_requests.
+      captured.gateway?.setOpenRequests([]);
+      await vi.advanceTimersByTimeAsync(5_100);
+      expect(received).toContainEqual(
+        expect.objectContaining({
+          type: 'request-cancel',
+          requestId: 'srq-remote',
+          reason: 'resolved-elsewhere',
+        }),
+      );
+      manager.close();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not fold a request answered in this window into a remote receipt', async () => {
+    vi.useFakeTimers();
+    try {
+      const captured: { gateway: FakeGateway | null } = { gateway: null };
+      const manager = createChatManager({
+        auth: fakeAuth,
+        fetchImpl: async () => ({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          text: async () => '{"ticket":"t","ttl_seconds":30}',
+        }),
+        connect: async (options) => {
+          captured.gateway = createFakeGateway(options);
+          return { ok: true, data: captured.gateway.client };
+        },
+      });
+      const cancelled: string[] = [];
+      manager.subscribe((event) => {
+        if (event.type === 'request-cancel') {
+          cancelled.push(event.requestId);
+        }
+      });
+      await manager.open('project-bot', 'stored-1');
+      captured.gateway?.request('srq-local', 'approval', { choices: ['deny'], command: 'ls' });
+      await manager.answer('srq-local', { choice: 'deny' });
+      captured.gateway?.setOpenRequests([]);
+      await vi.advanceTimersByTimeAsync(5_100);
+      expect(cancelled).not.toContain('srq-local');
+      manager.close();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('re-emits connection, session and open requests when the same chat is reopened', async () => {
