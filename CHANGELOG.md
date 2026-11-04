@@ -293,6 +293,12 @@ until the release repository exists.
   SIGKILL during an in-flight prompt restores the chat with the prompt appearing
   exactly once (no automatic resend).
 
+- The viewer now renders the lease snapshot returned by display.observe when it
+  opens, so an existing holder shows "someone else is controlling" immediately
+  instead of a misleading view-only state. A SIGKILL/restart walkthrough confirms a
+  killed viewer does not leave a stuck human lease on this deployment: restart is
+  view-only with Take control available, and re-acquiring succeeds.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,

@@ -69,8 +69,10 @@ export function createComputerViewer(deps: ComputerViewerDeps): ComputerViewer {
   let leaseHeld = false;
   let currentProfile: string | null = null;
   let currentBootstrap: ComputerBootstrap | null = null;
+  let currentLease: DisplayLease | null = null;
 
   const sendLease = (lease: DisplayLease | null): void => {
+    currentLease = lease;
     window?.webContents.send(DASHBOARD_CHANNELS.computerLease, lease);
   };
 
@@ -113,6 +115,7 @@ export function createComputerViewer(deps: ComputerViewerDeps): ComputerViewer {
     viewerId = '';
     currentProfile = null;
     currentBootstrap = null;
+    currentLease = null;
   };
 
   /** Only the viewer window's own top-level frame may drive its lease/window. */
@@ -150,6 +153,9 @@ export function createComputerViewer(deps: ComputerViewerDeps): ComputerViewer {
       if (currentBootstrap !== null) {
         viewer.webContents.send(DASHBOARD_CHANNELS.computerBootstrap, currentBootstrap);
       }
+      // The observe snapshot already carries the current lease: show "someone
+      // else is controlling" immediately instead of a misleading view-only state.
+      viewer.webContents.send(DASHBOARD_CHANNELS.computerLease, currentLease);
       viewer.show();
     });
     viewer.on('closed', () => {
@@ -280,6 +286,7 @@ export function createComputerViewer(deps: ComputerViewerDeps): ComputerViewer {
     }
     viewerId = mintedViewerId;
     currentProfile = profileName;
+    currentLease = mapLease(asRecord(observed.data)?.['lease'], viewerHash(mintedViewerId));
     currentBootstrap = bootstrapFor({ ticket, viewerId: mintedViewerId, profile: profileName });
     return createWindow(currentBootstrap);
   };
