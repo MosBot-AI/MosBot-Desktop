@@ -555,6 +555,7 @@ function KanbanPage(): ReactElement {
       setStatus('unavailable');
       return;
     }
+    currentBoard.current = next.slug;
     setBoard(next.slug);
     setStatus('ready');
   }, []);
@@ -566,6 +567,11 @@ function KanbanPage(): ReactElement {
     }
     setStatus('loading');
     const result = await dashboard.kanbanBoard(slug);
+    // A response for a board the person already switched away from must never
+    // repaint the current board (slow network reordering).
+    if (slug !== currentBoard.current) {
+      return;
+    }
     if (!result.ok) {
       setStatus('error');
       return;
@@ -660,6 +666,7 @@ function KanbanPage(): ReactElement {
           value={board}
           aria-label="Board"
           onChange={(event) => {
+            currentBoard.current = event.target.value;
             setBoard(event.target.value);
           }}
         >

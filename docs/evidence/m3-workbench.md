@@ -61,3 +61,25 @@ probe 创建并**保留**专用 board（`MOSBOT_PROBE_KEEP_BOARD=1`，只动 `mo
 报告：`docs/evidence/tmp/workbench-refresh-2026-11-04T11-19-10-251Z.json`。
 
 仍未验证：插件禁用状态的真实部署证据、切换 board/profile 后迟到响应的真实双端隔离。
+
+## 2026-11-04 切换 board 的旧响应隔离（注入延迟）
+
+`scripts/gui-workbench-stale.mjs`：创建两个专用 probe board，给 board A 注入 2.5s 延迟；A 先选中
+慢 board，随即切到快 board。旧响应晚到后不得覆盖当前 board。
+
+| 检查                                        | 结果 |
+| ------------------------------------------- | ---- |
+| 两个专用 board 创建                         | ✅   |
+| 另一客户端在慢 board 建任务                 | ✅   |
+| 切走后旧响应被丢弃（看不到慢 board 的任务） | ✅   |
+| 当前快 board 保持选中                       | ✅   |
+| 再切回慢 board 能看到任务                   | ✅   |
+
+报告：`docs/evidence/tmp/workbench-stale-2026-11-04T11-53-07-488Z.json`。
+
+**修复**：`loadBoard` 之前无条件 `setSnapshot`，迟到的旧 board 响应会覆盖当前 board。现在响应
+返回后先检查 `slug === currentBoard.current`，不是当前 board 直接丢弃；切换 board 时同步更新
+`currentBoard.current`，消除 effect 更新前的竞态。延迟仅为测试 seam
+（`MOSBOT_TEST_KANBAN_SLOW_BOARD`），正常启动不生效。
+
+仍未验证：切换 profile/账号后的迟到响应隔离；插件禁用状态的部署证据。

@@ -333,6 +333,12 @@ until the release repository exists.
   live user bubbles stay local and are reconciled by history on reopen/resume
   (recorded as a server-side limitation).
 
+- Fixed: a late Kanban board response could repaint the board the person already
+  switched away from. loadBoard now drops responses whose slug is no longer the
+  current board and the board switch updates the current-board ref synchronously.
+  A walkthrough with injected latency on one dedicated board verifies the stale
+  response is ignored and switching back still loads its task.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,

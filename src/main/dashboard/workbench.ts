@@ -253,6 +253,14 @@ export async function readKanbanBoard(
   if (target === null) {
     return connectionError();
   }
+  // Test-only latency injection: makes one board's response arrive late so a GUI
+  // walkthrough can prove stale board responses are discarded.
+  const slowBoard = process.env['MOSBOT_TEST_KANBAN_SLOW_BOARD'];
+  if (slowBoard !== undefined && slowBoard !== '' && board === slowBoard) {
+    const raw = Number.parseInt(process.env['MOSBOT_TEST_KANBAN_DELAY_MS'] ?? '', 10);
+    const delay = Number.isFinite(raw) && raw > 0 ? Math.min(raw, 10_000) : 1_500;
+    await new Promise((resolve) => setTimeout(resolve, delay));
+  }
   const response = await requestJson(options(deps, target), {
     method: 'GET',
     path: `/api/plugins/kanban/board?board=${encodeURIComponent(board)}`,

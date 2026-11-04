@@ -206,6 +206,10 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
   网关不广播其他客户端的用户消息事件，实时用户气泡不会跨端出现，重开/重连后由历史补齐
   （记为服务端能力限制）。
 
+- 修复：Kanban board 的迟到响应可能覆盖已经切走的当前 board。`loadBoard` 现在丢弃 slug 不再是
+  当前 board 的响应，切换时同步更新当前 board ref。用专用 board + 注入延迟的 walkthrough 验证
+  旧响应被忽略、切回后任务正常显示。
+
 ### 变更
 
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。
