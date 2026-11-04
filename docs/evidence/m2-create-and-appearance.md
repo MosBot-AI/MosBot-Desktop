@@ -56,3 +56,18 @@
 因此该验收场景**无法在只有 Dashboard API 授权的条件下构造**，需要真实未配置环境或明确授权临时
 清空某个测试 profile 的模型；客户端未做任何“伪造未就绪状态”的测试绕过。其余创建/外观/模型就绪
 回读证据见上文。
+
+## 2026-11-04 授权配置后再次尝试“未配置模型”（API 层不可达）
+
+用户授权可直接使用测试服务器配置。通过 Electron 主进程解密既有会话、直接调用测试服 REST：
+
+| 尝试                                         | 结果                                                                                               |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `PUT /api/profiles/<name>/model` 空值        | 400                                                                                                |
+| `PUT` 指定 ollama/openai/anthropic/custom    | 均 400（profile 无凭据，校验拒绝）                                                                 |
+| `POST /api/profiles` 不传 provider/model     | 200，但 `/api/profiles` 与 `/api/model/info` 都报告继承的默认模型 `gpt-6-luna-900k / openai-codex` |
+| `POST /api/profiles` 指定其他 provider/model | 同上，仍报告默认模型                                                                               |
+
+结论：该部署的 profile 创建路径会自动继承默认模型，`/api/model/info` 也返回该继承值，因此
+“未配置模型”状态**无法通过现有 API 构造**；不是客户端逻辑问题。脚本保留为诊断：
+`scripts/probe-model-not-ready-api.mjs`。插件禁用状态同样需要服务端插件配置/重启，API 未暴露。

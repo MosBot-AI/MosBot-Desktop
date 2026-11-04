@@ -256,6 +256,10 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
   日常测试包保持 linker-signed，因为改变代码身份会让既有 userData 的 keychain 凭据失效
   （`vault_unavailable`）。
 
+- 在用户授权下重新尝试构造“未配置模型”：解密会话后直连测试服 REST，发现 profile 创建总会继承
+  默认模型且 `/api/model/info` 返回该继承值，`PUT /model` 又拒绝空值/无凭据 provider，因此该
+  状态无法通过 Dashboard API 构造；诊断脚本与限制已记录。
+
 ### 变更
 
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。

@@ -405,6 +405,12 @@ until the release repository exists.
   linker-signed because changing the code identity invalidates the existing
   userData's keychain-encrypted Dashboard session (`vault_unavailable`).
 
+- Re-attempted the unconfigured-model state with the authorised test server by
+  decrypting the session and calling the REST API directly: profile creation always
+  inherits the default model and `/api/model/info` reports it, while PUT /model
+  rejects empty or credential-less providers. The state is not constructible with
+  the Dashboard API; the diagnostic script and limitation are recorded.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,
