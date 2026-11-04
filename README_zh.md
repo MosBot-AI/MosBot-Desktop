@@ -69,6 +69,24 @@ macOS 应用菜单随界面语言切换，并提供主要操作的快捷键：
 
 编辑、窗口与全屏幕使用系统菜单角色，复制粘贴、撤销与系统输入法行为保持不变。
 
+## 连接与登录
+
+在底栏入口选择 Dashboard（开发环境中参考部署地址已预填）。应用先校验地址，再用系统浏览器
+完成 OAuth，经 loopback 回调返回；刷新令牌加密保存在 macOS 钥匙串，之后启动静默恢复。
+同一底栏菜单可注销；令牌不会进入页面。新 Bot 需要模型授权时，聊天内显示「完成配置 / 重新
+检查」，并在浏览器打开该 Dashboard 的 profile 页面。
+
+## Bot、聊天与审批
+
+左栏展示置顶头像、分区与其余 Bot；聊天顶部名牌打开按需详情栏（详情 / 资料库 / 电脑）。
+审批与澄清问题以内联卡片出现在对话中；窗口不在前台时同时发系统通知，「待确认」入口直达等待
+中的 Bot。流式回复可随时停止且保留已显示文字；草稿、选中项与滚动位置重启后恢复。
+
+## 文件与产物
+
+输入条通过系统文件选择器添加附件（10 MB），随下一条 prompt 发送。资料库列出 Bot 工作区里
+产生的文件，可预览文本与图片；「保存并打开」先写入下载目录再由系统应用打开。
+
 ## 目录
 
 ```
@@ -97,6 +115,7 @@ docs           方案（中文）、品牌来源、证据
 - 验收证据索引：[`docs/evidence/acceptance.md`](docs/evidence/acceptance.md)
 - 性能证据：[`docs/evidence/m5-performance.md`](docs/evidence/m5-performance.md)
 - 键盘与可访问性证据：[`docs/evidence/m5-gui-a11y.md`](docs/evidence/m5-gui-a11y.md)
+- 安装与升级证据：[`docs/evidence/m5-install-upgrade.md`](docs/evidence/m5-install-upgrade.md)
 - 更新日志：[`CHANGELOG.zh-CN.md`](CHANGELOG.zh-CN.md)
 
 ## 已知限制

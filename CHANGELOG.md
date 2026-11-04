@@ -179,6 +179,10 @@ until the release repository exists.
   selected Bot and the theme, upgrades in place to v2, and recovers from a corrupt document via
   the backup. Evidence: `docs/evidence/m5-install-upgrade.md`.
 
+- README/README_zh now include the user guide for connecting and signing in, Bots,
+  chats and approvals, files and artifacts, local data and manual upgrades, plus the
+  current limitations instead of the stale M0a list.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,

@@ -89,6 +89,30 @@ actions with their shortcuts:
 Standard edit, window and full-screen menu roles stay in place so copy/paste,
 undo and the system input method keep their macOS behaviour.
 
+## Connect and sign in
+
+Pick a Dashboard from the footer entry (the address of the reference deployment is
+pre-filled in development). The app checks the address, opens the system browser for
+OAuth, and returns through a loopback callback; the refresh token is encrypted in the
+macOS Keychain and later launches restore silently. Sign out from the same footer menu;
+tokens never reach the page. When a new Bot needs model authorisation, the chat shows
+"Finish setup / Check again" and opens the Dashboard's profile page in the browser.
+
+## Bots, chats and approvals
+
+The roster shows pinned faces, sections and the remaining Bots; the nameplate at the top
+of the chat opens the on-demand details column (details, library, computer). Approvals and
+clarifying questions appear inline in the transcript and as a system notification when the
+window is not focused; the attention chip jumps straight to the waiting Bot. Streaming
+replies can be stopped without losing the text already shown, and drafts, selection and
+scroll survive restarts.
+
+## Files and artifacts
+
+The composer attaches files through the system picker (10 MB) and sends them with the next
+prompt. The library lists files the Bot produced in its workspace, previews text and
+images, and "save and open" writes a copy to Downloads before opening it.
+
 ## Layout
 
 ```
@@ -120,6 +144,7 @@ machines.
 - Acceptance evidence index: [`docs/evidence/acceptance.md`](docs/evidence/acceptance.md)
 - Performance evidence: [`docs/evidence/m5-performance.md`](docs/evidence/m5-performance.md)
 - Keyboard/accessibility evidence: [`docs/evidence/m5-gui-a11y.md`](docs/evidence/m5-gui-a11y.md)
+- Install/upgrade evidence: [`docs/evidence/m5-install-upgrade.md`](docs/evidence/m5-install-upgrade.md)
 - Changelog: [`CHANGELOG.md`](CHANGELOG.md)
 
 ## Known limitations (M0a)

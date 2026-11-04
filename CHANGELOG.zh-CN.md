@@ -101,6 +101,9 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
 - 覆盖升级 E2E：上一测试版的 v1 文档保留草稿、选中 Bot 与主题并原地升级到 v2；主文档损坏时
   可从备份恢复。证据：`docs/evidence/m5-install-upgrade.md`。
 
+- `README.md` / `README_zh.md` 补齐用户指南：连接与登录、Bot/聊天/审批、文件与产物、
+  本地数据与手动升级，并用当前限制替换过时的 M0a 列表。
+
 ### 变更
 
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。
