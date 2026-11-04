@@ -4,9 +4,9 @@ const { MakerZIP } = require('@electron-forge/maker-zip');
 
 /**
  * Signing, hardened runtime and notarization are opt-in through the environment:
- * without a Developer ID identity the build stays an unsigned ZIP (and the
- * evidence records it as unsigned). With these variables `pnpm make` signs and
- * notarizes:
+ * Without a Developer ID identity the build is ad-hoc signed (identity "-") so the
+ * bundle is sealed and macOS can register notifications/permissions; with the
+ * variables below `pnpm make` signs with that identity and notarizes:
  *   MOSBOT_MACOS_SIGN_IDENTITY  e.g. "Developer ID Application: Name (TEAMID)"
  *   MOSBOT_NOTARY_APPLE_ID      Apple ID for notarytool
  *   MOSBOT_NOTARY_PASSWORD      app-specific password
@@ -78,6 +78,39 @@ module.exports = {
   },
   rebuildConfig: {},
   makers: [new MakerZIP({}, ['darwin'])],
+  hooks: {
+    // @electron/osx-sign refuses the ad-hoc identity "-", so seal the local build
+    // ourselves: an unsigned/linker-signed bundle does not register with macOS
+    // notifications (ncprefs has no entry). Developer ID builds keep using
+    // osxSign above and skip this.
+    postPackage: async (_config, options) => {
+      if (process.platform !== 'darwin') {
+        return;
+      }
+      if (typeof signingIdentity === 'string' && signingIdentity !== '') {
+        return;
+      }
+      // Opt-in for release builds: existing dev/test userData is encrypted under
+      // the previous code identity, so signing every local package would break
+      // their saved Dashboard session.
+      if (process.env['MOSBOT_ADHOC_SIGN'] !== '1') {
+        return;
+      }
+      const { readdirSync } = require('node:fs');
+      const { execFileSync } = require('node:child_process');
+      for (const outputPath of options.outputPaths) {
+        for (const entry of readdirSync(outputPath)) {
+          if (!entry.endsWith('.app')) {
+            continue;
+          }
+          const appPath = path.join(outputPath, entry);
+          execFileSync('codesign', ['--force', '--deep', '--sign', '-', appPath], {
+            stdio: 'inherit',
+          });
+        }
+      }
+    },
+  },
   plugins: [
     new VitePlugin({
       build: [

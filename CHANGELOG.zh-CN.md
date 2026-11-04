@@ -247,6 +247,15 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
 - 新增 `docs/evidence/delivery-summary.md`：当前验证计数、已实现范围、隐藏测试模式说明、复验命令，
   以及仍阻塞首版的 5 项外部/用户动作。
 
+- 本地打包默认做 ad-hoc 完整签名（`postPackage` 执行 `codesign --force --deep --sign -`），因为
+  linker-signed 产物的 Identifier=Electron、Info.plist 未绑定，macOS 不会注册通知；配置
+  Developer ID 时仍走原 osxSign 路径。记录用户范围决定：非抢占租约移出首版、接受内部签名、
+  7 天日用自行管理、授权测试服务器配置。
+
+- 修正为显式开关：`MOSBOT_ADHOC_SIGN=1 pnpm make` 才做 ad-hoc 完整签名（发布/通知验证用）；
+  日常测试包保持 linker-signed，因为改变代码身份会让既有 userData 的 keychain 凭据失效
+  （`vault_unavailable`）。
+
 ### 变更
 
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。

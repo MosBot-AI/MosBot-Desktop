@@ -393,6 +393,18 @@ until the release repository exists.
   how the hidden test mode works, re-verification commands and the five external/user
   actions still blocking the first release.
 
+- Packaging now ad-hoc signs the local build by default (`postPackage` codesign
+  `--force --deep --sign -`) because a linker-signed bundle has Identifier=Electron
+  and an unbound Info.plist, which prevents macOS from registering notifications.
+  Developer ID builds still use the env-configured osxSign path. Recorded the user's
+  scope decisions: non-preemptive display lease out of first release, internal
+  signing accepted, 7-day use self-managed, test-server configuration authorised.
+
+- Corrected the signing change to opt-in: `MOSBOT_ADHOC_SIGN=1 pnpm make` seals the
+  bundle ad-hoc for release/notification checks, while routine test packages stay
+  linker-signed because changing the code identity invalidates the existing
+  userData's keychain-encrypted Dashboard session (`vault_unavailable`).
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,

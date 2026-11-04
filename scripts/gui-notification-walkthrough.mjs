@@ -200,6 +200,13 @@ async function main() {
         ? 'none'
         : `${entry.title} · ${entry.body} · approval=${String(entry.approval)}`,
     );
+    if (entry !== null && entry.shown === true) {
+      const shotPath = path.resolve('.tmp/shots/notification-banner.png');
+      // Give macOS a moment to animate the banner in.
+      await page.waitForTimeout(1_200);
+      execFileSync('screencapture', ['-x', shotPath]);
+      note('system notification screenshot captured', true, shotPath);
+    }
     if (entry === null) {
       await application.evaluate(({ BrowserWindow }) => {
         const window = BrowserWindow.getAllWindows()[0];
