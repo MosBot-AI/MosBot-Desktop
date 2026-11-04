@@ -350,6 +350,9 @@ until the release repository exists.
   on an empty dedicated profile verifies that switching away keeps the fast
   profile's 50 sessions and switching back loads the empty list.
 
+- Stale search responses are now verified too: a slow no-match query followed by a
+  matching one cannot clear the new results (test-only delay injection).
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,

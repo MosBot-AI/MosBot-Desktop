@@ -217,6 +217,9 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
   query / session 已切换时丢弃旧响应。用专用空 profile 注入延迟的 walkthrough 验证：切走后快
   profile 的 50 条会话不被覆盖，切回空 profile 正常显示“还没有会话”。
 
+- 搜索旧响应也已验证：慢的无结果查询之后立即输入能命中的查询，旧结果不会清空新结果
+  （测试专用延迟注入）。
+
 ### 变更
 
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。

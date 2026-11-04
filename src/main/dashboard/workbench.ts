@@ -137,6 +137,14 @@ export async function searchWorkbenchSessions(
   if (trimmed === '') {
     return { ok: true, data: [] };
   }
+  // Test-only latency injection for one query so a walkthrough can prove stale
+  // search responses no longer overwrite the current query.
+  const slowQuery = process.env['MOSBOT_TEST_SEARCH_SLOW_QUERY'];
+  if (slowQuery !== undefined && slowQuery !== '' && slowQuery === trimmed) {
+    const raw = Number.parseInt(process.env['MOSBOT_TEST_SEARCH_DELAY_MS'] ?? '', 10);
+    const delay = Number.isFinite(raw) && raw > 0 ? Math.min(raw, 10_000) : 1_500;
+    await new Promise((resolve) => setTimeout(resolve, delay));
+  }
   const response = await requestJson(options(deps, target), {
     method: 'GET',
     path: `/api/sessions/search?q=${encodeURIComponent(trimmed)}&profile=${encodeURIComponent(profile)}&limit=${limit}`,
