@@ -236,6 +236,15 @@ export function App(): ReactElement {
       return;
     }
     return dashboard.onChatEvent((event) => {
+      // A flush that was in flight while switching Bots must not append the
+      // previous Bot's tail to the newly opened chat.
+      if (
+        event.type === 'delta' &&
+        event.profile !== undefined &&
+        event.profile !== appStore.getState().live.profile
+      ) {
+        return;
+      }
       const action = chatEventAction(event);
       if (action !== null) {
         dispatch(action);

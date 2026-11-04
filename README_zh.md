@@ -50,6 +50,8 @@ npm run dev            # 或：npx pnpm@11.28.5 dev
 | `npm run package`                       | 未签名的 `out/MosBot-<platform>-<arch>/MosBot.app`                      |
 | `npm run screenshot`                    | 打包并生成证据截图                                                      |
 | `npm run assets:sync`                   | 从固定提交重新同步 MosBot 品牌资产                                      |
+| `npm run bench:pipeline`                | 本地合并压测：四通道脱敏帧、批次年龄与内存                              |
+| `npm run bench:stream`                  | 先打包，再测「帧到可见文本」p95、突发与长历史场景                       |
 
 ## 目录
 

@@ -365,7 +365,7 @@ export type DashboardChatEvent =
       readonly runtimeSessionId: string | null;
     }
   | { readonly type: 'turn-start' }
-  | { readonly type: 'delta'; readonly text: string }
+  | { readonly type: 'delta'; readonly text: string; readonly profile?: string }
   | { readonly type: 'interim'; readonly text: string }
   | {
       readonly type: 'turn-complete';

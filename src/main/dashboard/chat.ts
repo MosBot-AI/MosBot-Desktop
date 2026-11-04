@@ -13,6 +13,7 @@ import {
   type GatewayServerRequest,
   type RpcClient,
 } from './rpc';
+import { createStreamBatcher } from '../../shared/stream-batch';
 import { emptySchema } from './schemas';
 import type { TransportFetch } from './transport';
 
@@ -94,10 +95,25 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
   let reconnectTimer: NodeJS.Timeout | null = null;
   let connecting: Promise<Result<ChatOpenResult>> | null = null;
 
-  const emit = (event: DashboardChatEvent): void => {
+  const deliver = (event: DashboardChatEvent): void => {
     for (const listener of listeners) {
       listener(event);
     }
+  };
+
+  // Streamed deltas are merged per turn before delivery; every control event
+  // flushes the pending text first so ordering is preserved end to end. Every
+  // delta carries the profile it belongs to so a late flush can never leak into
+  // the chat of a Bot the user just switched to.
+  const deltaBatcher = createStreamBatcher({
+    onFlush: (text) => {
+      deliver({ type: 'delta', text, ...(profile === null ? {} : { profile }) });
+    },
+  });
+
+  const emit = (event: DashboardChatEvent): void => {
+    deltaBatcher.flush();
+    deliver(event);
   };
 
   const setConnection = (next: ChatState['connection'], detail?: string): void => {
@@ -106,6 +122,9 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
   };
 
   const handleEvent = (type: string, params: Record<string, unknown>): void => {
+    if (closing) {
+      return;
+    }
     const sessionId = str(params['session_id']);
     if (sessionId !== '' && runtimeSessionId !== null && sessionId !== runtimeSessionId) {
       return;
@@ -125,7 +144,7 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
       case 'message.delta': {
         const text = payload['text'];
         if (typeof text === 'string' && text !== '') {
-          emit({ type: 'delta', text });
+          deltaBatcher.push(text);
         }
         return;
       }
@@ -457,6 +476,9 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
             },
           };
         }
+        // Switching sessions drops any text still waiting in the coalescing
+        // window; it belongs to the previous Bot and the transcript is reset.
+        deltaBatcher.reset();
         if (client !== null) {
           client.close();
           client = null;
@@ -548,6 +570,9 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
 
     close() {
       closing = true;
+      // Deliver any text that already arrived before the session goes away.
+      deltaBatcher.flush();
+      deltaBatcher.reset();
       if (reconnectTimer !== null) {
         clearTimeout(reconnectTimer);
         reconnectTimer = null;

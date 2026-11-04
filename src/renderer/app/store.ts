@@ -1681,6 +1681,12 @@ export function selectChatMessages(state: AppState, botId: string): ChatMessage[
     return base;
   }
   const live: ChatMessage[] = [];
+  // Only the last text segment is still growing; earlier segments ended when a
+  // tool started and must render as final Markdown even mid-turn.
+  const lastTextIndex = state.live.segments.reduce(
+    (last, segment, index) => (segment.kind === 'text' ? index : last),
+    -1,
+  );
   if (state.live.userText !== null) {
     live.push({
       id: 'live-user',
@@ -1699,6 +1705,7 @@ export function selectChatMessages(state: AppState, botId: string): ChatMessage[
           kind: 'text',
           text: segment.text,
           at: state.live.userAt,
+          streaming: state.live.phase === 'streaming' && index === lastTextIndex,
         });
       }
       return;

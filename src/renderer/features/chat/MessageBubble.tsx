@@ -34,7 +34,7 @@ export function MessageBubble({ message, userBubble }: MessageBubbleProps): Reac
             {isUser ? (
               <p className={styles.plainText}>{message.text}</p>
             ) : (
-              <RichText text={message.text} />
+              <RichText text={message.text} streaming={message.streaming === true} />
             )}
           </div>
         </div>

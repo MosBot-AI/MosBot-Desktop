@@ -188,8 +188,11 @@ export function ChatView(): ReactElement {
         ref={timelineRef}
         onScroll={onScroll}
         role="log"
-        aria-live="polite"
+        // Streaming updates arrive many times per second; announcing each one
+        // would flood a screen reader. Completed messages are announced.
+        aria-live={livePhase === 'streaming' ? 'off' : 'polite'}
         aria-relevant="additions text"
+        aria-busy={livePhase === 'streaming'}
         aria-label={bot.name}
       >
         {messages.length === 0 ? (

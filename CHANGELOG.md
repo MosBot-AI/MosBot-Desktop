@@ -141,6 +141,21 @@ until the release repository exists.
   `profiles.list`, `client.capabilities` and the exact Bot Chat lookup pass; replay
   and expired tickets are rejected.
 
+- Stream coalescing: the chat manager merges deltas per turn in a clamped 16–32 ms
+  window (24 ms default) with frame and byte caps, and flushes pending text before
+  any control event, terminal status or connection change. This keeps transcript
+  order without one process hop and React render per raw token.
+- Streaming Markdown: an in-progress reply renders finished blank-line blocks as
+  Markdown (parsed once, memoised) and only the growing tail as plain text, then
+  switches back to the full Markdown pass at the terminal event; the transcript
+  stops announcing every token to screen readers while a turn is streaming.
+- Performance gate: `pnpm bench:pipeline` replays four channels of desensitised
+  frames (JSON parse + coalescing) and fails on batch-age/queue/loss regressions;
+  `pnpm bench:stream` launches the packaged app with an in-process frame replayer
+  and checks frame→visible-text p95, a 5 s ×5 burst, achieved frame rates,
+  10,000-message history, 20-sample send/switch feedback and DOM text completeness,
+  recording heap/RSS curves. Evidence is in `docs/evidence/m5-performance.md`.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,

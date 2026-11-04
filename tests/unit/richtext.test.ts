@@ -1,7 +1,7 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { RichText } from '../../src/renderer/features/chat/RichText';
+import { RichText, splitStreamingBlocks } from '../../src/renderer/features/chat/RichText';
 
 function render(markdown: string): string {
   return renderToStaticMarkup(createElement(RichText, { text: markdown }));
@@ -53,3 +53,59 @@ describe('Markdown transcript rendering', () => {
     expect(html).not.toContain('<img');
   });
 });
+
+describe('streaming Markdown', () => {
+  it('splits finished blocks from the growing tail', () => {
+    const split = splitStreamingBlocks('**done**\n\nstill gro');
+    expect(split.blocks).toEqual(['**done**']);
+    expect(split.tail).toBe('still gro');
+  });
+
+  it('keeps blank lines inside a fence in the growing tail', () => {
+    const split = splitStreamingBlocks('intro\n\n```ts\nline one\n\nline two');
+    expect(split.blocks).toEqual(['intro']);
+    expect(split.tail).toBe('```ts\nline one\n\nline two');
+  });
+
+  it('does not split after a closed fence', () => {
+    const split = splitStreamingBlocks('```ts\nx\n```\n\nnext');
+    expect(split.blocks).toEqual(['```ts\nx\n```']);
+    expect(split.tail).toBe('next');
+  });
+
+  it('closes a fence only with the same character and sufficient length', () => {
+    const split = splitStreamingBlocks('```ts\ncode\n````\n\nnext');
+    expect(split.blocks).toEqual(['```ts\ncode\n````']);
+    const mismatched = splitStreamingBlocks('```\n~~~\n\nstill code');
+    expect(mismatched.blocks).toEqual([]);
+    expect(mismatched.tail).toContain('still code');
+  });
+
+  it('keeps a loose list in one growing block', () => {
+    const split = splitStreamingBlocks('1. a\n\n2. b');
+    expect(split.blocks).toEqual([]);
+    expect(split.tail).toBe('1. a\n\n2. b');
+  });
+
+  it('keeps indented code lines together', () => {
+    const split = splitStreamingBlocks('    code one\n\n    code two');
+    expect(split.blocks).toEqual([]);
+    expect(split.tail).toBe('    code one\n\n    code two');
+  });
+
+  it('renders finished blocks as Markdown and the tail as plain text', () => {
+    const html = renderStreaming('**bold done**\n\n**still typ');
+    expect(html).toContain('<strong>bold done</strong>');
+    expect(html).toContain('**still typ');
+    expect(html).not.toContain('<strong>still typ</strong>');
+  });
+
+  it('renders the same markup as the full pass once every block is complete', () => {
+    const text = '**bold done**\n\n- one\n- two\n\n';
+    expect(renderStreaming(text)).toBe(render(text));
+  });
+});
+
+function renderStreaming(markdown: string, streaming = true): string {
+  return renderToStaticMarkup(createElement(RichText, { text: markdown, streaming }));
+}

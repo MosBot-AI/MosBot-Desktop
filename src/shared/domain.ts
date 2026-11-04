@@ -90,6 +90,8 @@ export interface TextMessage {
   readonly kind: 'text';
   readonly text: string;
   readonly at: number;
+  /** True for the turn's in-progress Bot text, which renders incrementally. */
+  readonly streaming?: boolean;
 }
 
 export interface WorkRecordMessage {

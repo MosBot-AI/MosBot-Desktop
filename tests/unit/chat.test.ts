@@ -270,11 +270,14 @@ describe('chat manager', () => {
     const opened = await manager.open('project-bot', 'stored-1');
     expect(opened.ok).toBe(true);
     gateways[0]?.emit('message.delta', { text: 'first' }, 1);
+    // Deltas are coalesced in a 16–32 ms window, so wait for the batch boundary.
+    await new Promise((resolve) => setTimeout(resolve, 40));
     expect(received.filter((event) => event.type === 'delta')).toHaveLength(1);
 
     gateways[0]?.closeSocket();
     await new Promise((resolve) => setTimeout(resolve, 1_300));
     expect(gateways).toHaveLength(2);
+    await new Promise((resolve) => setTimeout(resolve, 40));
     const deltas = received.filter(
       (event) => event.type === 'delta' && (event as { text?: string }).text === 'missed',
     );
@@ -289,11 +292,128 @@ describe('chat manager', () => {
 
     // A replayed sequence is never applied twice.
     gateways[1]?.emit('message.delta', { text: 'missed' }, 3);
+    await new Promise((resolve) => setTimeout(resolve, 40));
     expect(
       received.filter(
         (event) => event.type === 'delta' && (event as { text?: string }).text === 'missed',
       ),
     ).toHaveLength(1);
+    manager.close();
+  });
+
+  it('coalesces streamed deltas into ordered batches and flushes before control events', async () => {
+    const captured: { gateway: FakeGateway | null } = { gateway: null };
+    const manager = createChatManager({
+      auth: fakeAuth,
+      fetchImpl: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => '{"ticket":"t","ttl_seconds":30}',
+      }),
+      connect: async (options) => {
+        captured.gateway = createFakeGateway(options);
+        return { ok: true, data: captured.gateway.client };
+      },
+    });
+    const received: Array<{ type: string; text?: string }> = [];
+    manager.subscribe((event) => {
+      received.push(event as { type: string; text?: string });
+    });
+
+    const opened = await manager.open('project-bot', 'stored-1');
+    expect(opened.ok).toBe(true);
+
+    captured.gateway?.emit('message.delta', { text: 'a' });
+    captured.gateway?.emit('message.delta', { text: 'b' });
+    captured.gateway?.emit('message.delta', { text: 'c' });
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    const batches = received.filter((event) => event.type === 'delta');
+    expect(batches.map((event) => event.text)).toEqual(['abc']);
+
+    // A terminal frame arrives between two batches: the pending text is delivered
+    // first so the transcript can never finish before its own content.
+    captured.gateway?.emit('message.delta', { text: 'd' });
+    captured.gateway?.emit('message.complete', { status: 'complete', text: 'abcd' });
+    const tail = received.slice(-2).map((event) => event.type);
+    expect(tail).toEqual(['delta', 'turn-complete']);
+    expect(received.filter((event) => event.type === 'delta').map((event) => event.text)).toEqual([
+      'abc',
+      'd',
+    ]);
+    manager.close();
+  });
+
+  it('drops a pending batch when the session switches and tags deltas with the profile', async () => {
+    const gateways: FakeGateway[] = [];
+    const manager = createChatManager({
+      auth: fakeAuth,
+      fetchImpl: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => '{"ticket":"t","ttl_seconds":30}',
+      }),
+      connect: async (options) => {
+        const gateway = createFakeGateway(options);
+        gateways.push(gateway);
+        return { ok: true, data: gateway.client };
+      },
+    });
+    const received: Array<{ type: string; text?: string; profile?: string }> = [];
+    manager.subscribe((event) => {
+      received.push(event as { type: string; text?: string; profile?: string });
+    });
+
+    expect((await manager.open('bot-a', 'stored-a')).ok).toBe(true);
+    gateways[0]?.emit('message.delta', { text: 'leak' });
+    // Switch while the batch is still inside the coalescing window.
+    expect((await manager.open('bot-b', 'stored-b')).ok).toBe(true);
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    expect(received.filter((event) => event.type === 'delta')).toHaveLength(0);
+
+    gateways[1]?.emit('message.delta', { text: 'ok' });
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    const deltas = received.filter((event) => event.type === 'delta');
+    expect(deltas).toHaveLength(1);
+    expect(deltas[0]).toMatchObject({ text: 'ok', profile: 'bot-b' });
+    manager.close();
+  });
+
+  it('flushes pending text when the socket closes and before interim/terminal frames', async () => {
+    const captured: { gateway: FakeGateway | null } = { gateway: null };
+    const manager = createChatManager({
+      auth: fakeAuth,
+      fetchImpl: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => '{"ticket":"t","ttl_seconds":30}',
+      }),
+      connect: async (options) => {
+        captured.gateway = createFakeGateway(options);
+        return { ok: true, data: captured.gateway.client };
+      },
+    });
+    const received: Array<{ type: string; text?: string; state?: string }> = [];
+    manager.subscribe((event) => {
+      received.push(event as { type: string; text?: string; state?: string });
+    });
+    expect((await manager.open('project-bot', 'stored-1')).ok).toBe(true);
+
+    captured.gateway?.emit('message.delta', { text: 'before-interim' });
+    captured.gateway?.emit('message.interim', { text: 'hint' });
+    const types = received.map((event) => event.type);
+    expect(types.slice(-2)).toEqual(['delta', 'interim']);
+    expect(received.filter((event) => event.type === 'delta')[0]?.text).toBe('before-interim');
+
+    captured.gateway?.emit('message.delta', { text: 'before-close' });
+    captured.gateway?.closeSocket();
+    const delta = received.filter((event) => event.type === 'delta')[1];
+    expect(delta?.text).toBe('before-close');
+    expect(
+      received.some((event) => event.type === 'connection' && event.state === 'disconnected'),
+    ).toBe(true);
     manager.close();
   });
 });

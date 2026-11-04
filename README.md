@@ -68,6 +68,8 @@ its own sandbox and GPU process, which a locked-down environment can block.
 | `npm run package`                       | unsigned `out/MosBot-<platform>-<arch>/MosBot.app`                                        |
 | `npm run screenshot`                    | packages and writes the evidence screenshots                                              |
 | `npm run assets:sync`                   | re-copies MosBot brand assets from the pinned source commit                               |
+| `npm run bench:pipeline`                | local coalescing benchmark: four channels of desensitised frames, batch age and memory    |
+| `npm run bench:stream`                  | packages the app, then measures frame→visible-text p95 and burst/history scenarios        |
 
 ## Layout
 

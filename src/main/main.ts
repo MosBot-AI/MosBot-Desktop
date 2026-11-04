@@ -73,7 +73,36 @@ function hardenWebContents(window: BrowserWindow): void {
   }
 }
 
+/** Query parameters the stream benchmark harness may receive (test-only). */
+const BENCH_QUERY_KEYS = [
+  'seconds',
+  'rate',
+  'batchMs',
+  'burst',
+  'burstFactor',
+  'history',
+  'historyBase',
+  'markdownEvery',
+] as const;
+
+/** `?bench=1&…` for the frame replayer, or null in every normal launch. */
+function benchWindowQuery(): Record<string, string> | null {
+  if (process.env['MOSBOT_BENCH'] !== '1') {
+    return null;
+  }
+  const raw = new URLSearchParams(process.env['MOSBOT_BENCH_QUERY'] ?? '');
+  const query: Record<string, string> = { bench: '1' };
+  for (const key of BENCH_QUERY_KEYS) {
+    const value = raw.get(key);
+    if (value !== null) {
+      query[key] = value;
+    }
+  }
+  return query;
+}
+
 function createMainWindow(): void {
+  const benchQuery = benchWindowQuery();
   mainWindow = new BrowserWindow({
     width: 1000,
     height: 760,
@@ -96,6 +125,8 @@ function createMainWindow(): void {
       spellcheck: false,
       webviewTag: false,
       webSecurity: true,
+      // Benchmarks need unthrottled timers/rAF even if the window is occluded.
+      ...(benchQuery === null ? {} : { backgroundThrottling: false }),
     },
   });
 
@@ -109,11 +140,22 @@ function createMainWindow(): void {
     mainWindow = null;
   });
 
+  // The stream benchmark harness (`pnpm bench:stream`) appends `?bench=1` so the
+  // renderer can install its in-process frame replayer. Never set in normal runs.
   if (typeof MAIN_WINDOW_VITE_DEV_SERVER_URL === 'string') {
-    void mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
+    try {
+      const devUrl = new URL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
+      for (const [key, value] of Object.entries(benchQuery ?? {})) {
+        devUrl.searchParams.set(key, value);
+      }
+      void mainWindow.loadURL(devUrl.toString());
+    } catch {
+      void mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
+    }
   } else {
     void mainWindow.loadFile(
       path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
+      benchQuery === null ? undefined : { query: benchQuery },
     );
   }
 }

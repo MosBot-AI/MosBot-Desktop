@@ -73,6 +73,16 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
   依赖后 ZIP 由 347 MB 降至 312 MB。未连接时保持 fixture 演示。
 - Gateway WebSocket 客户端（`ws`）：一次性 ticket 握手、`gateway.ready` 首帧、zod 校验的 JSON-RPC 请求响应、类型化服务端事件，以及 ticket 复用/过期拒绝检查。已在测试部署验证：`profiles.list`、`client.capabilities` 与精确 Bot Chat 查询通过；复用与过期 ticket 被拒绝。
 
+- 流式合并：聊天管理器按 turn 在 16–32 ms（默认 24 ms）窗口内合并 delta，并限制帧数与
+  字节数；任何控制事件、终态或连接状态变化前先冲刷待发文本。transcript 顺序不变，同时避免
+  每个原始 token 一次进程往返与 React 渲染。
+- 流式 Markdown：进行中的回复把已完成的空行分块按 Markdown 渲染（只解析一次并记忆化），
+  仅正在增长的尾块以纯文本显示，终态事件后切回完整 Markdown；回合进行中不再向读屏逐字播报。
+- 性能门槛：`pnpm bench:pipeline` 用真实合并器回放四通道脱敏帧（含 JSON 解析）并对批次年龄、
+  队列上界与丢字回归直接断言；`pnpm bench:stream` 以进程内帧回放器启动打包产物，检查
+  「帧到可见文本」p95、5 秒 5 倍突发、实际帧率、10,000 条历史、20 次采样的发送/切 Bot 反馈
+  与 DOM 文本完整性，并记录堆/RSS 曲线。证据见 `docs/evidence/m5-performance.md`。
+
 ### 变更
 
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。
