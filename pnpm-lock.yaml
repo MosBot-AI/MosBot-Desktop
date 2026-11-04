@@ -30,6 +30,9 @@ importers:
       '@electron-forge/cli':
         specifier: 8.0.1
         version: 8.0.1(@types/react@19.3.0)(supports-color@7.2.0)
+      '@electron-forge/maker-zip':
+        specifier: 8.0.1
+        version: 8.0.1(supports-color@7.2.0)
       '@electron-forge/plugin-vite':
         specifier: 8.0.1
         version: 8.0.1(supports-color@7.2.0)
@@ -106,6 +109,10 @@ packages:
 
   '@electron-forge/maker-base@8.0.1':
     resolution: {integrity: sha512-DNuGxgICA8RisFlq1zfu1jUAPGsB/8DDM0pJd/iWlpMYtgDvJS4jc/QZVfnMDQopWIVlFaiYwsLzPApqkA9j1g==}
+    engines: {node: '>= 22.13.0'}
+
+  '@electron-forge/maker-zip@8.0.1':
+    resolution: {integrity: sha512-EyMyAMFRZTPKbe6K1HEAgnpAMC7OvR8tQ2iG/5Vd++iG2AVdFJ9usChfW72n172jk9CTfFc7L88IF8lXMYYvIQ==}
     engines: {node: '>= 22.13.0'}
 
   '@electron-forge/multi-logger@8.0.1':
@@ -615,6 +622,10 @@ packages:
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
+
+  cross-zip@4.0.1:
+    resolution: {integrity: sha512-n63i0lZ0rvQ6FXiGQ+/JFCKAUyPFhLQYJIqKaa+tSJtfKeULF/IDNDAbdnSIxgS4NTuw2b0+lj8LzfITuq+ZxQ==}
+    engines: {node: '>=12.10'}
 
   csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
@@ -1554,6 +1565,15 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@electron-forge/maker-zip@8.0.1(supports-color@7.2.0)':
+    dependencies:
+      '@electron-forge/core-utils': 8.0.1(supports-color@7.2.0)
+      '@electron-forge/maker-base': 8.0.1(supports-color@7.2.0)
+      '@electron-forge/shared-types': 8.0.1(supports-color@7.2.0)
+      cross-zip: 4.0.1
+    transitivePeerDependencies:
+      - supports-color
+
   '@electron-forge/multi-logger@8.0.1(@types/react@19.3.0)(supports-color@7.2.0)':
     dependencies:
       debug: 4.4.3(supports-color@7.2.0)
@@ -2065,6 +2085,8 @@ snapshots:
       path-key: 3.1.1
       shebang-command: 2.0.0
       which: 2.0.2
+
+  cross-zip@4.0.1: {}
 
   csstype@3.2.3: {}
 

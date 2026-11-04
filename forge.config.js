@@ -1,5 +1,6 @@
 const path = require('node:path');
 const { VitePlugin } = require('@electron-forge/plugin-vite');
+const { MakerZIP } = require('@electron-forge/maker-zip');
 
 /**
  * Electron Forge configuration. Main and preload are bundled by Vite; the
@@ -22,7 +23,7 @@ module.exports = {
     ],
   },
   rebuildConfig: {},
-  makers: [],
+  makers: [new MakerZIP({}, ['darwin'])],
   plugins: [
     new VitePlugin({
       build: [

@@ -129,7 +129,10 @@ until the release repository exists.
   (observe ticket, acquire holder=human, preview suppressed while held, release
   holder=agent).
 - Details routines: connected Bots read `/api/cron/jobs?profile=` and list each
-  job's name, schedule and disabled state instead of the fixture routines. Fixture
+  job's name, schedule and disabled state instead of the fixture routines.
+- Packaging: `pnpm make` now produces an unsigned macOS ZIP through the Forge ZIP
+  maker (`out/make/zip/darwin/arm64/`). Signing, notarization, DMG and the clean
+  install/upgrade checks follow once a Developer certificate is available. Fixture
   windows keep the offline demo.
 - Gateway WebSocket client (`ws`): one-time ticket handshake, `gateway.ready` first
   frame, JSON-RPC request/response with zod validation, typed server events, and
