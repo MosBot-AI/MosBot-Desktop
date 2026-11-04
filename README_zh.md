@@ -86,6 +86,7 @@ docs           方案（中文）、品牌来源、证据
 - Dashboard 接入：[`docs/plans/02-dashboard-integration.md`](docs/plans/02-dashboard-integration.md)
 - 任务卡：[`docs/plans/03-agent-handoff.md`](docs/plans/03-agent-handoff.md)
 - 品牌资产与许可：[`docs/assets/brand.md`](docs/assets/brand.md)
+- 验收证据索引：[`docs/evidence/acceptance.md`](docs/evidence/acceptance.md)
 - 性能证据：[`docs/evidence/m5-performance.md`](docs/evidence/m5-performance.md)
 - 键盘与可访问性证据：[`docs/evidence/m5-gui-a11y.md`](docs/evidence/m5-gui-a11y.md)
 - 更新日志：[`CHANGELOG.zh-CN.md`](CHANGELOG.zh-CN.md)

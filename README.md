@@ -106,6 +106,7 @@ docs           plans (Chinese), brand provenance, evidence
 - Dashboard integration: [`docs/plans/02-dashboard-integration.md`](docs/plans/02-dashboard-integration.md)
 - Task cards: [`docs/plans/03-agent-handoff.md`](docs/plans/03-agent-handoff.md)
 - Brand assets and licences: [`docs/assets/brand.md`](docs/assets/brand.md)
+- Acceptance evidence index: [`docs/evidence/acceptance.md`](docs/evidence/acceptance.md)
 - Performance evidence: [`docs/evidence/m5-performance.md`](docs/evidence/m5-performance.md)
 - Keyboard/accessibility evidence: [`docs/evidence/m5-gui-a11y.md`](docs/evidence/m5-gui-a11y.md)
 - Changelog: [`CHANGELOG.md`](CHANGELOG.md)
