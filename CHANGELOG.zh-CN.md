@@ -191,6 +191,10 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
   `MOSBOT_TEST_FOREGROUND=1`。已用窗口状态探针（visible/focusable/dock=false）、21 项 E2E 与
   两个真实服务 GUI 流程验证。
 
+- 聊天断线回放新增测试专用 socket 断开验证：自动重连（disconnected → reconnecting →
+  connected）、既有 transcript 保留、重连后新消息仍收到真实回复、回放不重复消息。真实网卡断开仍
+  需可复现环境。
+
 ### 变更
 
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。

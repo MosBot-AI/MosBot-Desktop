@@ -78,6 +78,17 @@ function turnStatus(value: unknown): ChatTurnStatus {
  * renderer. Reconnects with backoff and re-resumes the same stored session.
  */
 export function createChatManager(deps: ChatManagerDeps): ChatManager {
+  // Test-only (MOSBOT_DIAG=1): lets the walkthrough drop the gateway socket to
+  // exercise the real reconnect/replay path without touching the network stack.
+  const diagHost =
+    process.env['MOSBOT_DIAG'] === '1'
+      ? (globalThis as typeof globalThis & {
+          __mosbotChatDiag?: {
+            dropSocket: () => void;
+            state: () => { connection: string; reconnectAttempt: number };
+          };
+        })
+      : null;
   const listeners = new Set<(event: DashboardChatEvent) => void>();
   let client: RpcClient | null = null;
   let profile: string | null = null;
@@ -489,6 +500,14 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
     }
     reconnectAttempt = 0;
     setConnection('connected');
+    if (diagHost !== null) {
+      diagHost.__mosbotChatDiag = {
+        dropSocket: () => {
+          client?.close();
+        },
+        state: () => ({ connection, reconnectAttempt }),
+      };
+    }
     const currentProfile = profile;
     if (currentProfile !== null) {
       emit({
@@ -681,6 +700,9 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
       lastSeenSeq = 0;
       runningTurn = false;
       connection = 'disconnected';
+      if (diagHost !== null) {
+        delete diagHost.__mosbotChatDiag;
+      }
     },
 
     state() {

@@ -42,3 +42,19 @@
 - 断线回放（`session.events.since`）与后台长回复恢复。
 - 工作记录（tool.* 归组）、Markdown 完整渲染（M1 后续）。
 - 用户实际操作验收：在应用内发送一条消息并观察流式与停止。
+
+## 2026-11-04 断线回放（模拟 socket 断开，隐藏窗口）
+
+`scripts/gui-chat-reconnect.mjs`（`MOSBOT_DIAG=1` 暴露测试专用 `dropSocket()`，E2E/脚本默认隐藏窗口）：
+
+| 检查                                                                      | 结果 |
+| ------------------------------------------------------------------------- | ---- |
+| 断开前收到真实回复                                                        | ✅   |
+| 关闭 gateway socket 后自动重连（disconnected → reconnecting → connected） | ✅   |
+| 重连后既有 transcript 保留                                                | ✅   |
+| 重连后继续发新消息仍收到真实回复                                          | ✅   |
+| 回放没有把消息列表重复一遍                                                | ✅   |
+
+报告：`docs/evidence/tmp/chat-reconnect-2026-11-04T11-08-10-611Z.json`。
+
+说明：这是**模拟** socket 断开（测试 seam），不是真实网卡断开；真实网络回放仍待可复现断网环境。

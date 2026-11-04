@@ -311,6 +311,11 @@ until the release repository exists.
   the window-state probe (visible=false, focusable=false, dockVisible=false), all
   21 E2E tests, and two real-service GUI walks in background mode.
 
+- Chat reconnection is covered with a test-only socket drop: the manager reconnects
+  (disconnected → reconnecting → connected), keeps the existing transcript, gets a
+  real reply to a new prompt afterwards and does not duplicate the replay. This is a
+  simulation; a real network-interface loss still needs a reproducible environment.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,
