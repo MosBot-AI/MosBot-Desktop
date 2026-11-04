@@ -147,3 +147,21 @@ BENCH_SECONDS=600 BENCH_BURST_SECONDS=5 ./node_modules/.bin/pnpm bench:pipeline
 | 隐藏窗口              | 是（`MOSBOT_TEST_BACKGROUND=1`，不打扰用户）           |
 
 报告：`docs/evidence/tmp/perf-stream-2026-11-04T12-22-02-571Z.json`。
+
+## 2026-11-04 隐藏模式完整 10 分钟复跑（有波动，未通过 switch 门槛）
+
+为确认修复后无性能回归，在隐藏窗口下重跑完整 10 分钟门槛：
+
+| 指标                                     | 结果                                                      |
+| ---------------------------------------- | --------------------------------------------------------- |
+| steady frame→visible p95                 | **32.6ms** ✅                                             |
+| burst frame→visible p95                  | **30.5ms** ✅                                             |
+| 10k 历史渲染                             | ✅ 39ms                                                   |
+| 文本完整性/终态                          | ✅ 全通过                                                 |
+| **switch local feedback p95（20 样本）** | ❌ **199.8ms**（2/20 异常值：199.8、732.9；其余 11–18ms） |
+
+两次连续复跑都只在 switch 反馈上出现个别大异常值（另一次 133.1ms），steady/burst/history 均通过。
+这更像隐藏窗口/系统噪声（负值样本也说明是时钟/调度抖动）而非代码回归；此前可见窗口的完整 10 分钟
+门槛曾通过（p95 31.3ms）。**未修改门槛**；建议在机器空闲时以前台可见窗口复跑一次确认。
+
+报告：`docs/evidence/tmp/perf-stream-2026-11-04T13-28-25-231Z.json`。

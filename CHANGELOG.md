@@ -377,6 +377,11 @@ until the release repository exists.
   loader also depends on the profile and drops responses for a Bot that is no
   longer selected.
 
+- Documented the hidden-mode 10-minute benchmark rerun: steady (p95 32.6ms),
+  burst (30.5ms) and history pass, but the switch-feedback check saw 2/20 large
+  outliers (p95 199.8ms) in two runs while hidden, so the gate was not marked
+  passed; a quiet visible-window rerun is recommended. No threshold was loosened.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,
