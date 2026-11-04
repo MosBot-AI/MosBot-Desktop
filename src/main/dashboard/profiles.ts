@@ -366,3 +366,34 @@ export async function renameRemoteBot(
     },
   };
 }
+
+/** Writes the profile's model/provider (Dashboard `PUT /api/profiles/{name}/model`). */
+export async function setProfileModel(
+  deps: ProfileDeps,
+  profileName: string,
+  provider: string,
+  model: string,
+): Promise<Result<{ provider: string; model: string }>> {
+  const target = requireTarget(deps);
+  if (target === null) {
+    return connectionError();
+  }
+  const written = await requestJson(restOptions(deps, target), {
+    method: 'PUT',
+    path: `/api/profiles/${encodeURIComponent(profileName)}/model`,
+    body: { provider, model },
+    authenticated: true,
+    schema: emptySchema,
+  });
+  if (!written.ok) {
+    return written;
+  }
+  const record = asRecord(written.data);
+  return {
+    ok: true,
+    data: {
+      provider: str(record?.['provider']) || provider,
+      model: str(record?.['model']) || model,
+    },
+  };
+}

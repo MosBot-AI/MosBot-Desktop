@@ -14,6 +14,7 @@ import {
   readModelReadiness,
   readRosterBot,
   renameRemoteBot,
+  setProfileModel,
   setRemoteAppearance,
 } from './profiles';
 import { connectGateway, type RpcClient } from './rpc';
@@ -1109,6 +1110,28 @@ export async function runCreateBotProbe(deps: WriteProbeDeps): Promise<Result<Pr
           : errorDetail(model.error),
       ),
     );
+
+    if (model.ok && model.data.provider !== '' && model.data.model !== '') {
+      const written = await setProfileModel(
+        profileDeps,
+        marker,
+        model.data.provider,
+        model.data.model,
+      );
+      const reread = written.ok ? await readModelReadiness(profileDeps, marker) : null;
+      rows.push(
+        row(
+          'bot_model_write',
+          '模型配置写入并回读',
+          written.ok && reread !== null && reread.ok ? 'pass' : 'fail',
+          written.ok
+            ? reread?.ok === true
+              ? `provider=${reread.data.provider} · model=${reread.data.model} · ready=${String(reread.data.ready)}`
+              : errorDetail(reread?.ok === false ? reread.error : { message: 'readback failed' })
+            : errorDetail(written.error),
+        ),
+      );
+    }
 
     const newName = `${marker}-r`;
     const renamed = await renameRemoteBot(profileDeps, marker, newName);

@@ -27,15 +27,18 @@ import {
   profileConfigUrl,
   readModelReadiness,
   renameRemoteBot,
+  setProfileModel,
   setRemoteAppearance,
 } from './profiles';
 import { runChatProbe, runCreateBotProbe } from './probe-writes';
 import {
+  createKanbanTask,
   listKanbanBoards,
   listWorkbenchSessions,
   readKanbanBoard,
   readWorkbenchMessages,
   searchWorkbenchSessions,
+  setKanbanTaskStatus,
 } from './workbench';
 import { createProbeService, type ProbeService } from './probe';
 import type { TransportFetch } from './transport';
@@ -112,6 +115,23 @@ export interface DashboardService {
   kanbanBoards(): Promise<Result<readonly KanbanBoardSummary[]>>;
   /** Workbench: Kanban board snapshot. */
   kanbanBoard(board: string): Promise<Result<KanbanBoard>>;
+  /** Workbench: create a task on a board. */
+  kanbanCreateTask(
+    board: string,
+    title: string,
+  ): Promise<Result<{ taskId: string; status: string }>>;
+  /** Workbench: move a task to another workflow status. */
+  kanbanSetTaskStatus(
+    board: string,
+    taskId: string,
+    status: string,
+  ): Promise<Result<{ status: string }>>;
+  /** Workbench: write the profile's model/provider and read it back. */
+  setProfileModel(
+    profileName: string,
+    provider: string,
+    model: string,
+  ): Promise<Result<{ provider: string; model: string }>>;
   /** Non-secret connection preferences. */
   settings(): Result<DashboardSettings>;
   saveAddress(address: string | null): Result<void>;
@@ -284,6 +304,18 @@ export function createDashboardService(deps: DashboardServiceDeps): DashboardSer
 
     async kanbanBoard(board) {
       return readKanbanBoard(workbenchDeps(deps), board);
+    },
+
+    async kanbanCreateTask(board, title) {
+      return createKanbanTask(workbenchDeps(deps), board, title);
+    },
+
+    async kanbanSetTaskStatus(board, taskId, status) {
+      return setKanbanTaskStatus(workbenchDeps(deps), board, taskId, status);
+    },
+
+    async setProfileModel(profileName, provider, model) {
+      return setProfileModel(profileDeps(deps), profileName, provider, model);
     },
 
     configUrl() {

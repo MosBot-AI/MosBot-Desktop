@@ -93,6 +93,9 @@ function ProfilesPage(): ReactElement {
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<string | null>(null);
   const [readiness, setReadiness] = useState<Record<string, boolean | null>>({});
+  const [providerInput, setProviderInput] = useState('');
+  const [modelInput, setModelInput] = useState('');
+  const [modelState, setModelState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   const load = useCallback(async (): Promise<void> => {
     const dashboard = window.mosbot?.dashboard;
@@ -126,6 +129,15 @@ function ProfilesPage(): ReactElement {
   }, [state.data, query]);
 
   const active = state.data.find((bot) => bot.profileName === selected) ?? filtered[0];
+
+  useEffect(() => {
+    if (active === undefined) {
+      return;
+    }
+    setProviderInput(active.provider);
+    setModelInput(active.model);
+    setModelState('idle');
+  }, [active]);
 
   useEffect(() => {
     const dashboard = window.mosbot?.dashboard;
@@ -219,15 +231,79 @@ function ProfilesPage(): ReactElement {
                   ? t('workbench.profiles.ready')
                   : t('workbench.loading')}
             </p>
-            <button
-              type="button"
-              className={styles.primary}
-              onClick={() => {
-                void window.mosbot?.dashboard.openProfileConfig();
-              }}
-            >
-              {t('workbench.profiles.configure')}
-            </button>
+            <section className={styles.modelEditor}>
+              <h3 className={styles.columnTitle}>{t('workbench.profiles.editModel')}</h3>
+              <div className={styles.listToolbar}>
+                <input
+                  className={styles.search}
+                  value={providerInput}
+                  placeholder="provider"
+                  aria-label="provider"
+                  onChange={(event) => {
+                    setProviderInput(event.target.value);
+                  }}
+                />
+                <input
+                  className={styles.search}
+                  value={modelInput}
+                  placeholder="model"
+                  aria-label="model"
+                  onChange={(event) => {
+                    setModelInput(event.target.value);
+                  }}
+                />
+              </div>
+              <div className={styles.manageRow}>
+                <button
+                  type="button"
+                  className={styles.primary}
+                  disabled={modelState === 'saving'}
+                  onClick={() => {
+                    const dashboard = window.mosbot?.dashboard;
+                    if (dashboard === undefined || active === undefined) {
+                      return;
+                    }
+                    setModelState('saving');
+                    void dashboard
+                      .setProfileModel(active.profileName, providerInput, modelInput)
+                      .then((result) => {
+                        if (!result.ok) {
+                          setModelState('error');
+                          return;
+                        }
+                        setModelState('saved');
+                        void load();
+                        void dashboard
+                          .checkModelReady(active.profileName)
+                          .then((readinessResult) => {
+                            if (readinessResult.ok) {
+                              setReadiness((current) => ({
+                                ...current,
+                                [active.profileName]: readinessResult.data.ready,
+                              }));
+                            }
+                          });
+                      });
+                  }}
+                >
+                  {t('workbench.profiles.save')}
+                </button>
+                <button
+                  type="button"
+                  className={styles.primary}
+                  onClick={() => {
+                    void window.mosbot?.dashboard.openProfileConfig();
+                  }}
+                >
+                  {t('workbench.profiles.configure')}
+                </button>
+              </div>
+              {modelState === 'saved' ? (
+                <p className={styles.state}>{t('workbench.profiles.saved')}</p>
+              ) : modelState === 'error' ? (
+                <p className={styles.state}>{t('workbench.profiles.saveFailed')}</p>
+              ) : null}
+            </section>
           </article>
         )}
       </div>
@@ -452,6 +528,9 @@ function KanbanPage(): ReactElement {
   const [board, setBoard] = useState('');
   const [snapshot, setSnapshot] = useState<KanbanBoard | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error' | 'unavailable'>('loading');
+  const [newTitle, setNewTitle] = useState('');
+  const [writing, setWriting] = useState(false);
+  const [writeError, setWriteError] = useState(false);
 
   const loadBoards = useCallback(async (): Promise<void> => {
     const dashboard = window.mosbot?.dashboard;
@@ -524,6 +603,47 @@ function KanbanPage(): ReactElement {
           {t('workbench.refresh')}
         </button>
       </div>
+      <form
+        className={styles.listToolbar}
+        onSubmit={(event) => {
+          event.preventDefault();
+          const dashboard = window.mosbot?.dashboard;
+          const title = newTitle.trim();
+          if (dashboard === undefined || board === '' || title === '' || writing) {
+            return;
+          }
+          setWriting(true);
+          setWriteError(false);
+          void dashboard.kanbanCreateTask(board, title).then((result) => {
+            setWriting(false);
+            if (!result.ok) {
+              setWriteError(true);
+              return;
+            }
+            setNewTitle('');
+            void loadBoard(board);
+          });
+        }}
+      >
+        <input
+          className={styles.search}
+          value={newTitle}
+          maxLength={120}
+          placeholder={t('workbench.kanban.newTask')}
+          aria-label={t('workbench.kanban.newTask')}
+          onChange={(event) => {
+            setNewTitle(event.target.value);
+          }}
+        />
+        <button
+          type="submit"
+          className={styles.primary}
+          disabled={newTitle.trim() === '' || writing}
+        >
+          {t('workbench.kanban.addTask')}
+        </button>
+      </form>
+      {writeError ? <p className={styles.state}>{t('workbench.kanban.writeFailed')}</p> : null}
       {status === 'loading' ? (
         <p className={styles.state}>{t('workbench.loading')}</p>
       ) : status === 'error' ? (
@@ -542,6 +662,32 @@ function KanbanPage(): ReactElement {
                     {task.id}
                     {task.assignee === '' ? '' : ` · ${task.assignee}`}
                   </p>
+                  <select
+                    className={styles.search}
+                    value={task.status}
+                    aria-label={t('workbench.kanban.status')}
+                    onChange={(event) => {
+                      const dashboard = window.mosbot?.dashboard;
+                      const next = event.target.value;
+                      if (dashboard === undefined || board === '') {
+                        return;
+                      }
+                      setWriteError(false);
+                      void dashboard.kanbanSetTaskStatus(board, task.id, next).then((result) => {
+                        if (!result.ok) {
+                          setWriteError(true);
+                          return;
+                        }
+                        void loadBoard(board);
+                      });
+                    }}
+                  >
+                    {snapshot.columns.map((option) => (
+                      <option key={option.name} value={option.name}>
+                        {option.name}
+                      </option>
+                    ))}
+                  </select>
                 </article>
               ))}
             </section>

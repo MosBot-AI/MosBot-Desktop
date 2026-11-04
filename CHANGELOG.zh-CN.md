@@ -50,7 +50,10 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
 - M3 工作台：左下菜单打开全窗口 Hermes 工作台，含 Profiles / Sessions / Kanban 三个子页。
   Profiles 显示真实名单与模型就绪；Sessions 支持 `/api/sessions` 分页、搜索与只读历史；Kanban 列出
   看板并渲染带 `latest_event_id` 的快照，插件不可用时有专用空态。聊天外壳保持挂载，返回时 Bot、草稿、
-  滚动位置与详情栏原样恢复。未连接时保持 fixture 演示。
+  滚动位置与详情栏原样恢复。
+- 工作台写入：Kanban 页可新建任务、在列间移动状态（写入后重读快照回显）；Profiles 页可通过
+  `PUT /api/profiles/{name}/model` 写入默认 provider/model 并回读就绪状态。均用专用 board/profile
+  探针验证并自动清理。未连接时保持 fixture 演示。
 - Gateway WebSocket 客户端（`ws`）：一次性 ticket 握手、`gateway.ready` 首帧、zod 校验的 JSON-RPC 请求响应、类型化服务端事件，以及 ticket 复用/过期拒绝检查。已在测试部署验证：`profiles.list`、`client.capabilities` 与精确 Bot Chat 查询通过；复用与过期 ticket 被拒绝。
 
 ### 变更

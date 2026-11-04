@@ -101,8 +101,12 @@ until the release repository exists.
   Sessions page through `/api/sessions`, search and read transcripts; Kanban lists
   boards and renders the board snapshot with its `latest_event_id`, with dedicated
   empty states when the plugin is unavailable. The chat shell stays mounted, so
-  returning restores the Bot, draft, scroll position and details column. Fixture
-  windows keep the offline demo.
+  returning restores the Bot, draft, scroll position and details column.
+- Workbench writes: the Kanban page creates tasks and moves them between workflow
+  columns (re-reading the board snapshot afterwards), and the Profiles page writes
+  the default provider/model through `PUT /api/profiles/{name}/model` and reads
+  readiness back. Verified with dedicated-board and dedicated-profile probes that
+  clean up after themselves. Fixture windows keep the offline demo.
 - Gateway WebSocket client (`ws`): one-time ticket handshake, `gateway.ready` first
   frame, JSON-RPC request/response with zod validation, typed server events, and
   ticket replay/expiry rejection checks. Verified against the test deployment:

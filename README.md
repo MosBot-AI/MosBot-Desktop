@@ -25,7 +25,8 @@ into named sections (create/rename/delete), moved between them, and their look a
 edited through the compare-and-swap appearance write; the arrangement persists locally.
 The footer opens a Hermes workbench with Profiles, Sessions and Kanban pages backed
 by the Dashboard's REST APIs; returning to Bots keeps the chat, draft and scroll
-position untouched. Without a connection the window
+position untouched. The Kanban page can create tasks and move them between
+columns, and Profiles can write the default model/provider and read readiness back. Without a connection the window
 keeps using fixtures. No signed installer or upgrade path
 exists yet. See
 [`docs/evidence/m0a-design-slice.md`](docs/evidence/m0a-design-slice.md) and

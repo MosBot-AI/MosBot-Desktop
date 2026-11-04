@@ -248,6 +248,43 @@ export function registerDashboardIpc(options: {
     return service.kanbanBoard(board);
   });
 
+  handle<{ taskId: string; status: string }>(
+    DASHBOARD_CHANNELS.kanbanCreateTask,
+    (board, title) => {
+      if (!isBoundedString(board, 128) || !isBoundedString(title, 200)) {
+        return { ok: false, error: protocolError('invalid_url', 'A task title is required.') };
+      }
+      return service.kanbanCreateTask(board, title);
+    },
+  );
+
+  handle<{ status: string }>(DASHBOARD_CHANNELS.kanbanSetTaskStatus, (board, taskId, status) => {
+    if (
+      !isBoundedString(board, 128) ||
+      !isBoundedString(taskId, 128) ||
+      !isBoundedString(status, 32)
+    ) {
+      return { ok: false, error: protocolError('invalid_url', 'The task update is not valid.') };
+    }
+    return service.kanbanSetTaskStatus(board, taskId, status);
+  });
+
+  handle<{ provider: string; model: string }>(
+    DASHBOARD_CHANNELS.setProfileModel,
+    (profileName, provider, model) => {
+      if (
+        !isBoundedString(profileName, 128) ||
+        typeof provider !== 'string' ||
+        typeof model !== 'string' ||
+        provider.length > 64 ||
+        model.length > 128
+      ) {
+        return { ok: false, error: protocolError('invalid_url', 'The model update is not valid.') };
+      }
+      return service.setProfileModel(profileName, provider, model);
+    },
+  );
+
   handle<void>(DASHBOARD_CHANNELS.openProfileConfig, async () => {
     const url = service.configUrl();
     if (!url.ok) {

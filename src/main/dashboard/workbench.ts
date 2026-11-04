@@ -290,3 +290,59 @@ export async function readKanbanBoard(
     },
   };
 }
+
+/** Creates one task on the given board (used by the workbench Kanban page). */
+export async function createKanbanTask(
+  deps: WorkbenchDeps,
+  board: string,
+  title: string,
+): Promise<Result<{ taskId: string; status: string }>> {
+  const target = requireTarget(deps);
+  if (target === null) {
+    return connectionError();
+  }
+  const response = await requestJson(options(deps, target), {
+    method: 'POST',
+    path: `/api/plugins/kanban/tasks?board=${encodeURIComponent(board)}`,
+    body: { title, triage: false },
+    authenticated: true,
+    schema: emptySchema,
+  });
+  if (!response.ok) {
+    return response;
+  }
+  const task = asRecord(asRecord(response.data)?.['task']);
+  const taskId = str(task?.['id']);
+  if (taskId === '') {
+    return {
+      ok: false,
+      error: protocolError('malformed_response', 'The Dashboard did not return the new task.'),
+    };
+  }
+  return { ok: true, data: { taskId, status: str(task?.['status']) } };
+}
+
+/** Moves a task to another workflow status and returns the status the server stored. */
+export async function setKanbanTaskStatus(
+  deps: WorkbenchDeps,
+  board: string,
+  taskId: string,
+  status: string,
+): Promise<Result<{ status: string }>> {
+  const target = requireTarget(deps);
+  if (target === null) {
+    return connectionError();
+  }
+  const response = await requestJson(options(deps, target), {
+    method: 'PATCH',
+    path: `/api/plugins/kanban/tasks/${encodeURIComponent(taskId)}?board=${encodeURIComponent(board)}`,
+    body: { status },
+    authenticated: true,
+    schema: emptySchema,
+  });
+  if (!response.ok) {
+    return response;
+  }
+  const task = asRecord(asRecord(response.data)?.['task']);
+  return { ok: true, data: { status: str(task?.['status']) || status } };
+}

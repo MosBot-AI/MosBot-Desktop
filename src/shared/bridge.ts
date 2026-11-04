@@ -118,6 +118,23 @@ export interface MosBotDashboardBridge {
   kanbanBoards(): Promise<Result<readonly KanbanBoardSummary[]>>;
   /** Workbench: Kanban board snapshot. */
   kanbanBoard(board: string): Promise<Result<KanbanBoard>>;
+  /** Workbench: create a task on a board. */
+  kanbanCreateTask(
+    board: string,
+    title: string,
+  ): Promise<Result<{ taskId: string; status: string }>>;
+  /** Workbench: move a task to another workflow status. */
+  kanbanSetTaskStatus(
+    board: string,
+    taskId: string,
+    status: string,
+  ): Promise<Result<{ status: string }>>;
+  /** Workbench: write the profile's model/provider and read it back. */
+  setProfileModel(
+    profileName: string,
+    provider: string,
+    model: string,
+  ): Promise<Result<{ provider: string; model: string }>>;
   /** Resumes (or creates) the live Bot Chat session so prompts can be sent. */
   chatOpen(profileName: string, storedSessionId: string | null): Promise<Result<ChatOpenResult>>;
   /** Submits one prompt to the open session. */
@@ -171,6 +188,9 @@ export const DASHBOARD_CHANNELS = {
   workbenchMessages: 'mosbot:dashboard:workbenchMessages',
   kanbanBoards: 'mosbot:dashboard:kanbanBoards',
   kanbanBoard: 'mosbot:dashboard:kanbanBoard',
+  kanbanCreateTask: 'mosbot:dashboard:kanbanCreateTask',
+  kanbanSetTaskStatus: 'mosbot:dashboard:kanbanSetTaskStatus',
+  setProfileModel: 'mosbot:dashboard:setProfileModel',
   chatOpen: 'mosbot:dashboard:chatOpen',
   chatSend: 'mosbot:dashboard:chatSend',
   chatStop: 'mosbot:dashboard:chatStop',

@@ -76,7 +76,8 @@
   （v1 自动迁移）并重启恢复。
 - M3 工作台：`/hermes` 外壳（返回保留聊天状态）与 Profiles/Sessions/Kanban 只读子页已接入真实 REST；
   真实探针验证分页（total 1791、offset 不重叠）、搜索、消息分页、看板快照与 `latest_event_id`。
-  Kanban 写入/WS 游标与模型配置写入待下一段。
+  Kanban 新建任务/改状态（专用 board 验证、游标 0→2）与模型配置写入（专用 profile 写入并回读）已通过；
+  Kanban WS 实时游标待下一段。
   证据：`docs/evidence/m1-roster-and-history.md`、`docs/evidence/m1-chat-streaming.md`。
 - 未连接时仍使用 fixture，M0a 演示不受影响。
 

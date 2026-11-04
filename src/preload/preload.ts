@@ -143,6 +143,38 @@ const bridge: Omit<MosBotBridge, 'openExternal' | 'local'> = {
         Result<KanbanBoard>
       >;
     },
+    kanbanCreateTask(
+      board: string,
+      title: string,
+    ): Promise<Result<{ taskId: string; status: string }>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.kanbanCreateTask, board, title) as Promise<
+        Result<{ taskId: string; status: string }>
+      >;
+    },
+    kanbanSetTaskStatus(
+      board: string,
+      taskId: string,
+      status: string,
+    ): Promise<Result<{ status: string }>> {
+      return ipcRenderer.invoke(
+        DASHBOARD_CHANNELS.kanbanSetTaskStatus,
+        board,
+        taskId,
+        status,
+      ) as Promise<Result<{ status: string }>>;
+    },
+    setProfileModel(
+      profileName: string,
+      provider: string,
+      model: string,
+    ): Promise<Result<{ provider: string; model: string }>> {
+      return ipcRenderer.invoke(
+        DASHBOARD_CHANNELS.setProfileModel,
+        profileName,
+        provider,
+        model,
+      ) as Promise<Result<{ provider: string; model: string }>>;
+    },
     loadOlderChat(
       profileName: string,
       storedSessionId: string,
