@@ -287,6 +287,12 @@ until the release repository exists.
   selected Bot and the typed draft are restored; its script and evidence are
   linked from the index. A dogfood log template is ready for the 7-day use.
 
+- Concurrency and crash safety verified on the real service: two clients answering
+  the same approval at once never execute the command twice or leave a card behind
+  (the API has no "who won" receipt, so the two windows' receipts can differ), and
+  SIGKILL during an in-flight prompt restores the chat with the prompt appearing
+  exactly once (no automatic resend).
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,
