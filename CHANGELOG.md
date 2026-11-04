@@ -420,6 +420,12 @@ until the release repository exists.
   server-side `hermes plugins disable` + gateway restart and cannot be constructed
   through the Dashboard API.
 
+- Notification permission is now verified visually: with screen recording granted,
+  the first real request shows the macOS "MosBot notifications" prompt, clicking it
+  opens Settings with notifications allowed and ncprefs gains a com.mosbot.desktop
+  entry (cropped screenshot committed). The actual approval banner still needs the
+  signed app kept open for one more trigger; the harness records the current state.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,

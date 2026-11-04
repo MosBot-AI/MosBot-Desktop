@@ -266,6 +266,10 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
 - 记录测试服为 `hermes serve` 无头后端：插件管理 API 返回 404（web UI disabled），因此“插件禁用”
   状态需要服务端 CLI + gateway 重启，无法通过 Dashboard API 构造。
 
+- 通知权限已视觉验证：屏幕录制授权后，首次真实请求弹出 macOS「MosBot 通知」权限提示；点击后
+  系统设置显示允许通知，ncprefs 出现 com.mosbot.desktop 条目（已提交裁剪截图）。真实审批横幅仍需
+  签名版保持打开后再触发一次；证据记录当前状态。
+
 ### 变更
 
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。
