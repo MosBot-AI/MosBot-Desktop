@@ -72,6 +72,8 @@
   应用内计数与系统通知已实现；真实审批触发与通知展示待自然条件复验。
 - M2 新建/外观后端已接入真实服务并验证：fresh `profiles.create`、`ui_meta['hermes-bots']` 外观 CAS、
   过期 revision 冲突、改名、`/api/model/info` 就绪回读；创建弹层真实提交与模型引导已接入。
+  置顶、分区（新建/重命名/删除/移入移出/折叠）与外观/改名编辑已实现，组织状态存入本地 schema v2
+  （v1 自动迁移）并重启恢复。
   证据：`docs/evidence/m1-roster-and-history.md`、`docs/evidence/m1-chat-streaming.md`。
 - 未连接时仍使用 fixture，M0a 演示不受影响。
 

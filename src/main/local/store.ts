@@ -7,15 +7,53 @@ import {
   writeFileSync,
 } from 'node:fs';
 import path from 'node:path';
-import type { LocalState } from '../../shared/protocol';
+import type { LocalOrganization, LocalSection, LocalState } from '../../shared/protocol';
 
 const MAX_DRAFTS = 500;
 const MAX_DRAFT_LENGTH = 20_000;
 const MAX_CONNECTIONS = 20;
+const MAX_SECTIONS = 30;
+const MAX_SECTION_BOTS = 500;
+const CURRENT_VERSION = 2;
+
+function emptyOrganization(): LocalOrganization {
+  return { pinned: [], sections: [] };
+}
+
+function sanitizeOrganization(value: unknown): LocalOrganization {
+  const record = asRecord(value);
+  if (record === null) {
+    return emptyOrganization();
+  }
+  const pinned = Array.isArray(record['pinned'])
+    ? record['pinned']
+        .filter((entry): entry is string => typeof entry === 'string' && entry.length > 0)
+        .slice(0, MAX_SECTION_BOTS)
+        .map((entry) => entry.slice(0, 128))
+    : [];
+  const rawSections = Array.isArray(record['sections']) ? record['sections'] : [];
+  const sections: LocalSection[] = [];
+  for (const entry of rawSections.slice(0, MAX_SECTIONS)) {
+    const section = asRecord(entry);
+    const id = typeof section?.['id'] === 'string' ? section['id'].slice(0, 128) : '';
+    const title = typeof section?.['title'] === 'string' ? section['title'].slice(0, 64) : '';
+    if (id === '' || title === '') {
+      continue;
+    }
+    const botIds = Array.isArray(section?.['botIds'])
+      ? section['botIds']
+          .filter((botId): botId is string => typeof botId === 'string' && botId.length > 0)
+          .slice(0, MAX_SECTION_BOTS)
+          .map((botId) => botId.slice(0, 128))
+      : [];
+    sections.push({ id, title, botIds, collapsed: section?.['collapsed'] === true });
+  }
+  return { pinned, sections };
+}
 
 function emptyState(): LocalState {
   return {
-    version: 1,
+    version: CURRENT_VERSION,
     connections: {},
     preferences: { theme: 'system', language: 'zh-Hans' },
   };
@@ -76,7 +114,8 @@ export function createLocalStore(filePath: string): {
     try {
       const parsed = JSON.parse(readFileSync(filePath, 'utf8')) as unknown;
       const record = asRecord(parsed);
-      if (record === null || record['version'] !== 1) {
+      const version = record?.['version'];
+      if (record === null || (version !== 1 && version !== CURRENT_VERSION)) {
         return null;
       }
       const connections: Record<string, LocalState['connections'][string]> = {};
@@ -93,13 +132,14 @@ export function createLocalStore(filePath: string): {
               : null,
           drafts: sanitizeDrafts(connection['drafts']),
           inspector: sanitizeInspector(connection['inspector']),
+          organization: sanitizeOrganization(connection['organization']),
         };
       }
       const preferences = asRecord(record['preferences']);
       const theme = preferences?.['theme'];
       const language = preferences?.['language'];
       return {
-        version: 1,
+        version: CURRENT_VERSION,
         connections,
         preferences: {
           theme: theme === 'light' || theme === 'dark' ? theme : 'system',
@@ -123,11 +163,11 @@ export function createLocalStore(filePath: string): {
           existingVersion = undefined;
         }
       }
-      if (typeof existingVersion === 'number' && existingVersion > 1) {
+      if (typeof existingVersion === 'number' && existingVersion > CURRENT_VERSION) {
         return { ok: false, reason: 'newer-schema' };
       }
       mkdirSync(path.dirname(filePath), { recursive: true });
-      if (existsSync(filePath) && existingVersion === 1) {
+      if (existsSync(filePath) && existingVersion !== undefined) {
         copyFileSync(filePath, backupPath);
       }
       const temporary = `${filePath}.tmp`;

@@ -9,7 +9,13 @@ import {
 import { botColorSwatches, normalizeColor } from '../../../shared/color';
 import { BOT_SHAPES, type BotShape } from '../../../shared/domain';
 import { type MessageKey, useMessages } from '../../app/i18n';
-import { MAX_NAME_LENGTH, isRemoteRoster, useAppState, useDispatch } from '../../app/store';
+import {
+  appStore,
+  MAX_NAME_LENGTH,
+  isRemoteRoster,
+  useAppState,
+  useDispatch,
+} from '../../app/store';
 import { BotLookFace } from '../bots/BotLookFace';
 import styles from './CreateBotDialog.module.css';
 
@@ -55,6 +61,7 @@ export function CreateBotDialog(): ReactElement | null {
 
   const open = create.open;
   const error = create.error;
+  const editing = create.editingProfile !== null;
   const canSubmit = create.name.trim() !== '' && !create.busy;
   const seed = create.name === '' ? 'new-bot' : create.name;
 
@@ -113,6 +120,53 @@ export function CreateBotDialog(): ReactElement | null {
       return;
     }
     dispatch({ type: 'create-busy', busy: true });
+
+    if (create.editingProfile !== null) {
+      const profile = create.editingProfile;
+      const current = appStore.getState().remote.bots.find((bot) => bot.profileName === profile);
+      const look = await dashboard.setBotAppearance(
+        profile,
+        { shape: create.shape, color: create.color, title: name },
+        create.editingRevision,
+      );
+      if (!look.ok) {
+        dispatch({
+          type: 'create-remote-error',
+          message:
+            look.error.code === 'conflict'
+              ? t('connection.error.conflict')
+              : t('create.error.remote'),
+        });
+        return;
+      }
+      let nextProfile = profile;
+      let displayName = name;
+      if (name !== profile) {
+        const renamed = await dashboard.renameBot(profile, name);
+        if (!renamed.ok) {
+          dispatch({ type: 'create-remote-error', message: t('create.error.remote') });
+          return;
+        }
+        nextProfile = renamed.data.profile;
+        displayName = renamed.data.displayName || name;
+      }
+      if (current !== undefined) {
+        dispatch({
+          type: 'remote-upsert-bot',
+          bot: {
+            ...current,
+            profileName: nextProfile,
+            displayName,
+            shape: create.shape,
+            color: create.color,
+            metaRevision: look.data.revision,
+          },
+        });
+      }
+      dispatch({ type: 'create-close' });
+      return;
+    }
+
     const result = await dashboard.createBot({
       name,
       shape: create.shape,
@@ -193,7 +247,7 @@ export function CreateBotDialog(): ReactElement | null {
         onKeyDown={onDialogKeyDown}
       >
         <h2 id={TITLE_ID} className={styles.title}>
-          {t('create.title')}
+          {editing ? t('create.editingTitle') : t('create.title')}
         </h2>
 
         <div className={styles.preview} style={previewStyle} aria-hidden="true">
@@ -309,7 +363,13 @@ export function CreateBotDialog(): ReactElement | null {
               {t('common.cancel')}
             </button>
             <button type="submit" className={styles.submitButton} disabled={!canSubmit}>
-              {create.busy ? t('create.creating') : t('create.submit')}
+              {create.busy
+                ? editing
+                  ? t('create.saving')
+                  : t('create.creating')
+                : editing
+                  ? t('create.save')
+                  : t('create.submit')}
             </button>
           </footer>
         </form>

@@ -20,7 +20,9 @@ details column and language/appearance preferences survive a restart. A backgrou
 watcher finds approvals/questions waiting in Bot Chats you have not opened, shows
 an attention count and sends a system notification (clicking it opens that Bot). Creating a Bot in a connected window now
 runs the real fresh-profile flow (name, shape, colour), selects it and guides model
-setup when the Dashboard reports it is not ready yet. Without a connection the window
+setup when the Dashboard reports it is not ready yet. Connected Bots can be pinned, grouped
+into named sections (create/rename/delete), moved between them, and their look and name
+edited through the compare-and-swap appearance write; the arrangement persists locally. Without a connection the window
 keeps using fixtures. No signed installer or upgrade path
 exists yet. See
 [`docs/evidence/m0a-design-slice.md`](docs/evidence/m0a-design-slice.md) and

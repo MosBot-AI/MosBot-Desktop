@@ -14,6 +14,8 @@ import {
   selectPendingProfile,
   selectPinnedBots,
   selectRosterBots,
+  selectRosterSections,
+  selectSectionBots,
   selectSelectedBot,
   selectUnresolvedCount,
   synthesizeRemoteBot,
@@ -348,6 +350,38 @@ describe('remote roster', () => {
     expect(selectChatMessages(reset, 'bot-project').length).toBeGreaterThan(0);
   });
 
+  it('organises remote bots into pinned and named sections', () => {
+    let state = reduceAppState(build(), { type: 'remote-ready', bots: [...bots] });
+    state = reduceAppState(state, { type: 'org-toggle-pin', profile: 'writer' });
+    expect(state.remoteOrg.pinned).toEqual(['writer']);
+    expect(selectPinnedBots(state).map((bot) => bot.id)).toEqual(['writer']);
+
+    state = reduceAppState(state, { type: 'org-create-section', title: '产品' });
+    const sectionId = state.remoteOrg.sections[0]?.id ?? '';
+    expect(sectionId).not.toBe('');
+    state = reduceAppState(state, {
+      type: 'org-move-bot',
+      profile: 'default',
+      sectionId,
+    });
+    expect(selectSectionBots(state, sectionId).map((bot) => bot.id)).toEqual(['default']);
+    expect(selectRosterSections(state).some((section) => section.name === '产品')).toBe(true);
+
+    state = reduceAppState(state, {
+      type: 'org-rename-section',
+      sectionId,
+      title: '研究',
+    });
+    expect(state.remoteOrg.sections[0]?.title).toBe('研究');
+    state = reduceAppState(state, { type: 'org-remove-section', sectionId });
+    expect(state.remoteOrg.sections).toHaveLength(0);
+    expect(
+      selectSectionBots(state, 'remote-unsorted')
+        .map((bot) => bot.id)
+        .sort(),
+    ).toEqual(['default', 'writer']);
+  });
+
   it('tracks remote create state and model readiness', () => {
     let state = reduceAppState(build(), { type: 'remote-ready', bots: [...bots] });
     state = reduceAppState(state, { type: 'create-busy', busy: true });
@@ -473,12 +507,13 @@ describe('local state persistence', () => {
     state = reduceAppState(state, { type: 'set-language', language: 'en' });
 
     const local = buildLocalState(state);
-    expect(local.version).toBe(1);
+    expect(local.version).toBe(2);
     const bucket = local.connections[connectionKey(state)];
     expect(bucket?.selectedProfile).toBe('bot-project');
     expect(bucket?.drafts).toEqual({ 'bot-project': 'keep me' });
     expect(bucket?.inspector).toEqual({ open: true, tab: 'library', width: 400 });
     expect(local.preferences).toEqual({ theme: 'dark', language: 'en' });
+    expect(local.connections[connectionKey(state)]?.organization.pinned).toEqual([]);
   });
 
   it('hydrates drafts, inspector and preferences back into the window', () => {
@@ -486,12 +521,16 @@ describe('local state persistence', () => {
     const hydrated = reduceAppState(state, {
       type: 'hydrate-local',
       state: {
-        version: 1,
+        version: 2,
         connections: {
           fixture: {
             selectedProfile: 'bot-design',
             drafts: { 'bot-design': 'restored draft' },
             inspector: { open: true, tab: 'computer', width: 420 },
+            organization: {
+              pinned: ['bot-design'],
+              sections: [{ id: 's1', title: '产品', botIds: ['bot-design'], collapsed: false }],
+            },
           },
         },
         preferences: { theme: 'light', language: 'en' },
@@ -504,5 +543,7 @@ describe('local state persistence', () => {
     expect(hydrated.inspector.tab).toBe('computer');
     expect(hydrated.inspector.width).toBe(420);
     expect(hydrated.savedSelectedProfile).toBe('bot-design');
+    expect(hydrated.remoteOrg.pinned).toEqual(['bot-design']);
+    expect(hydrated.remoteOrg.sections[0]?.title).toBe('产品');
   });
 });

@@ -1,8 +1,8 @@
-import type { ReactElement } from 'react';
+import { useState, type ReactElement } from 'react';
 import type { BotProfile } from '../../../shared/domain';
 import { formatRelativeMinutes, presenceKey } from '../../app/format';
 import { useMessages } from '../../app/i18n';
-import { selectRoutinesFor, useAppState } from '../../app/store';
+import { isRemoteRoster, selectRoutinesFor, useAppState, useDispatch } from '../../app/store';
 import { BotLookFace } from '../bots/BotLookFace';
 import { BotStatusDot } from '../bots/BotStatusDot';
 import styles from './InspectorPanel.module.css';
@@ -16,6 +16,12 @@ export function DetailsTab({ bot }: DetailsTabProps): ReactElement {
   const t = useMessages();
   const language = useAppState((state) => state.language);
   const routines = useAppState(selectRoutinesFor);
+  const dispatch = useDispatch();
+  const remote = useAppState(isRemoteRoster);
+  const organization = useAppState((state) => state.remoteOrg);
+  const [newSection, setNewSection] = useState('');
+  const pinned = organization.pinned.includes(bot.id);
+  const currentSection = organization.sections.find((section) => section.botIds.includes(bot.id));
 
   return (
     <div className={styles.tabContent}>
@@ -43,6 +49,78 @@ export function DetailsTab({ bot }: DetailsTabProps): ReactElement {
           </p>
         </div>
       </div>
+
+      {remote ? (
+        <section className={styles.section}>
+          <h3 className={styles.sectionTitle}>{t('inspector.manage.title')}</h3>
+          <div className={styles.manageRow}>
+            <button
+              type="button"
+              className={styles.manageButton}
+              onClick={() => {
+                dispatch({ type: 'org-toggle-pin', profile: bot.id });
+              }}
+            >
+              {pinned ? t('inspector.manage.unpin') : t('inspector.manage.pin')}
+            </button>
+            <button
+              type="button"
+              className={styles.manageButton}
+              onClick={() => {
+                dispatch({ type: 'edit-open', profile: bot.id });
+              }}
+            >
+              {t('inspector.manage.edit')}
+            </button>
+          </div>
+          <label className={styles.manageField}>
+            <span className={styles.manageLabel}>{t('inspector.manage.section')}</span>
+            <select
+              className={styles.manageSelect}
+              value={currentSection?.id ?? ''}
+              onChange={(event) => {
+                dispatch({
+                  type: 'org-move-bot',
+                  profile: bot.id,
+                  sectionId: event.target.value === '' ? null : event.target.value,
+                });
+              }}
+            >
+              <option value="">{t('inspector.manage.unsorted')}</option>
+              {organization.sections.map((section) => (
+                <option key={section.id} value={section.id}>
+                  {section.title}
+                </option>
+              ))}
+            </select>
+          </label>
+          <form
+            className={styles.manageField}
+            onSubmit={(event) => {
+              event.preventDefault();
+              dispatch({ type: 'org-create-section', title: newSection });
+              setNewSection('');
+            }}
+          >
+            <input
+              className={styles.manageInput}
+              value={newSection}
+              maxLength={24}
+              placeholder={t('inspector.manage.newSection')}
+              onChange={(event) => {
+                setNewSection(event.target.value);
+              }}
+            />
+            <button
+              type="submit"
+              className={styles.manageButton}
+              disabled={newSection.trim() === ''}
+            >
+              {t('inspector.manage.addSection')}
+            </button>
+          </form>
+        </section>
+      ) : null}
 
       {bot.description === '' ? null : (
         <section className={styles.section}>

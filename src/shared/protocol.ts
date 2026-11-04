@@ -364,9 +364,23 @@ export interface DashboardStatus {
   readonly lastProbe: ProbeReport | null;
 }
 
+export interface LocalSection {
+  readonly id: string;
+  readonly title: string;
+  readonly botIds: readonly string[];
+  readonly collapsed: boolean;
+}
+
+export interface LocalOrganization {
+  readonly pinned: readonly string[];
+  readonly sections: readonly LocalSection[];
+  readonly unsortedCollapsed?: boolean;
+}
+
 export interface LocalConnectionState {
   readonly selectedProfile: string | null;
   readonly drafts: Readonly<Record<string, string>>;
+  readonly organization: LocalOrganization;
   readonly inspector: {
     readonly open: boolean;
     readonly tab: InspectorTab;
@@ -376,7 +390,7 @@ export interface LocalConnectionState {
 
 /** Versioned, non-secret local state persisted by the main process. */
 export interface LocalState {
-  readonly version: 1;
+  readonly version: 2;
   readonly connections: Readonly<Record<string, LocalConnectionState>>;
   readonly preferences: {
     readonly theme: ThemePreference;

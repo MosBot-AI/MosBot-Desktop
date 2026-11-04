@@ -222,6 +222,57 @@
   gap: var(--space-2);
 }
 
+.manageRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.manageField {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.manageLabel {
+  flex: 0 0 auto;
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.manageSelect,
+.manageInput {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+}
+
+.manageButton {
+  height: 28px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-hover);
+  color: var(--text-primary);
+  font-size: var(--text-xs);
+}
+
+.manageButton:hover:not(:disabled) {
+  background: var(--surface-code);
+}
+
+.manageButton:disabled {
+  color: var(--text-tertiary);
+}
+
 .sectionTitle {
   margin: 0;
   font-size: var(--text-2xs);

@@ -52,6 +52,9 @@ export interface CreateState {
   readonly busy: boolean;
   /** Server-side failure message for the remote path (already user-readable). */
   readonly remoteError: string | null;
+  /** When set, the dialog edits this profile instead of creating a new Bot. */
+  readonly editingProfile: string | null;
+  readonly editingRevision: number;
 }
 
 export type ConnectionStage =
@@ -81,6 +84,19 @@ export interface LiveRequest {
   readonly id: string;
   readonly method: 'approval' | 'clarify';
   readonly payload: Readonly<Record<string, unknown>>;
+}
+
+export interface RemoteSection {
+  readonly id: string;
+  readonly title: string;
+  readonly botIds: readonly string[];
+  readonly collapsed: boolean;
+}
+
+export interface RemoteOrganization {
+  readonly pinned: readonly string[];
+  readonly sections: readonly RemoteSection[];
+  readonly unsortedCollapsed: boolean;
 }
 
 export interface LiveTool {
@@ -140,6 +156,7 @@ export interface AppState {
   readonly live: LiveChatState;
   readonly localState: LocalState | null;
   readonly savedSelectedProfile: string | null;
+  readonly remoteOrg: RemoteOrganization;
   readonly pending: {
     readonly items: Readonly<
       Record<
@@ -173,9 +190,16 @@ export type AppAction =
   | { type: 'create-color'; color: string }
   | { type: 'create-submit' }
   | { type: 'create-busy'; busy: boolean }
+  | { type: 'edit-open'; profile: string }
   | { type: 'create-remote-error'; message: string | null }
   | { type: 'remote-upsert-bot'; bot: RemoteBot }
   | { type: 'remote-model-ready'; profile: string; ready: boolean | null }
+  | { type: 'org-toggle-pin'; profile: string }
+  | { type: 'org-toggle-section'; sectionId: string }
+  | { type: 'org-create-section'; title: string }
+  | { type: 'org-rename-section'; sectionId: string; title: string }
+  | { type: 'org-remove-section'; sectionId: string }
+  | { type: 'org-move-bot'; profile: string; sectionId: string | null }
   | { type: 'set-draft'; botId: string; text: string }
   | { type: 'send-message'; botId: string; text: string; at: number }
   | { type: 'deliver-reply'; botId: string; text: string; at: number }
@@ -388,6 +412,8 @@ export function createInitialState(seed: FixtureSeed, bootstrap: Bootstrap): App
       error: null,
       busy: false,
       remoteError: null,
+      editingProfile: null,
+      editingRevision: 0,
     },
     theme: 'system',
     resolvedTheme: bootstrap.resolvedTheme,
@@ -434,6 +460,7 @@ export function createInitialState(seed: FixtureSeed, bootstrap: Bootstrap): App
     },
     localState: null,
     savedSelectedProfile: null,
+    remoteOrg: { pinned: [], sections: [], unsortedCollapsed: false },
     pending: { items: {} },
   };
 }
@@ -522,6 +549,8 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
           error: null,
           busy: false,
           remoteError: null,
+          editingProfile: null,
+          editingRevision: 0,
         },
       };
     case 'create-close':
@@ -535,6 +564,8 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
           error: null,
           busy: false,
           remoteError: null,
+          editingProfile: null,
+          editingRevision: 0,
         },
       };
     case 'create-name':
@@ -593,6 +624,8 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
           error: null,
           busy: false,
           remoteError: null,
+          editingProfile: null,
+          editingRevision: 0,
         },
       };
     }
@@ -872,6 +905,7 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
           loadingOlder: false,
           modelReady: {},
         },
+        remoteOrg: { pinned: [], sections: [], unsortedCollapsed: false },
       };
     case 'live-reset':
       return {
@@ -1042,9 +1076,23 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
         state.bots.some((bot) => bot.id === savedProfile)
           ? savedProfile
           : state.selectedBotId;
+      const organization = connection?.organization;
       return {
         ...state,
         selectedBotId: fixtureSelection,
+        remoteOrg:
+          organization === undefined
+            ? state.remoteOrg
+            : {
+                pinned: organization.pinned,
+                sections: organization.sections.map((section) => ({
+                  id: section.id,
+                  title: section.title,
+                  botIds: section.botIds,
+                  collapsed: section.collapsed,
+                })),
+                unsortedCollapsed: organization.unsortedCollapsed === true,
+              },
         localState: action.state,
         theme: action.state.preferences.theme,
         language: action.state.preferences.language,
@@ -1091,6 +1139,27 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
       delete items[action.requestId];
       return { ...state, pending: { items } };
     }
+    case 'edit-open': {
+      const remoteBot = state.remote.bots.find((bot) => bot.profileName === action.profile);
+      if (remoteBot === undefined) {
+        return state;
+      }
+      const shape = (remoteBot.shape as BotShape | null) ?? 'blobatar';
+      return {
+        ...state,
+        create: {
+          open: true,
+          name: remoteBot.displayName,
+          shape,
+          color: remoteBot.color === '' ? DEFAULT_CREATE_COLOR : remoteBot.color,
+          error: null,
+          busy: false,
+          remoteError: null,
+          editingProfile: remoteBot.profileName,
+          editingRevision: remoteBot.metaRevision,
+        },
+      };
+    }
     case 'create-busy':
       return { ...state, create: { ...state.create, busy: action.busy } };
     case 'create-remote-error':
@@ -1121,6 +1190,90 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
           modelReady: { ...state.remote.modelReady, [action.profile]: action.ready },
         },
       };
+    case 'org-toggle-pin': {
+      const pinned = state.remoteOrg.pinned.includes(action.profile)
+        ? state.remoteOrg.pinned.filter((profile) => profile !== action.profile)
+        : [...state.remoteOrg.pinned, action.profile];
+      return { ...state, remoteOrg: { ...state.remoteOrg, pinned } };
+    }
+    case 'org-toggle-section':
+      if (action.sectionId === REMOTE_UNSORTED_ID) {
+        return {
+          ...state,
+          remoteOrg: {
+            ...state.remoteOrg,
+            unsortedCollapsed: !state.remoteOrg.unsortedCollapsed,
+          },
+        };
+      }
+      return {
+        ...state,
+        remoteOrg: {
+          ...state.remoteOrg,
+          sections: state.remoteOrg.sections.map((section) =>
+            section.id === action.sectionId
+              ? { ...section, collapsed: !section.collapsed }
+              : section,
+          ),
+        },
+      };
+    case 'org-create-section': {
+      const title = action.title.trim();
+      if (title === '') {
+        return state;
+      }
+      const id = `section-${Date.now().toString(36)}-${state.remoteOrg.sections.length}`;
+      return {
+        ...state,
+        remoteOrg: {
+          ...state.remoteOrg,
+          sections: [...state.remoteOrg.sections, { id, title, botIds: [], collapsed: false }],
+        },
+      };
+    }
+    case 'org-rename-section': {
+      const title = action.title.trim();
+      if (title === '') {
+        return state;
+      }
+      return {
+        ...state,
+        remoteOrg: {
+          ...state.remoteOrg,
+          sections: state.remoteOrg.sections.map((section) =>
+            section.id === action.sectionId ? { ...section, title } : section,
+          ),
+        },
+      };
+    }
+    case 'org-remove-section':
+      return {
+        ...state,
+        remoteOrg: {
+          ...state.remoteOrg,
+          sections: state.remoteOrg.sections.filter((section) => section.id !== action.sectionId),
+        },
+      };
+    case 'org-move-bot': {
+      const sections = state.remoteOrg.sections.map((section) => ({
+        ...section,
+        botIds: section.botIds.filter((profile) => profile !== action.profile),
+      }));
+      if (action.sectionId === null) {
+        return { ...state, remoteOrg: { ...state.remoteOrg, sections } };
+      }
+      return {
+        ...state,
+        remoteOrg: {
+          ...state.remoteOrg,
+          sections: sections.map((section) =>
+            section.id === action.sectionId
+              ? { ...section, botIds: [...section.botIds, action.profile] }
+              : section,
+          ),
+        },
+      };
+    }
     case 'set-footer-menu':
       return state.footerMenuOpen === action.open && !state.pinnedMenuOpen
         ? state
@@ -1233,10 +1386,20 @@ export function buildLocalState(state: AppState): LocalState {
         tab: state.inspector.tab,
         width: state.inspector.width,
       },
+      organization: {
+        pinned: state.remoteOrg.pinned,
+        sections: state.remoteOrg.sections.map((section) => ({
+          id: section.id,
+          title: section.title,
+          botIds: section.botIds,
+          collapsed: section.collapsed,
+        })),
+        unsortedCollapsed: state.remoteOrg.unsortedCollapsed,
+      },
     },
   };
   return {
-    version: 1,
+    version: 2,
     connections,
     preferences: { theme: state.theme, language: state.language },
   };
@@ -1248,6 +1411,7 @@ export function connectionKey(state: AppState): string {
 }
 
 const REMOTE_SECTION_ID = 'remote-all';
+export const REMOTE_UNSORTED_ID = 'remote-unsorted';
 
 /** True when the roster comes from the connected Dashboard rather than fixtures. */
 export function isRemoteRoster(state: AppState): boolean {
@@ -1287,9 +1451,26 @@ export function selectRosterBots(state: AppState): BotProfile[] {
 }
 
 export function selectRosterSections(state: AppState): BotSection[] {
-  return isRemoteRoster(state)
-    ? [{ id: REMOTE_SECTION_ID, name: 'Bots', collapsed: false, order: 0 }]
-    : state.sections;
+  if (!isRemoteRoster(state)) {
+    return state.sections;
+  }
+  const sections: BotSection[] = state.remoteOrg.sections.map((section, index) => ({
+    id: section.id,
+    name: section.title,
+    collapsed: section.collapsed,
+    order: index,
+  }));
+  const assigned = new Set(state.remoteOrg.sections.flatMap((section) => section.botIds));
+  const hasUnsorted = selectRosterBots(state).some((bot) => !assigned.has(bot.id));
+  if (hasUnsorted) {
+    sections.push({
+      id: REMOTE_UNSORTED_ID,
+      name: state.language === 'en' ? 'Ungrouped' : '未分组',
+      collapsed: state.remoteOrg.unsortedCollapsed,
+      order: sections.length,
+    });
+  }
+  return sections;
 }
 
 export function selectSelectedBot(state: AppState): BotProfile | undefined {
@@ -1299,9 +1480,19 @@ export function selectSelectedBot(state: AppState): BotProfile | undefined {
 
 export function selectPinnedBots(state: AppState): BotProfile[] {
   if (isRemoteRoster(state)) {
-    return selectRosterBots(state)
-      .slice(0, 6)
-      .map((bot, index) => ({ ...bot, pinnedIndex: index }));
+    const bots = selectRosterBots(state);
+    const byId = new Map(bots.map((bot) => [bot.id, bot]));
+    const pinned: BotProfile[] = [];
+    state.remoteOrg.pinned.forEach((profile, index) => {
+      const bot = byId.get(profile);
+      if (bot !== undefined) {
+        pinned.push({ ...bot, pinnedIndex: index });
+      }
+    });
+    if (pinned.length > 0) {
+      return pinned;
+    }
+    return bots.slice(0, 6).map((bot, index) => ({ ...bot, pinnedIndex: index }));
   }
   return state.bots
     .filter((bot) => bot.pinnedIndex !== null)
@@ -1311,7 +1502,19 @@ export function selectPinnedBots(state: AppState): BotProfile[] {
 
 export function selectSectionBots(state: AppState, sectionId: string): BotProfile[] {
   if (isRemoteRoster(state)) {
-    return sectionId === REMOTE_SECTION_ID ? selectRosterBots(state) : [];
+    const bots = selectRosterBots(state);
+    if (sectionId === REMOTE_UNSORTED_ID) {
+      const assigned = new Set(state.remoteOrg.sections.flatMap((section) => section.botIds));
+      return bots.filter((bot) => !assigned.has(bot.id));
+    }
+    const section = state.remoteOrg.sections.find((entry) => entry.id === sectionId);
+    if (section === undefined) {
+      return [];
+    }
+    const byId = new Map(bots.map((bot) => [bot.id, bot]));
+    return section.botIds
+      .map((profile) => byId.get(profile))
+      .filter((bot): bot is BotProfile => bot !== undefined);
   }
   return state.bots.filter((bot) => bot.sectionId === sectionId);
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import type { BotProfile, ThemePreference } from '../../../shared/domain';
 import { useMessages } from '../../app/i18n';
 import type { MessageKey } from '../../app/i18n';
@@ -9,6 +9,7 @@ import {
   selectPinnedBots,
   selectRosterBots,
   selectRosterSections,
+  REMOTE_UNSORTED_ID,
   selectSectionBots,
   selectUnreadTotal,
   useAppState,
@@ -56,6 +57,25 @@ export function BotSidebar(): ReactElement {
       ? (connectionUi.snapshot.displayName ?? connectionUi.snapshot.userId ?? '')
       : null;
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const [sectionMenuId, setSectionMenuId] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState<{ id: string; title: string } | null>(null);
+
+  useEffect(() => {
+    if (sectionMenuId === null) {
+      return;
+    }
+    const onPointerDown = (event: MouseEvent): void => {
+      const target = event.target;
+      if (target instanceof Element && target.closest('[data-section-menu]') !== null) {
+        return;
+      }
+      setSectionMenuId(null);
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+    };
+  }, [sectionMenuId]);
 
   const selectBot = (botId: string): void => {
     dispatch({ type: 'select-bot', botId });
@@ -148,25 +168,105 @@ export function BotSidebar(): ReactElement {
             const bots = selectSectionBots(state, section.id);
             return (
               <section key={section.id} className={styles.section}>
-                <button
-                  type="button"
-                  className={styles.sectionHeader}
-                  aria-expanded={!section.collapsed}
-                  aria-label={t('sidebar.sectionToggle', {
-                    name: section.name,
-                    count: bots.length,
-                  })}
-                  onClick={() => {
-                    dispatch({ type: 'toggle-section', sectionId: section.id });
-                  }}
-                >
-                  <IconChevronDown
-                    size={12}
-                    className={section.collapsed ? styles.chevronCollapsed : styles.chevron}
-                  />
-                  <span className={styles.sectionName}>{section.name}</span>
-                  <span className={styles.sectionCount}>{bots.length}</span>
-                </button>
+                <div className={styles.sectionHeaderRow} data-section-menu>
+                  <button
+                    type="button"
+                    className={styles.sectionHeader}
+                    aria-expanded={!section.collapsed}
+                    aria-label={t('sidebar.sectionToggle', {
+                      name: section.name,
+                      count: bots.length,
+                    })}
+                    onClick={() => {
+                      dispatch({ type: 'toggle-section', sectionId: section.id });
+                    }}
+                  >
+                    <IconChevronDown
+                      size={12}
+                      className={section.collapsed ? styles.chevronCollapsed : styles.chevron}
+                    />
+                    {renaming?.id === section.id ? (
+                      <input
+                        className={styles.sectionRenameInput}
+                        value={renaming.title}
+                        maxLength={24}
+                        autoFocus
+                        aria-label={t('sidebar.sectionRename')}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                        }}
+                        onChange={(event) => {
+                          setRenaming({ id: section.id, title: event.target.value });
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            event.preventDefault();
+                            dispatch({
+                              type: 'org-rename-section',
+                              sectionId: section.id,
+                              title: renaming.title,
+                            });
+                            setRenaming(null);
+                          } else if (event.key === 'Escape') {
+                            event.preventDefault();
+                            setRenaming(null);
+                          }
+                        }}
+                        onBlur={() => {
+                          dispatch({
+                            type: 'org-rename-section',
+                            sectionId: section.id,
+                            title: renaming.title,
+                          });
+                          setRenaming(null);
+                        }}
+                      />
+                    ) : (
+                      <span className={styles.sectionName}>{section.name}</span>
+                    )}
+                    <span className={styles.sectionCount}>{bots.length}</span>
+                  </button>
+                  {remote && section.id !== REMOTE_UNSORTED_ID ? (
+                    <button
+                      type="button"
+                      className={styles.sectionMenuButton}
+                      aria-label={t('sidebar.sectionMenu')}
+                      aria-expanded={sectionMenuId === section.id}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setSectionMenuId(sectionMenuId === section.id ? null : section.id);
+                      }}
+                    >
+                      ⋯
+                    </button>
+                  ) : null}
+                  {sectionMenuId === section.id ? (
+                    <div className={styles.sectionMenu} role="menu">
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className={styles.sectionMenuItem}
+                        onClick={() => {
+                          setRenaming({ id: section.id, title: section.name });
+                          setSectionMenuId(null);
+                        }}
+                      >
+                        {t('sidebar.sectionRename')}
+                      </button>
+                      <button
+                        type="button"
+                        role="menuitem"
+                        className={styles.sectionMenuItem}
+                        onClick={() => {
+                          dispatch({ type: 'org-remove-section', sectionId: section.id });
+                          setSectionMenuId(null);
+                        }}
+                      >
+                        {t('sidebar.sectionDelete')}
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
                 {!section.collapsed ? (
                   <div className={styles.sectionBots}>
                     {bots.length === 0 ? (

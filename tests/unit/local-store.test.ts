@@ -21,12 +21,16 @@ afterEach(() => {
 
 function sample(): LocalState {
   return {
-    version: 1,
+    version: 2,
     connections: {
       'https://hermes.example.com': {
         selectedProfile: 'project-bot',
         drafts: { 'project-bot': 'unfinished message' },
         inspector: { open: true, tab: 'library', width: 380 },
+        organization: {
+          pinned: ['project-bot'],
+          sections: [{ id: 'product', title: '产品', botIds: ['project-bot'], collapsed: false }],
+        },
       },
     },
     preferences: { theme: 'dark', language: 'en' },
@@ -43,6 +47,31 @@ describe('local state store', () => {
     store.save({ ...sample(), preferences: { theme: 'light', language: 'zh-Hans' } });
     expect(JSON.parse(readFileSync(`${file}.bak`, 'utf8'))).toEqual(sample());
     expect(store.load()?.preferences.theme).toBe('light');
+  });
+
+  it('migrates a version 1 document by adding an empty organization', () => {
+    const file = tempFile();
+    writeFileSync(
+      file,
+      JSON.stringify({
+        version: 1,
+        connections: {
+          fixture: {
+            selectedProfile: 'bot-project',
+            drafts: { 'bot-project': 'draft' },
+            inspector: { open: false, tab: 'details', width: 360 },
+          },
+        },
+        preferences: { theme: 'light', language: 'zh-Hans' },
+      }),
+    );
+    const loaded = createLocalStore(file).load();
+    expect(loaded?.version).toBe(2);
+    expect(loaded?.connections['fixture']?.organization).toEqual({
+      pinned: [],
+      sections: [],
+    });
+    expect(loaded?.connections['fixture']?.drafts).toEqual({ 'bot-project': 'draft' });
   });
 
   it('sanitises oversized or malformed drafts instead of trusting them', () => {
@@ -74,11 +103,11 @@ describe('local state store', () => {
 
   it('refuses to overwrite a newer schema and reports a reason', () => {
     const file = tempFile();
-    writeFileSync(file, JSON.stringify({ version: 2, anything: true }));
+    writeFileSync(file, JSON.stringify({ version: 3, anything: true }));
     const store = createLocalStore(file);
     expect(store.load()).toBeNull();
     expect(store.save(sample())).toEqual({ ok: false, reason: 'newer-schema' });
-    expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({ version: 2, anything: true });
+    expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({ version: 3, anything: true });
   });
 
   it('treats a corrupt file as empty rather than crashing', () => {

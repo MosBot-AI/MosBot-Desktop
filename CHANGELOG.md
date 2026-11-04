@@ -90,8 +90,12 @@ until the release repository exists.
   colour through the `ui_meta['hermes-bots']` compare-and-swap, selects the new Bot
   and shows a "finish setup / check again" banner while the Dashboard reports the
   model as not ready. Remote rows now render the appearance and title stored in
-  `ui_meta`, and the appearance write reports revision conflicts. Fixture windows
-  keep the offline demo.
+  `ui_meta`, and the appearance write reports revision conflicts.
+- M2 organisation: connected Bots can be pinned, grouped into named sections
+  (create/rename/delete, move in and out, collapse), and edited (look and name)
+  through the same CAS appearance write plus the REST rename. The arrangement,
+  including collapsed sections, is stored in the local-state document, which is
+  now schema v2 with automatic v1 migration. Fixture windows keep the offline demo.
 - Gateway WebSocket client (`ws`): one-time ticket handshake, `gateway.ready` first
   frame, JSON-RPC request/response with zod validation, typed server events, and
   ticket replay/expiry rejection checks. Verified against the test deployment:

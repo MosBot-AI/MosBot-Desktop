@@ -13,7 +13,7 @@ function isLocalState(value: unknown): value is LocalState {
   const record = asRecord(value);
   return (
     record !== null &&
-    record['version'] === 1 &&
+    record['version'] === 2 &&
     asRecord(record['connections']) !== null &&
     asRecord(record['preferences']) !== null
   );
