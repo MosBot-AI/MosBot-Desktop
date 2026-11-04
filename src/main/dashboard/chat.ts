@@ -396,7 +396,6 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
         storedSessionId = str(record?.['session_key']) || storedSessionId;
         approvalMode = str(asRecord(record?.['info'])?.['approval_mode']) || approvalMode;
         workspaceCwd = str(asRecord(record?.['info'])?.['cwd']) || workspaceCwd;
-        workspaceCwd = str(asRecord(record?.['info'])?.['cwd']) || workspaceCwd;
         runningTurn = record?.['running'] === true;
         // Resume carries unanswered requests for reconnecting clients.
         const openRequests = Array.isArray(record?.['open_requests'])

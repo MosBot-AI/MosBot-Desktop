@@ -362,6 +362,10 @@ until the release repository exists.
   pending cards after the first poll on a gateway that omits the field. It now
   skips reconciliation when the field is absent; a unit test covers it.
 
+- Fixed the inspector library's stale-response hazard: switching Bots no longer
+  lets a slow artifact list/preview/save response from the previous Bot repaint the
+  new one (same class as the workbench fixes).
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,

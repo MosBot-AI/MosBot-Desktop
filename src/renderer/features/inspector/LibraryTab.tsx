@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactElement } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import type { Artifact, ArtifactState, ChatMessage } from '../../../shared/domain';
 import type { BotArtifact, BotArtifactContent, ProtocolError } from '../../../shared/protocol';
 import { formatRelativeMinutes } from '../../app/format';
@@ -93,6 +93,9 @@ export function LibraryTab({ botId }: LibraryTabProps): ReactElement {
   const [previewText, setPreviewText] = useState<string | null>(null);
   const [savedPath, setSavedPath] = useState<string | null>(null);
   const workspace = useAppState((state) => state.remote.workspaces[botId] ?? null);
+  // Switching Bots must drop late artifact responses for the previous Bot.
+  const currentBot = useRef(botId);
+  currentBot.current = botId;
 
   const loadRemote = useCallback(async (): Promise<void> => {
     const dashboard = window.mosbot?.dashboard;
@@ -100,6 +103,9 @@ export function LibraryTab({ botId }: LibraryTabProps): ReactElement {
       return;
     }
     const result = await dashboard.listArtifacts(botId, workspace);
+    if (botId !== currentBot.current) {
+      return;
+    }
     if (!result.ok) {
       setLoadError(result.error);
       setRemoteStatus('error');
@@ -132,6 +138,9 @@ export function LibraryTab({ botId }: LibraryTabProps): ReactElement {
       setSavedPath(null);
       setActionError(null);
       const content = await dashboard.readArtifact(artifact.path);
+      if (botId !== currentBot.current) {
+        return;
+      }
       if (!content.ok) {
         setActionError(content.error);
         return;
@@ -236,6 +245,9 @@ export function LibraryTab({ botId }: LibraryTabProps): ReactElement {
                   return;
                 }
                 void dashboard.saveArtifact(preview.path, preview.name).then((result) => {
+                  if (botId !== currentBot.current) {
+                    return;
+                  }
                   if (result.ok) {
                     setActionError(null);
                     setSavedPath(result.data);
