@@ -339,6 +339,11 @@ until the release repository exists.
   A walkthrough with injected latency on one dedicated board verifies the stale
   response is ignored and switching back still loads its task.
 
+- Documented a verification limitation: a model-not-configured Bot cannot be
+  produced through the Dashboard API (`PUT /model` rejects empty values and a new
+  profile inherits a usable model), so that guidance path needs a real unconfigured
+  environment or explicit permission to clear a test profile's model.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,

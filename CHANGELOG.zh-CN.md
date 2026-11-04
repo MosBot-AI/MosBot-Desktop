@@ -210,6 +210,9 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
   当前 board 的响应，切换时同步更新当前 board ref。用专用 board + 注入延迟的 walkthrough 验证
   旧响应被忽略、切回后任务正常显示。
 
+- 记录验证限制：无法通过 Dashboard API 构造“未配置模型”的 Bot（`PUT /model` 拒绝空值，新建
+  profile 会继承可用模型），该引导路径需要真实未配置环境或明确授权清空测试 profile 的模型。
+
 ### 变更
 
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。
