@@ -1010,13 +1010,17 @@ export async function runChatProbe(deps: WriteProbeDeps): Promise<Result<ProbeRe
     const produced = artifacts.ok
       ? artifacts.data.find((artifact) => artifact.name.includes('mosbot-probe-artifact'))
       : undefined;
+    const artifactFresh =
+      produced !== undefined && produced.modifiedAt > 0 && produced.brokenLink !== true;
     rows.push(
       row(
         'chat_artifact_index',
         'Bot 产物索引（工作区）',
-        artifactDone && produced !== undefined ? 'pass' : 'unverified',
+        artifactDone && produced !== undefined && artifactFresh ? 'pass' : 'unverified',
         produced !== undefined
-          ? `name=${produced.name} · kind=${produced.kind} · bytes=${produced.size}`
+          ? `name=${produced.name} · kind=${produced.kind} · bytes=${produced.size} · mtime=${
+              produced.modifiedAt > 0 ? new Date(produced.modifiedAt).toISOString() : 'missing'
+            } · broken=${String(produced.brokenLink === true)}`
           : artifactDone
             ? `no matching artifact in ${artifacts.ok ? artifacts.data.length : '?'} entries`
             : artifactPrompt.ok

@@ -59,18 +59,19 @@ its own sandbox and GPU process, which a locked-down environment can block.
 
 ## Checks
 
-| Command                                 | What it proves                                                                            |
-| --------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `npm run typecheck`                     | strict TypeScript across renderer, preload and main                                       |
-| `npm test`                              | pure-function and reducer tests (colours, i18n parity, store, fixtures, BotFace geometry) |
-| `npm run test:e2e`                      | packages the app, then drives the real Electron window with Playwright                    |
-| `npm run lint` / `npm run format:check` | ESLint 9 and Prettier                                                                     |
-| `npm run package`                       | unsigned `out/MosBot-<platform>-<arch>/MosBot.app`                                        |
-| `npm run screenshot`                    | packages and writes the evidence screenshots                                              |
-| `npm run assets:sync`                   | re-copies MosBot brand assets from the pinned source commit                               |
-| `npm run test:install`                  | packages, extracts the ZIP into a temp dir and launches it with fresh data                |
-| `npm run bench:pipeline`                | local coalescing benchmark: four channels of desensitised frames, batch age and memory    |
-| `npm run bench:stream`                  | packages the app, then measures frame→visible-text p95 and burst/history scenarios        |
+| Command                                      | What it proves                                                                            |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `npm run typecheck`                          | strict TypeScript across renderer, preload and main                                       |
+| `npm test`                                   | pure-function and reducer tests (colours, i18n parity, store, fixtures, BotFace geometry) |
+| `npm run test:e2e`                           | packages the app, then drives the real Electron window with Playwright                    |
+| `npm run lint` / `npm run format:check`      | ESLint 9 and Prettier                                                                     |
+| `npm run package`                            | unsigned `out/MosBot-<platform>-<arch>/MosBot.app`                                        |
+| `npm run screenshot`                         | packages and writes the evidence screenshots                                              |
+| `npm run assets:sync`                        | re-copies MosBot brand assets from the pinned source commit                               |
+| `npm run test:install`                       | packages, extracts the ZIP into a temp dir and launches it with fresh data                |
+| `npm run bench:pipeline`                     | local coalescing benchmark: four channels of desensitised frames, batch age and memory    |
+| `npm run bench:stream`                       | packages the app, then measures frame→visible-text p95 and burst/history scenarios        |
+| `BENCH_SOAK_SECONDS=3600 npm run bench:soak` | four-channel stream/idle/reconnect soak with batch-age and memory assertions              |
 
 ## Menus and keyboard
 

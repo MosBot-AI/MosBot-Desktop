@@ -195,6 +195,14 @@ until the release repository exists.
 --strict`, signed ZIP launch). Developer ID signing and notarization still await
   a Developer ID certificate and notarytool credentials.
 
+- 60-minute reconnect/idle soak (`pnpm bench:soak`): four channels through the
+  real coalescer, 90 s cycles of streaming, idle and reconnect replay with a
+  rolling-hash text check, per-cycle batch age/queue and RSS/heap sampling. The
+  full run completed 40 cycles / 960,000 frames with a 25 ms worst batch-age p95,
+  bounded queues and RSS +13.8 MB. Evidence: `docs/evidence/m5-soak.md`.
+- The chat probe now also reports the artifact `mtime` it indexed and whether the
+  entry is a broken link, so a real-service run verifies the new metadata mapping.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,

@@ -41,18 +41,19 @@ npm run dev            # 或：npx pnpm@11.28.5 dev
 
 ## 检查
 
-| 命令                                    | 验证内容                                                                |
-| --------------------------------------- | ----------------------------------------------------------------------- |
-| `npm run typecheck`                     | renderer、preload、main 的严格 TypeScript                               |
-| `npm test`                              | 纯函数与 reducer 测试（颜色、中英一致性、store、fixture、BotFace 几何） |
-| `npm run test:e2e`                      | 先打包，再用 Playwright 驱动真实 Electron 窗口                          |
-| `npm run lint` / `npm run format:check` | ESLint 9 与 Prettier                                                    |
-| `npm run package`                       | 未签名的 `out/MosBot-<platform>-<arch>/MosBot.app`                      |
-| `npm run screenshot`                    | 打包并生成证据截图                                                      |
-| `npm run assets:sync`                   | 从固定提交重新同步 MosBot 品牌资产                                      |
-| `npm run test:install`                  | 先打包，再把 ZIP 解压到临时目录并用全新数据启动检查                     |
-| `npm run bench:pipeline`                | 本地合并压测：四通道脱敏帧、批次年龄与内存                              |
-| `npm run bench:stream`                  | 先打包，再测「帧到可见文本」p95、突发与长历史场景                       |
+| 命令                                         | 验证内容                                                                |
+| -------------------------------------------- | ----------------------------------------------------------------------- |
+| `npm run typecheck`                          | renderer、preload、main 的严格 TypeScript                               |
+| `npm test`                                   | 纯函数与 reducer 测试（颜色、中英一致性、store、fixture、BotFace 几何） |
+| `npm run test:e2e`                           | 先打包，再用 Playwright 驱动真实 Electron 窗口                          |
+| `npm run lint` / `npm run format:check`      | ESLint 9 与 Prettier                                                    |
+| `npm run package`                            | 未签名的 `out/MosBot-<platform>-<arch>/MosBot.app`                      |
+| `npm run screenshot`                         | 打包并生成证据截图                                                      |
+| `npm run assets:sync`                        | 从固定提交重新同步 MosBot 品牌资产                                      |
+| `npm run test:install`                       | 先打包，再把 ZIP 解压到临时目录并用全新数据启动检查                     |
+| `npm run bench:pipeline`                     | 本地合并压测：四通道脱敏帧、批次年龄与内存                              |
+| `npm run bench:stream`                       | 先打包，再测「帧到可见文本」p95、突发与长历史场景                       |
+| `BENCH_SOAK_SECONDS=3600 npm run bench:soak` | 四通道流式/空闲/重连 soak，断言批次年龄与内存                           |
 
 ## 菜单与键盘
 

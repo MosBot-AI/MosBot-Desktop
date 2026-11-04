@@ -113,6 +113,12 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
   `codesign --verify --deep --strict`、签名 ZIP 启动）；Developer ID 签名与公证仍需
   Developer ID 证书与 notarytool 凭据。
 
+- 60 分钟重连/空闲 soak（`pnpm bench:soak`）：四通道经真实合并器，90 秒一轮的流式、空闲与
+  重连回放，滚动哈希校验文本完整性，逐轮记录批次年龄/队列并采样 RSS/堆。完整运行 40 轮、
+  960,000 帧，最差批次年龄 p95 25 ms，队列有界，RSS +13.8 MB。证据：
+  `docs/evidence/m5-soak.md`。
+- 聊天探针现在同时记录索引产物的 `mtime` 与是否悬空链接，真实服务复跑可验证新字段映射。
+
 ### 变更
 
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。

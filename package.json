@@ -32,6 +32,7 @@
     "test:install": "electron-forge make && node scripts/verify-install.mjs",
     "bench:stream": "electron-forge package && node scripts/bench-stream.mjs",
     "bench:pipeline": "vitest run --config vitest.perf.config.mts",
+    "bench:soak": "vitest run --config vitest.perf.config.mts tests/perf/stream-soak.bench.test.ts",
     "screenshot:connected": "node scripts/capture-connected.mjs"
   },
   "dependencies": {
