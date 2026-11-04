@@ -263,6 +263,9 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
 - 消息面板旧响应也已验证：先打开慢会话、立即打开另一个会话，新 transcript 保留、旧消息被丢弃
   （对现有会话只读 + 测试专用延迟）。
 
+- 记录测试服为 `hermes serve` 无头后端：插件管理 API 返回 404（web UI disabled），因此“插件禁用”
+  状态需要服务端 CLI + gateway 重启，无法通过 Dashboard API 构造。
+
 ### 变更
 
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。

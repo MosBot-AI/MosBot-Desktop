@@ -135,3 +135,10 @@ session 是否仍是当前值”的守卫，旧响应直接丢弃；切换 profi
 报告：`docs/evidence/tmp/messages-stale-2026-11-04T15-26-15-853Z.json`。延迟仅测试 seam
 （`MOSBOT_TEST_MESSAGES_SLOW_SESSION`），正常启动不生效。至此工作台的列表 / 搜索 / 消息三类
 旧响应隔离都有真实服务验证。
+
+## 2026-11-04 插件禁用状态：Dashboard API 不可达
+
+用授权的测试服会话直连 REST 尝试读取/切换插件：`/api/dashboard/agent-plugins` 返回 **404
+`Headless backend (hermes serve): web UI disabled`**。该部署是 `hermes serve` 无头后端，没有 dashboard
+插件管理路由；禁用 Kanban 需要服务端 `hermes plugins disable <key>` 并重启/重扫 gateway。因此
+“插件禁用空状态”无法通过现有 API 构造，记录为服务端配置依赖，不做伪验证。

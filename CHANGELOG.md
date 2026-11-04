@@ -415,6 +415,11 @@ until the release repository exists.
   immediately another one keeps the new transcript and discards the late messages
   (test-only delay on existing sessions, read-only).
 
+- Recorded that the test server runs the headless `hermes serve` backend: the plugin
+  management API returns 404 (`web UI disabled`), so the plugin-disabled state needs a
+  server-side `hermes plugins disable` + gateway restart and cannot be constructed
+  through the Dashboard API.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,
