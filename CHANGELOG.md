@@ -156,6 +156,17 @@ until the release repository exists.
   10,000-message history, 20-sample send/switch feedback and DOM text completeness,
   recording heap/RSS curves. Evidence is in `docs/evidence/m5-performance.md`.
 
+- macOS application menu: New Bot (`Cmd+N`), Search Bots (`Cmd+K`), Settings
+  (`Cmd+,`), zoom in/out/actual size (`Cmd+=`/`Cmd+-`/`Cmd+0`), show the main
+  window and the standard edit/window roles. Labels follow the interface language,
+  and the footer settings menu moves focus into the menu and back to its button.
+- Keyboard and accessibility regression (`tests/e2e/m5-accessibility.spec.ts`):
+  menu commands open their surfaces with focus in the right field, zoom changes the
+  page and resets without horizontal overflow, Enter during Chinese IME composition
+  is left to the IME while Shift+Enter inserts a newline, reduced motion removes the
+  timed transitions, every visible control has an accessible name and Tab reaches
+  all main surfaces. Evidence: `docs/evidence/m5-gui-a11y.md`.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,

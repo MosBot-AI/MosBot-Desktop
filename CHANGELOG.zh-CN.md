@@ -83,6 +83,14 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
   「帧到可见文本」p95、5 秒 5 倍突发、实际帧率、10,000 条历史、20 次采样的发送/切 Bot 反馈
   与 DOM 文本完整性，并记录堆/RSS 曲线。证据见 `docs/evidence/m5-performance.md`。
 
+- macOS 应用菜单：新建 Bot（`Cmd+N`）、搜索 Bot（`Cmd+K`）、设置（`Cmd+,`）、
+  放大/缩小/实际大小（`Cmd+=`/`Cmd+-`/`Cmd+0`）、显示主窗口，以及标准编辑/窗口角色；
+  菜单文案随界面语言切换，底栏设置菜单打开时焦点进入菜单、关闭后回到底栏入口。
+- 键盘与可访问性回归（`tests/e2e/m5-accessibility.spec.ts`）：菜单命令打开对应界面并聚焦
+  正确控件；缩放改变页面且复位后无横向溢出；中文输入法 composition 期间 Enter 不发送、
+  Shift+Enter 换行；降动态时过渡时长为 0；所有可见控件都有可访问名称，Tab 可到达全部主要
+  区域。证据：`docs/evidence/m5-gui-a11y.md`。
+
 ### 变更
 
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。

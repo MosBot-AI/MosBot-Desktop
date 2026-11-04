@@ -6,12 +6,13 @@ import {
   nativeTheme,
   Notification,
   safeStorage,
+  Menu,
   session,
   shell,
 } from 'electron';
 import { existsSync } from 'node:fs';
 import { readFile, stat, writeFile } from 'node:fs/promises';
-import { DASHBOARD_CHANNELS, SHELL_CHANNELS } from '../shared/bridge';
+import { DASHBOARD_CHANNELS, SHELL_CHANNELS, type MenuCommand } from '../shared/bridge';
 import { protocolError, type Result } from '../shared/protocol';
 import path from 'node:path';
 import { createAuthManager } from './dashboard/auth';
@@ -20,6 +21,7 @@ import { registerChatIpc } from './dashboard/chat-ipc';
 import { watchKanbanBoard, type KanbanWatcher } from './dashboard/kanban-events';
 import { createPendingWatcher } from './dashboard/pending';
 import { createComputerViewer } from './computer-viewer';
+import { createApplicationMenu, menuLanguageForLocale, type MenuLanguage } from './menu';
 import { registerLocalIpc } from './local/ipc';
 import { createTrustedSenderCheck, registerDashboardIpc } from './dashboard/ipc';
 import { createDashboardService } from './dashboard/service';
@@ -199,6 +201,22 @@ function loginTimeoutMs(): number | undefined {
   return parsed;
 }
 
+/** Sends a native-menu command to the main window, recreating/showing it first. */
+function dispatchMenuCommand(command: MenuCommand): void {
+  ensureWindow();
+  if (command === 'show-main-window') {
+    return;
+  }
+  const contents = mainWindow?.webContents;
+  if (contents !== undefined && contents !== null && !contents.isDestroyed()) {
+    contents.send(SHELL_CHANNELS.menuCommand, command);
+  }
+}
+
+function installMenu(language: MenuLanguage): void {
+  Menu.setApplicationMenu(createApplicationMenu(language, dispatchMenuCommand));
+}
+
 /** Shows the main window, recreating it when the person closed it earlier. */
 function ensureWindow(): void {
   if (mainWindow === null || mainWindow.isDestroyed()) {
@@ -210,6 +228,14 @@ function ensureWindow(): void {
 }
 
 function registerShellIpc(): void {
+  const isTrustedSender = createTrustedSenderCheck(() => mainWindow?.webContents ?? null);
+  ipcMain.handle(SHELL_CHANNELS.setMenuLanguage, (event, rawLanguage: unknown): boolean => {
+    if (!isTrustedSender(event) || (rawLanguage !== 'zh-Hans' && rawLanguage !== 'en')) {
+      return false;
+    }
+    installMenu(rawLanguage);
+    return true;
+  });
   ipcMain.handle(SHELL_CHANNELS.openExternal, async (_event, rawUrl: unknown): Promise<boolean> => {
     if (typeof rawUrl !== 'string' || rawUrl.length > 2048) {
       return false;
@@ -481,6 +507,7 @@ function registerDashboard(): void {
 void app.whenReady().then(() => {
   registerShellIpc();
   registerDashboard();
+  installMenu(menuLanguageForLocale(app.getLocale()));
   createMainWindow();
 
   app.on('activate', () => {

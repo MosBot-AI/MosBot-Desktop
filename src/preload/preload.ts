@@ -3,6 +3,7 @@ import {
   DASHBOARD_CHANNELS,
   LOCAL_CHANNELS,
   SHELL_CHANNELS,
+  type MenuCommand,
   type MosBotBridge,
 } from '../shared/bridge';
 import type {
@@ -43,7 +44,7 @@ import type {
  * beyond the preload-safe `process` snapshot; every Dashboard call is a
  * validated IPC invoke handled in the main process.
  */
-const bridge: Omit<MosBotBridge, 'openExternal' | 'local' | 'computer'> = {
+const bridge: Omit<MosBotBridge, 'openExternal' | 'menu' | 'local' | 'computer'> = {
   platform: process.platform,
   versions: {
     electron: process.versions.electron,
@@ -351,6 +352,21 @@ const localBridge: MosBotBridge['local'] = {
   },
 };
 
+const menuBridge: MosBotBridge['menu'] = {
+  onCommand(listener: (command: MenuCommand) => void): () => void {
+    const wrapped = (_event: Electron.IpcRendererEvent, command: MenuCommand): void => {
+      listener(command);
+    };
+    ipcRenderer.on(SHELL_CHANNELS.menuCommand, wrapped);
+    return () => {
+      ipcRenderer.removeListener(SHELL_CHANNELS.menuCommand, wrapped);
+    };
+  },
+  setLanguage(language: 'zh-Hans' | 'en'): Promise<boolean> {
+    return ipcRenderer.invoke(SHELL_CHANNELS.setMenuLanguage, language) as Promise<boolean>;
+  },
+};
+
 const computerBridge: MosBotBridge['computer'] = {
   onBootstrap(listener: (payload: ComputerBootstrap) => void): () => void {
     const wrapped = (_event: Electron.IpcRendererEvent, payload: ComputerBootstrap): void => {
@@ -384,6 +400,7 @@ const computerBridge: MosBotBridge['computer'] = {
 const fullBridge: MosBotBridge = {
   ...bridge,
   openExternal: shellBridge,
+  menu: menuBridge,
   local: localBridge,
   computer: computerBridge,
 };

@@ -53,6 +53,21 @@ npm run dev            # 或：npx pnpm@11.28.5 dev
 | `npm run bench:pipeline`                | 本地合并压测：四通道脱敏帧、批次年龄与内存                              |
 | `npm run bench:stream`                  | 先打包，再测「帧到可见文本」p95、突发与长历史场景                       |
 
+## 菜单与键盘
+
+macOS 应用菜单随界面语言切换，并提供主要操作的快捷键：
+
+| 快捷键                      | 操作                                                      |
+| --------------------------- | --------------------------------------------------------- |
+| `Cmd+N`                     | 新建 Bot                                                  |
+| `Cmd+K`                     | 搜索 Bot                                                  |
+| `Cmd+,`                     | 设置（外观与语言）                                        |
+| `Cmd+=` / `Cmd+-` / `Cmd+0` | 放大 / 缩小 / 实际大小                                    |
+| `Shift+Cmd+M`               | 显示主窗口                                                |
+| `Enter` / `Shift+Enter`     | 发送 / 换行；中文输入法 composition 期间 Enter 交给输入法 |
+
+编辑、窗口与全屏幕使用系统菜单角色，复制粘贴、撤销与系统输入法行为保持不变。
+
 ## 目录
 
 ```
@@ -71,11 +86,16 @@ docs           方案（中文）、品牌来源、证据
 - Dashboard 接入：[`docs/plans/02-dashboard-integration.md`](docs/plans/02-dashboard-integration.md)
 - 任务卡：[`docs/plans/03-agent-handoff.md`](docs/plans/03-agent-handoff.md)
 - 品牌资产与许可：[`docs/assets/brand.md`](docs/assets/brand.md)
+- 性能证据：[`docs/evidence/m5-performance.md`](docs/evidence/m5-performance.md)
+- 键盘与可访问性证据：[`docs/evidence/m5-gui-a11y.md`](docs/evidence/m5-gui-a11y.md)
 - 更新日志：[`CHANGELOG.zh-CN.md`](CHANGELOG.zh-CN.md)
 
-## M0a 已知限制
+## 已知限制
 
-- 聊天回复与电脑唤醒是 fixture 节奏，不是推理或真实远端会话。
-- 附件、产物预览/保存/打开、独立电脑窗口在 M4 接入；相关按钮禁用并说明原因，不伪造成功。
-- 真实中文输入法、VoiceOver 顺序、窗口缩放与分屏尚未实测。
-- 构建未签名、未做分发打包；签名与连续 7 天日用验收在 M5。
+- macOS 构建目前是未签名 ZIP（无 DMG / 公证）；签名需要 Apple Developer 证书，连续 7 天
+  日用验收尚未开始。
+- 需要人在真机前完成的真实服务项仍未关闭：首次真实审批/通知往返、双客户端共同观察、
+  电脑观看窗口的真实画面；fixture 路径与顶层探针已通过。
+- VoiceOver 走查、硬件中文输入法与 macOS 显示缩放/分屏只有自动或合成覆盖，人工验收待做。
+- 流式回复的尾块以纯文本显示，块结束或回合终态后才切换为完整 Markdown（长回复的取舍）。
+- 群聊与语音输入属于 M6，不在本构建范围。

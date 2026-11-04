@@ -71,6 +71,23 @@ its own sandbox and GPU process, which a locked-down environment can block.
 | `npm run bench:pipeline`                | local coalescing benchmark: four channels of desensitised frames, batch age and memory    |
 | `npm run bench:stream`                  | packages the app, then measures frame→visible-text p95 and burst/history scenarios        |
 
+## Menus and keyboard
+
+The macOS application menu follows the interface language and exposes the main
+actions with their shortcuts:
+
+| Shortcut                    | Action                                                                  |
+| --------------------------- | ----------------------------------------------------------------------- |
+| `Cmd+N`                     | New Bot                                                                 |
+| `Cmd+K`                     | Search Bots                                                             |
+| `Cmd+,`                     | Settings (appearance and language)                                      |
+| `Cmd+=` / `Cmd+-` / `Cmd+0` | Zoom in / zoom out / actual size                                        |
+| `Shift+Cmd+M`               | Show the main window                                                    |
+| `Enter` / `Shift+Enter`     | Send / newline; Enter during Chinese IME composition is left to the IME |
+
+Standard edit, window and full-screen menu roles stay in place so copy/paste,
+undo and the system input method keep their macOS behaviour.
+
 ## Layout
 
 ```
@@ -89,6 +106,8 @@ docs           plans (Chinese), brand provenance, evidence
 - Dashboard integration: [`docs/plans/02-dashboard-integration.md`](docs/plans/02-dashboard-integration.md)
 - Task cards: [`docs/plans/03-agent-handoff.md`](docs/plans/03-agent-handoff.md)
 - Brand assets and licences: [`docs/assets/brand.md`](docs/assets/brand.md)
+- Performance evidence: [`docs/evidence/m5-performance.md`](docs/evidence/m5-performance.md)
+- Keyboard/accessibility evidence: [`docs/evidence/m5-gui-a11y.md`](docs/evidence/m5-gui-a11y.md)
 - Changelog: [`CHANGELOG.md`](CHANGELOG.md)
 
 ## Known limitations (M0a)

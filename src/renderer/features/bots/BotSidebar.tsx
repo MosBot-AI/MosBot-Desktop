@@ -57,6 +57,8 @@ export function BotSidebar(): ReactElement {
       ? (connectionUi.snapshot.displayName ?? connectionUi.snapshot.userId ?? '')
       : null;
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const footerButtonRef = useRef<HTMLButtonElement | null>(null);
+  const footerWasOpen = useRef(false);
   const [sectionMenuId, setSectionMenuId] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<{ id: string; title: string } | null>(null);
 
@@ -80,6 +82,21 @@ export function BotSidebar(): ReactElement {
   const selectBot = (botId: string): void => {
     dispatch({ type: 'select-bot', botId });
   };
+
+  // Menu commands and the footer toggle both land here: move focus into the
+  // menu when it opens and back to the footer button when it closes.
+  useEffect(() => {
+    if (state.footerMenuOpen === footerWasOpen.current) {
+      return;
+    }
+    footerWasOpen.current = state.footerMenuOpen;
+    if (state.footerMenuOpen) {
+      const first = menuRef.current?.querySelector<HTMLElement>('[data-footer-menu] button');
+      first?.focus({ preventScroll: true });
+    } else {
+      footerButtonRef.current?.focus({ preventScroll: true });
+    }
+  }, [state.footerMenuOpen]);
 
   useEffect(() => {
     if (!state.footerMenuOpen && !state.pinnedMenuOpen) {
@@ -311,7 +328,12 @@ export function BotSidebar(): ReactElement {
 
       <footer className={styles.footer} ref={menuRef}>
         {state.footerMenuOpen ? (
-          <div className={styles.menu} role="dialog" aria-label={t('sidebar.menu.label')}>
+          <div
+            className={styles.menu}
+            role="dialog"
+            aria-label={t('sidebar.menu.label')}
+            data-footer-menu=""
+          >
             <div className={styles.menuSection}>
               <span className={styles.menuLabel}>{t('sidebar.menu.dashboard')}</span>
               <button
@@ -427,6 +449,7 @@ export function BotSidebar(): ReactElement {
 
         <button
           id="sidebar-connection"
+          ref={footerButtonRef}
           type="button"
           className={styles.footerButton}
           aria-expanded={state.footerMenuOpen}

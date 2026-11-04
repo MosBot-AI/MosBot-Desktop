@@ -1,4 +1,5 @@
 import { useEffect, type ReactElement } from 'react';
+import type { MenuCommand } from '../shared/bridge';
 import styles from './App.module.css';
 import { LOCALE_TAGS } from './app/i18n';
 import {
@@ -50,6 +51,28 @@ export function App(): ReactElement {
   useEffect(() => {
     document.documentElement.dataset['reduceMotion'] = reduceMotion ? 'true' : 'false';
   }, [reduceMotion]);
+
+  // Native macOS menu → the same overlay actions the pointer reaches.
+  useEffect(() => {
+    const menu = window.mosbot?.menu;
+    if (menu === undefined) {
+      return;
+    }
+    return menu.onCommand((command: MenuCommand) => {
+      if (command === 'new-bot') {
+        dispatch({ type: 'create-open' });
+      } else if (command === 'search') {
+        dispatch({ type: 'search-open' });
+      } else if (command === 'settings') {
+        dispatch({ type: 'set-footer-menu', open: true });
+      }
+    });
+  }, [dispatch]);
+
+  // Keep the native menu labels in the interface language.
+  useEffect(() => {
+    void window.mosbot?.menu.setLanguage(language);
+  }, [language]);
 
   useEffect(() => {
     const dark = window.matchMedia('(prefers-color-scheme: dark)');

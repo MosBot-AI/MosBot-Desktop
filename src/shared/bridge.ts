@@ -31,6 +31,15 @@ import type {
   Result,
 } from './protocol';
 
+/** Commands a native menu item can dispatch to the renderer. */
+export type MenuCommand = 'new-bot' | 'search' | 'settings' | 'show-main-window';
+
+/** Native application menu → renderer commands, plus menu localisation. */
+export interface MosBotMenuBridge {
+  onCommand(listener: (command: MenuCommand) => void): () => void;
+  setLanguage(language: 'zh-Hans' | 'en'): Promise<boolean>;
+}
+
 /**
  * The only surface the renderer gets from Electron. No business data yet in
  * M0a; the dashboard section is the M0b bridge and never exposes tokens.
@@ -42,6 +51,7 @@ export interface MosBotBridge {
     readonly chrome: string;
   };
   readonly dashboard: MosBotDashboardBridge;
+  readonly menu: MosBotMenuBridge;
   /** Opens an https URL in the system browser (main process validates the scheme). */
   openExternal(url: string): Promise<boolean>;
   /** Versioned, non-secret local state (drafts, selection, preferences). */
@@ -205,6 +215,8 @@ export const LOCAL_CHANNELS = {
 
 export const SHELL_CHANNELS = {
   openExternal: 'mosbot:shell:openExternal',
+  menuCommand: 'mosbot:shell:menuCommand',
+  setMenuLanguage: 'mosbot:shell:setMenuLanguage',
 } as const;
 
 export const DASHBOARD_CHANNELS = {
