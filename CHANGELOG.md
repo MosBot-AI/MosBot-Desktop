@@ -245,6 +245,13 @@ until the release repository exists.
   the current deployment still lets a later viewer take the lease from the holder
   (the M0c atomic-claim gap), and that the evicted client recovers to watch mode.
 
+- M0c display-lease patch prepared: `acquire_if_free` performs the holder check and
+  write under the same profile file lock and returns a `lease_conflict` receipt; the
+  client now carries `error.data.code` and shows "someone else is in control" instead
+  of treating a refused takeover as a disconnect. The patch applies cleanly to the
+  deployment baseline but could not be deployed (no SSH access to the test server),
+  so M4 stays partially verified.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,

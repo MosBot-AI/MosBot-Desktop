@@ -17,6 +17,7 @@ export function ComputerViewer(): ReactElement {
   const [lease, setLease] = useState<DisplayLease | null>(null);
   const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
   const [online, setOnline] = useState<boolean>(() => navigator.onLine);
+  const [acquireConflict, setAcquireConflict] = useState(false);
   const wasOnline = useRef(online);
 
   useEffect(() => {
@@ -138,11 +139,19 @@ export function ComputerViewer(): ReactElement {
 
   const acquire = async (): Promise<void> => {
     const computer = window.mosbot?.computer;
-    if (computer !== undefined) {
-      const result = await computer.acquire();
-      if (!result.ok) {
-        setStatus('disconnected');
+    if (computer === undefined) {
+      return;
+    }
+    setAcquireConflict(false);
+    const result = await computer.acquire();
+    if (!result.ok) {
+      if (result.error.serverCode === 'lease_conflict') {
+        // Non-preemptive claim: another human keeps control; stay a watcher.
+        setAcquireConflict(true);
+        setStatus('connected');
+        return;
       }
+      setStatus('disconnected');
     }
   };
 
@@ -154,6 +163,11 @@ export function ComputerViewer(): ReactElement {
     <div className={styles.viewer}>
       <div ref={screenRef} className={styles.screen} aria-label={t('computer.viewer.screen')} />
       <footer className={styles.controls}>
+        {acquireConflict ? (
+          <span className={styles.status} role="alert">
+            {t('computer.viewer.acquireConflict')}
+          </span>
+        ) : null}
         <span className={styles.status} role="status" aria-live="polite">
           {!online
             ? t('computer.viewer.offline')

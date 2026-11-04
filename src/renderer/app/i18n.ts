@@ -194,6 +194,7 @@ const zhHans = {
   'computer.viewer.controlling': '你正在控制',
   'computer.viewer.otherViewer': '其他人正在控制这台电脑。',
   'computer.viewer.acquire': '取得控制权',
+  'computer.viewer.acquireConflict': '其他人正在控制，需对方先归还。',
   'computer.viewer.release': '归还控制',
   'computer.viewer.close': '关闭',
 
@@ -469,6 +470,7 @@ const en: Record<MessageKey, string> = {
   'computer.viewer.controlling': 'You are controlling',
   'computer.viewer.otherViewer': 'Someone else is controlling this computer.',
   'computer.viewer.acquire': 'Take control',
+  'computer.viewer.acquireConflict': 'Someone else is in control; ask them to hand back first.',
   'computer.viewer.release': 'Return control',
   'computer.viewer.close': 'Close',
   'inspector.computer.pending':

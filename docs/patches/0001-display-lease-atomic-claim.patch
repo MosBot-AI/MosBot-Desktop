@@ -1,0 +1,76 @@
+--- a/tools/bot_desktop/lease.py
++++ b/tools/bot_desktop/lease.py
+@@ -184,12 +184,50 @@
+     with _lock:
+         _lock.notify_all()
+     _notify(key, lease)
++    return lease
++
++
++class LeaseConflict(Exception):
++    """Another human viewer already holds the lease (non-preemptive claim)."""
++
++    def __init__(self, lease: Lease):
++        super().__init__("another viewer holds the display")
++        self.lease = lease
++
++
++def acquire_if_free(viewer_id: str, *, profile_key: Optional[str] = None, reason: str = "") -> Lease:
++    """Take control only when no OTHER human holds it.
++
++    The read of the current holder and the write of the new holder happen under the
++    same per-profile file lock (``_locked``), so two viewers racing an acquire
++    cannot both succeed: the loser gets :class:`LeaseConflict` carrying the
++    authoritative lease and never mutates it. Re-acquiring as the current holder is
++    idempotent (no epoch bump)."""
++    key, path = hermes_home_key(profile_key) if profile_key else hermes_home_key(), _path(profile_key)
++    with _locked(path):
++        lease = _read(path)
++        if lease.holder == HUMAN and lease.viewer_id is not None and lease.viewer_id != viewer_id:
++            raise LeaseConflict(lease)
++        changed = not (lease.holder == HUMAN and lease.viewer_id == viewer_id)
++        if changed:
++            # The agent's ask ("please log in to X") stays as the takeover reason.
++            lease.holder, lease.viewer_id, lease.since = HUMAN, viewer_id, time.time()
++            lease.reason = reason or ""
++            lease.epoch += 1
++            _write(path, lease)
++    if changed:
++        with _lock:
++            _lock.notify_all()
++        _notify(key, lease)
+     return lease
+ 
+ 
+ def acquire(viewer_id: str, *, profile_key: Optional[str] = None, reason: str = "") -> Lease:
+-    """Human ``viewer_id`` takes control. Last writer wins: a second viewer evicts the first, and the
+-    RFB bridge closes the evicted socket so its UI drops to view-only."""
++    """Human ``viewer_id`` takes control. Last writer wins (explicit force path).
++
++    Prefer :func:`acquire_if_free` for anything driven by a remote viewer: this
++    function intentionally allows replacing another viewer's lease and must not be
++    exposed as the normal "Take over" entry point."""
+     def _m(lease: Lease) -> bool:
+         if lease.holder == HUMAN and lease.viewer_id == viewer_id:
+             return False  # already theirs: no epoch bump, `since` and the reason on screen stay put
+--- a/tui_gateway/methods_display.py
++++ b/tui_gateway/methods_display.py
+@@ -240,7 +240,17 @@
+         return _err(rid, _DISPLAY_ERR, "viewer_id required")
+     if (refused := _foreign_viewer_id(rid, viewer_id)) is not None:
+         return refused
+-    lease = _bd_lease.acquire(viewer_id, reason=str(params.get("reason") or ""))
++    try:
++        lease = _bd_lease.acquire_if_free(viewer_id, reason=str(params.get("reason") or ""))
++    except _bd_lease.LeaseConflict as conflict:
++        # Non-preemptive: the request changes nothing and reports the authoritative
++        # holder so the client can show "someone else is controlling".
++        return _err(
++            rid,
++            _DISPLAY_ERR,
++            "another viewer holds the display; ask them to hand back before taking over",
++            data={"code": "lease_conflict", "lease": _bd_lease.public_view(conflict.lease)},
++        )
+     return _ok(rid, {"lease": _bd_lease.public_view(lease)})
+ 
+ 

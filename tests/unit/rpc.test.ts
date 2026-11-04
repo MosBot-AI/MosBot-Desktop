@@ -140,6 +140,7 @@ describe('gateway JSON-RPC client', () => {
     socket.emit({ jsonrpc: '2.0', id: firstId, error: { code: -32000, message: 'denied' } });
     const errorResult = await errored;
     expect(errorResult.ok ? '' : errorResult.error.code).toBe('http_error');
+    expect(errorResult.ok ? '' : errorResult.error.serverCode).toBeUndefined();
 
     const malformed = client.data.call(
       'session.list',
@@ -150,6 +151,22 @@ describe('gateway JSON-RPC client', () => {
     socket.answer(secondId, { sessions: [1, 2] });
     const malformedResult = await malformed;
     expect(malformedResult.ok ? '' : malformedResult.error.code).toBe('malformed_response');
+
+    // A structured gateway error keeps its machine-readable code for typed UI states.
+    const conflicted = client.data.call('display.lease.acquire', {}, z.object({}).passthrough());
+    const thirdId = (JSON.parse(socket.sent[2] ?? '{}') as { id: number }).id;
+    socket.emit({
+      jsonrpc: '2.0',
+      id: thirdId,
+      error: {
+        code: 5300,
+        message: 'another viewer holds the display',
+        data: { code: 'lease_conflict' },
+      },
+    });
+    const conflictResult = await conflicted;
+    expect(conflictResult.ok ? '' : conflictResult.error.code).toBe('http_error');
+    expect(conflictResult.ok ? '' : conflictResult.error.serverCode).toBe('lease_conflict');
   });
 
   it('times out unanswered calls', async () => {

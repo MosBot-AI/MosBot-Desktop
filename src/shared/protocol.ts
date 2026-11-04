@@ -31,6 +31,8 @@ export interface ProtocolError {
   readonly message: string;
   readonly retriable: boolean;
   readonly httpStatus?: number;
+  /** Machine-readable code from a gateway error payload (`error.data.code`). */
+  readonly serverCode?: string;
 }
 
 export type Result<T> =
@@ -39,13 +41,14 @@ export type Result<T> =
 export function protocolError(
   code: ProtocolErrorCode,
   message: string,
-  extra: { retriable?: boolean; httpStatus?: number } = {},
+  extra: { retriable?: boolean; httpStatus?: number; serverCode?: string } = {},
 ): ProtocolError {
   return {
     code,
     message,
     retriable: extra.retriable ?? false,
     ...(extra.httpStatus === undefined ? {} : { httpStatus: extra.httpStatus }),
+    ...(extra.serverCode === undefined ? {} : { serverCode: extra.serverCode }),
   };
 }
 

@@ -271,9 +271,16 @@ export async function connectGateway(options: GatewayOptions): Promise<Result<Rp
             : {};
         const message =
           typeof errorRecord['message'] === 'string' ? errorRecord['message'] : 'RPC failed';
+        const data =
+          typeof errorRecord['data'] === 'object' && errorRecord['data'] !== null
+            ? (errorRecord['data'] as Record<string, unknown>)
+            : {};
+        const serverCode = typeof data['code'] === 'string' ? data['code'] : undefined;
         entry.resolve({
           ok: false,
-          error: protocolError('http_error', message),
+          error: protocolError('http_error', message, {
+            ...(serverCode === undefined ? {} : { serverCode }),
+          }),
         });
         return;
       }

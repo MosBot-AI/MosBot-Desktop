@@ -187,6 +187,16 @@ export function createComputerViewer(deps: ComputerViewerDeps): ComputerViewer {
       emptySchema,
     );
     if (!acquired.ok) {
+      if (acquired.error.serverCode === 'lease_conflict') {
+        return {
+          ok: false,
+          error: protocolError(
+            'conflict',
+            'Another viewer is controlling this computer; ask them to hand back first.',
+            { serverCode: 'lease_conflict' },
+          ),
+        };
+      }
       return acquired;
     }
     leaseHeld = true;
