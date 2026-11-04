@@ -247,9 +247,17 @@ export function registerDashboardIpc(options: {
     service.kanbanBoards(),
   );
 
-  handle<DisplaySnapshot>(DASHBOARD_CHANNELS.displayStatus, () => service.displayStatus());
-  handle<DisplayThumbnail>(DASHBOARD_CHANNELS.displayThumbnail, () => service.displayThumbnail());
-  handle<DisplaySnapshot>(DASHBOARD_CHANNELS.displayStart, () => service.displayStart());
+  const profileArg = (value: unknown): string | undefined =>
+    isBoundedString(value, 128) ? value : undefined;
+  handle<DisplaySnapshot>(DASHBOARD_CHANNELS.displayStatus, (_event, profile) =>
+    service.displayStatus(profileArg(profile)),
+  );
+  handle<DisplayThumbnail>(DASHBOARD_CHANNELS.displayThumbnail, (_event, profile) =>
+    service.displayThumbnail(profileArg(profile)),
+  );
+  handle<DisplaySnapshot>(DASHBOARD_CHANNELS.displayStart, (_event, profile) =>
+    service.displayStart(profileArg(profile)),
+  );
 
   handle<readonly CronJob[]>(DASHBOARD_CHANNELS.listCronJobs, (profileName) => {
     if (!isBoundedString(profileName, 128)) {

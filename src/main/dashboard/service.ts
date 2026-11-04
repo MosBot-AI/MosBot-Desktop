@@ -143,11 +143,11 @@ export interface DashboardService {
     model: string,
   ): Promise<Result<{ provider: string; model: string }>>;
   /** Remote computer: read-only status. */
-  displayStatus(): Promise<Result<DisplaySnapshot>>;
+  displayStatus(profile?: string): Promise<Result<DisplaySnapshot>>;
   /** Remote computer: one preview frame (suppressed while a human holds control). */
-  displayThumbnail(): Promise<Result<DisplayThumbnail>>;
+  displayThumbnail(profile?: string): Promise<Result<DisplayThumbnail>>;
   /** Remote computer: explicit wake. */
-  displayStart(): Promise<Result<DisplaySnapshot>>;
+  displayStart(profile?: string): Promise<Result<DisplaySnapshot>>;
   /** Library: files in the Bot Chat workspace. */
   listArtifacts(
     profile: string,
@@ -351,16 +351,16 @@ export function createDashboardService(deps: DashboardServiceDeps): DashboardSer
       return setProfileModel(profileDeps(deps), profileName, provider, model);
     },
 
-    async displayStatus() {
-      return readDisplayStatus(displayDeps(deps));
+    async displayStatus(profile) {
+      return readDisplayStatus(displayDeps(deps), profile);
     },
 
-    async displayThumbnail() {
-      return readDisplayThumbnail(displayDeps(deps));
+    async displayThumbnail(profile) {
+      return readDisplayThumbnail(displayDeps(deps), profile);
     },
 
-    async displayStart() {
-      return startDisplay(displayDeps(deps));
+    async displayStart(profile) {
+      return startDisplay(displayDeps(deps), profile);
     },
 
     async listArtifacts(profile, workspace) {

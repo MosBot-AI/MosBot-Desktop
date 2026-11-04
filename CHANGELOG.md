@@ -366,6 +366,12 @@ until the release repository exists.
   lets a slow artifact list/preview/save response from the previous Bot repaint the
   new one (same class as the workbench fixes).
 
+- Remote-computer status/thumbnail/start now accept and forward an explicit
+  profile: the inspector's computer tab passes its Bot, so lease state and
+  thumbnail suppression are read for that profile instead of the gateway's current
+  session context. Unit tests cover the parameter routing; runtime/geometry remain
+  host-level by design.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,

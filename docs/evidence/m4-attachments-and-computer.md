@@ -171,3 +171,16 @@ mtime=2026-11-04T06:37:52.972Z · broken=false`，`chat_artifact_read` 回显 to
 仍是当前 Bot：快速切换 Bot 时，旧 Bot 的列表/预览可能覆盖新 Bot 的内容（与工作台 board/profile
 同一类问题）。已增加 `currentBot` ref 守卫，旧响应直接丢弃；同时删除 `chat.ts` 一处重复赋值。
 该修复由类型检查/回归测试覆盖，未单独做延迟注入的 GUI 复现（真实资料库内容涉及用户数据）。
+
+## 2026-11-04 电脑状态/缩略图按 profile 路由（修复）
+
+`display.status/thumbnail/start` 的 **runtime 是主机级**，但 **lease 与缩略图抑制按 profile**。
+资料库“电脑”页此前调用时不带 profile，网关只能按当前会话上下文取 lease：快速切换 Bot 时可能把
+另一个 Bot 的租约/抑制状态用错（缩略图可能在他人持有时仍显示）。
+
+修复：bridge/preload/IPC/service 全部支持可选 `profile`，`ComputerTab` 显式传 `profileId`；
+未命名时保持旧行为（探针/兼容调用）。单测 `tests/unit/display.test.ts` 验证三种调用都把
+`{profile}` 传给 RPC，未命名时传 `{}`。
+
+说明：runtime 的 running/geometry 是主机级共享值，不能靠“未启动的 Bot”区分 profile；因此没有
+用该现象做真实服务断言，避免误判。

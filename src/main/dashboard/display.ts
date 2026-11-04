@@ -87,17 +87,31 @@ async function withClient<T>(
 }
 
 /** Read-only remote-computer status (no lease change). */
-export async function readDisplayStatus(deps: DisplayDeps): Promise<Result<DisplaySnapshot>> {
+export async function readDisplayStatus(
+  deps: DisplayDeps,
+  profile?: string,
+): Promise<Result<DisplaySnapshot>> {
   return withClient(deps, async (client) => {
-    const status = await client.call('display.status', {}, emptySchema);
+    const status = await client.call(
+      'display.status',
+      profile === undefined ? {} : { profile },
+      emptySchema,
+    );
     return status.ok ? { ok: true, data: mapSnapshot(status.data) } : status;
   });
 }
 
 /** One JPEG frame; suppressed while a human holds the lease. */
-export async function readDisplayThumbnail(deps: DisplayDeps): Promise<Result<DisplayThumbnail>> {
+export async function readDisplayThumbnail(
+  deps: DisplayDeps,
+  profile?: string,
+): Promise<Result<DisplayThumbnail>> {
   return withClient(deps, async (client) => {
-    const thumbnail = await client.call('display.thumbnail', {}, emptySchema);
+    const thumbnail = await client.call(
+      'display.thumbnail',
+      profile === undefined ? {} : { profile },
+      emptySchema,
+    );
     if (!thumbnail.ok) {
       return thumbnail;
     }
@@ -113,9 +127,16 @@ export async function readDisplayThumbnail(deps: DisplayDeps): Promise<Result<Di
 }
 
 /** Explicit wake; the caller waits for the authoritative status afterwards. */
-export async function startDisplay(deps: DisplayDeps): Promise<Result<DisplaySnapshot>> {
+export async function startDisplay(
+  deps: DisplayDeps,
+  profile?: string,
+): Promise<Result<DisplaySnapshot>> {
   return withClient(deps, async (client) => {
-    const started = await client.call('display.start', {}, emptySchema);
+    const started = await client.call(
+      'display.start',
+      profile === undefined ? {} : { profile },
+      emptySchema,
+    );
     return started.ok ? { ok: true, data: mapSnapshot(started.data) } : started;
   });
 }

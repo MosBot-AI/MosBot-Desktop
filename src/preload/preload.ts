@@ -184,18 +184,18 @@ const bridge: Omit<MosBotBridge, 'openExternal' | 'menu' | 'local' | 'computer'>
         model,
       ) as Promise<Result<{ provider: string; model: string }>>;
     },
-    displayStatus(): Promise<Result<DisplaySnapshot>> {
-      return ipcRenderer.invoke(DASHBOARD_CHANNELS.displayStatus) as Promise<
+    displayStatus(profile?: string): Promise<Result<DisplaySnapshot>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.displayStatus, profile) as Promise<
         Result<DisplaySnapshot>
       >;
     },
-    displayThumbnail(): Promise<Result<DisplayThumbnail>> {
-      return ipcRenderer.invoke(DASHBOARD_CHANNELS.displayThumbnail) as Promise<
+    displayThumbnail(profile?: string): Promise<Result<DisplayThumbnail>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.displayThumbnail, profile) as Promise<
         Result<DisplayThumbnail>
       >;
     },
-    displayStart(): Promise<Result<DisplaySnapshot>> {
-      return ipcRenderer.invoke(DASHBOARD_CHANNELS.displayStart) as Promise<
+    displayStart(profile?: string): Promise<Result<DisplaySnapshot>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.displayStart, profile) as Promise<
         Result<DisplaySnapshot>
       >;
     },

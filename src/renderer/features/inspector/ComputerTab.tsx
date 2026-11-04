@@ -71,7 +71,7 @@ export function ComputerTab({ profileId, botName }: ComputerTabProps): ReactElem
     if (dashboard === undefined) {
       return;
     }
-    const status = await dashboard.displayStatus();
+    const status = await dashboard.displayStatus(profileId);
     if (!status.ok) {
       setRemoteState((current) => ({ ...current, status: 'error' }));
       return;
@@ -79,7 +79,7 @@ export function ComputerTab({ profileId, botName }: ComputerTabProps): ReactElem
     let frame: string | null = null;
     let suppressed: string | null = null;
     if (status.data.running) {
-      const thumbnail = await dashboard.displayThumbnail();
+      const thumbnail = await dashboard.displayThumbnail(profileId);
       if (thumbnail.ok) {
         frame = thumbnail.data.dataUrl;
         suppressed = thumbnail.data.suppressed;
@@ -119,7 +119,7 @@ export function ComputerTab({ profileId, botName }: ComputerTabProps): ReactElem
         return;
       }
       setRemoteState((current) => ({ ...current, waking: true }));
-      const started = await dashboard.displayStart();
+      const started = await dashboard.displayStart(profileId);
       setRemoteState((current) => ({
         ...current,
         waking: false,
