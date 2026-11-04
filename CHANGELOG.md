@@ -132,8 +132,9 @@ until the release repository exists.
   job's name, schedule and disabled state instead of the fixture routines.
 - Packaging: `pnpm make` now produces an unsigned macOS ZIP through the Forge ZIP
   maker (`out/make/zip/darwin/arm64/`). Signing, notarization, DMG and the clean
-  install/upgrade checks follow once a Developer certificate is available. Fixture
-  windows keep the offline demo.
+  install/upgrade checks follow once a Developer certificate is available. The
+  package ignore list now excludes build outputs and dev-only dependencies
+  (ZIP 347 MB → 312 MB). Fixture windows keep the offline demo.
 - Gateway WebSocket client (`ws`): one-time ticket handshake, `gateway.ready` first
   frame, JSON-RPC request/response with zod validation, typed server events, and
   ticket replay/expiry rejection checks. Verified against the test deployment:
