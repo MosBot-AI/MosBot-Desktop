@@ -29,6 +29,7 @@
     "format:check": "prettier --check .",
     "assets:sync": "node scripts/sync-brand-assets.mjs",
     "test:integration": "electron-forge package && node scripts/probe-dashboard.mjs",
+    "test:install": "electron-forge make && node scripts/verify-install.mjs",
     "bench:stream": "electron-forge package && node scripts/bench-stream.mjs",
     "bench:pipeline": "vitest run --config vitest.perf.config.mts",
     "screenshot:connected": "node scripts/capture-connected.mjs"

@@ -68,6 +68,7 @@ its own sandbox and GPU process, which a locked-down environment can block.
 | `npm run package`                       | unsigned `out/MosBot-<platform>-<arch>/MosBot.app`                                        |
 | `npm run screenshot`                    | packages and writes the evidence screenshots                                              |
 | `npm run assets:sync`                   | re-copies MosBot brand assets from the pinned source commit                               |
+| `npm run test:install`                  | packages, extracts the ZIP into a temp dir and launches it with fresh data                |
 | `npm run bench:pipeline`                | local coalescing benchmark: four channels of desensitised frames, batch age and memory    |
 | `npm run bench:stream`                  | packages the app, then measures frame→visible-text p95 and burst/history scenarios        |
 
@@ -98,6 +99,16 @@ src/renderer   React app, CSS Modules, tokens, fixtures and the UI features
 tests/unit     Vitest; tests/e2e runs against the packaged app
 docs           plans (Chinese), brand provenance, evidence
 ```
+
+## Data and updates
+
+Local state lives in `~/Library/Application Support/MosBot/` (`local-state.json`, atomic writes
+with a `.bak` of the previous version; unreadable documents are kept as `.corrupt`). Drafts,
+the selected Bot, sections and appearance survive restarts and manual upgrades. To update,
+quit the app and replace `MosBot.app` with the new build; the next launch upgrades the local
+state in place (v1 → v2) and falls back to the backup if the main document cannot be read.
+Sign-in credentials stay in the macOS Keychain via `safeStorage` and are never copied between
+machines.
 
 ## Documentation
 

@@ -91,6 +91,16 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
   Shift+Enter 换行；降动态时过渡时长为 0；所有可见控件都有可访问名称，Tab 可到达全部主要
   区域。证据：`docs/evidence/m5-gui-a11y.md`。
 
+- 打包与签名：`forge.config.js` 可按 `MOSBOT_MACOS_SIGN_IDENTITY` / `MOSBOT_NOTARY_*` 启用
+  Developer ID 签名、硬化运行与公证，并附带最小 entitlements；没有证书时保持未签名 ZIP，
+  报告中如实标为 ad-hoc/未签名。
+- `pnpm test:install` 把打包 ZIP 解压到临时目录、用全新 userData 启动，检查标题、版本、
+  bundle id、离线名单与连接弹层；报告记录体积、SHA-256 与 ad-hoc/Developer ID 签名状态。
+- 本地状态恢复：主文档损坏时回退上一份 `.bak`，并在下次写入前把损坏文档另存为 `.corrupt`；
+  更高 schema 仍拒绝覆盖。
+- 覆盖升级 E2E：上一测试版的 v1 文档保留草稿、选中 Bot 与主题并原地升级到 v2；主文档损坏时
+  可从备份恢复。证据：`docs/evidence/m5-install-upgrade.md`。
+
 ### 变更
 
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。

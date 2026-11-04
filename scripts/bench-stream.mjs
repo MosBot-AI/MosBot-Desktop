@@ -268,6 +268,18 @@ function evaluateGate(result, historyTimedOut) {
   return checks;
 }
 
+function withTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((_resolve, reject) => {
+      const timer = setTimeout(() => {
+        reject(new Error(`${label} timed out after ${ms} ms`));
+      }, ms);
+      timer.unref?.();
+    }),
+  ]);
+}
+
 async function openWindow(isolated, userDataDir) {
   const args = [
     '--enable-precise-memory-info',
@@ -295,7 +307,8 @@ async function openWindow(isolated, userDataDir) {
 
   const application = await electron.launch({ executablePath: appPath, env, args });
   try {
-    const page = await application.firstWindow();
+    // A sandboxed launch can spawn and then die; fail fast so the fallback runs.
+    const page = await withTimeout(application.firstWindow(), 8_000, 'first window');
     await page.waitForLoadState('domcontentloaded');
     return { application, page, isolated };
   } catch (error) {
@@ -305,6 +318,11 @@ async function openWindow(isolated, userDataDir) {
 }
 
 async function launch(userDataDir) {
+  if (process.env['MOSBOT_TRY_SANDBOX'] !== '1') {
+    // This developer shell denies Chromium's own sandbox; a sandboxed launch
+    // hangs instead of failing. Opt in with MOSBOT_TRY_SANDBOX=1 elsewhere.
+    return await openWindow(false, userDataDir);
+  }
   try {
     return await openWindow(true, userDataDir);
   } catch (error) {

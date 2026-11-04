@@ -50,6 +50,7 @@ npm run dev            # 或：npx pnpm@11.28.5 dev
 | `npm run package`                       | 未签名的 `out/MosBot-<platform>-<arch>/MosBot.app`                      |
 | `npm run screenshot`                    | 打包并生成证据截图                                                      |
 | `npm run assets:sync`                   | 从固定提交重新同步 MosBot 品牌资产                                      |
+| `npm run test:install`                  | 先打包，再把 ZIP 解压到临时目录并用全新数据启动检查                     |
 | `npm run bench:pipeline`                | 本地合并压测：四通道脱敏帧、批次年龄与内存                              |
 | `npm run bench:stream`                  | 先打包，再测「帧到可见文本」p95、突发与长历史场景                       |
 
@@ -78,6 +79,13 @@ src/renderer   React 应用、CSS Modules、设计令牌、fixture 与界面功�
 tests/unit     Vitest；tests/e2e 针对打包产物运行
 docs           方案（中文）、品牌来源、证据
 ```
+
+## 数据与升级
+
+本地状态位于 `~/Library/Application Support/MosBot/`（`local-state.json`，原子写入并保留上一版
+`.bak`；无法读取的文档另存为 `.corrupt`）。草稿、选中 Bot、分区与外观在重启和手动升级后保留。
+升级时退出应用、用新构建替换 `MosBot.app` 即可；下次启动原地升级本地状态（v1 → v2），
+主文档损坏时回退到备份。登录凭据经 `safeStorage` 保存在 macOS 钥匙串，不跨机器复制。
 
 ## 文档
 

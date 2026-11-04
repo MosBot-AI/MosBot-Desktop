@@ -3,6 +3,28 @@ const { VitePlugin } = require('@electron-forge/plugin-vite');
 const { MakerZIP } = require('@electron-forge/maker-zip');
 
 /**
+ * Signing, hardened runtime and notarization are opt-in through the environment:
+ * without a Developer ID identity the build stays an unsigned ZIP (and the
+ * evidence records it as unsigned). With these variables `pnpm make` signs and
+ * notarizes:
+ *   MOSBOT_MACOS_SIGN_IDENTITY  e.g. "Developer ID Application: Name (TEAMID)"
+ *   MOSBOT_NOTARY_APPLE_ID      Apple ID for notarytool
+ *   MOSBOT_NOTARY_PASSWORD      app-specific password
+ *   MOSBOT_NOTARY_TEAM_ID       Apple team id
+ */
+const signingIdentity = process.env.MOSBOT_MACOS_SIGN_IDENTITY;
+const notaryAppleId = process.env.MOSBOT_NOTARY_APPLE_ID;
+const notaryPassword = process.env.MOSBOT_NOTARY_PASSWORD;
+const notaryTeamId = process.env.MOSBOT_NOTARY_TEAM_ID;
+const notarize =
+  typeof notaryAppleId === 'string' &&
+  notaryAppleId !== '' &&
+  typeof notaryPassword === 'string' &&
+  notaryPassword !== '' &&
+  typeof notaryTeamId === 'string' &&
+  notaryTeamId !== '';
+
+/**
  * Electron Forge configuration. Main and preload are bundled by Vite; the
  * renderer is a bundled local page. Packaging and signing are added in M5.
  */
@@ -26,6 +48,24 @@ module.exports = {
       /^\/node_modules\/(\.pnpm|@electron-forge|@electron|electron|electron-squirrel-startup|vite|rolldown|rollup|typescript|@types|vitest|@vitest|playwright|@playwright|eslint|@eslint|prettier|@vitejs|@typescript-eslint|jsdom|happy-dom)(\/|$)/,
       /^\/node_modules\/\.bin(\/|$)/,
     ],
+    ...(typeof signingIdentity === 'string' && signingIdentity !== ''
+      ? {
+          osxSign: {
+            identity: signingIdentity,
+            hardenedRuntime: true,
+            entitlements: path.resolve(__dirname, 'build/entitlements.mac.plist'),
+          },
+        }
+      : {}),
+    ...(notarize
+      ? {
+          osxNotarize: {
+            appleId: notaryAppleId,
+            appleIdPassword: notaryPassword,
+            teamId: notaryTeamId,
+          },
+        }
+      : {}),
   },
   rebuildConfig: {},
   makers: [new MakerZIP({}, ['darwin'])],

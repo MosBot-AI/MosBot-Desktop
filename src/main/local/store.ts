@@ -107,68 +107,94 @@ export function createLocalStore(filePath: string): {
 } {
   const backupPath = `${filePath}.bak`;
 
+  const parseDocument = (parsed: unknown): LocalState | null => {
+    const record = asRecord(parsed);
+    const version = record?.['version'];
+    if (record === null || (version !== 1 && version !== CURRENT_VERSION)) {
+      return null;
+    }
+    const connections: Record<string, LocalState['connections'][string]> = {};
+    const rawConnections = asRecord(record['connections']) ?? {};
+    for (const [key, raw] of Object.entries(rawConnections).slice(0, MAX_CONNECTIONS)) {
+      const connection = asRecord(raw);
+      if (connection === null) {
+        continue;
+      }
+      connections[key.slice(0, 256)] = {
+        selectedProfile:
+          typeof connection['selectedProfile'] === 'string'
+            ? connection['selectedProfile'].slice(0, 128)
+            : null,
+        drafts: sanitizeDrafts(connection['drafts']),
+        inspector: sanitizeInspector(connection['inspector']),
+        organization: sanitizeOrganization(connection['organization']),
+      };
+    }
+    const preferences = asRecord(record['preferences']);
+    const theme = preferences?.['theme'];
+    const language = preferences?.['language'];
+    return {
+      version: CURRENT_VERSION,
+      connections,
+      preferences: {
+        theme: theme === 'light' || theme === 'dark' ? theme : 'system',
+        language: language === 'en' ? 'en' : 'zh-Hans',
+      },
+    };
+  };
+
+  /** Reads one document. `readable` is false when the file is not valid JSON. */
+  const readDocument = (target: string): { state: LocalState | null; readable: boolean } => {
+    try {
+      const parsed = JSON.parse(readFileSync(target, 'utf8')) as unknown;
+      return { state: parseDocument(parsed), readable: true };
+    } catch {
+      return { state: null, readable: false };
+    }
+  };
+
   const load = (): LocalState | null => {
     if (!existsSync(filePath)) {
       return null;
     }
-    try {
-      const parsed = JSON.parse(readFileSync(filePath, 'utf8')) as unknown;
-      const record = asRecord(parsed);
-      const version = record?.['version'];
-      if (record === null || (version !== 1 && version !== CURRENT_VERSION)) {
-        return null;
-      }
-      const connections: Record<string, LocalState['connections'][string]> = {};
-      const rawConnections = asRecord(record['connections']) ?? {};
-      for (const [key, raw] of Object.entries(rawConnections).slice(0, MAX_CONNECTIONS)) {
-        const connection = asRecord(raw);
-        if (connection === null) {
-          continue;
-        }
-        connections[key.slice(0, 256)] = {
-          selectedProfile:
-            typeof connection['selectedProfile'] === 'string'
-              ? connection['selectedProfile'].slice(0, 128)
-              : null,
-          drafts: sanitizeDrafts(connection['drafts']),
-          inspector: sanitizeInspector(connection['inspector']),
-          organization: sanitizeOrganization(connection['organization']),
-        };
-      }
-      const preferences = asRecord(record['preferences']);
-      const theme = preferences?.['theme'];
-      const language = preferences?.['language'];
-      return {
-        version: CURRENT_VERSION,
-        connections,
-        preferences: {
-          theme: theme === 'light' || theme === 'dark' ? theme : 'system',
-          language: language === 'en' ? 'en' : 'zh-Hans',
-        },
-      };
-    } catch {
-      return null;
+    const primary = readDocument(filePath);
+    if (primary.state !== null) {
+      return primary.state;
     }
+    // A corrupt or newer document is never overwritten silently; fall back to the
+    // last good backup so an interrupted upgrade cannot lose the person's drafts.
+    if (existsSync(backupPath)) {
+      const backup = readDocument(backupPath);
+      if (backup.state !== null) {
+        return backup.state;
+      }
+    }
+    return null;
   };
 
   const save = (state: LocalState): { ok: boolean; reason?: string } => {
     try {
       let existingVersion: unknown = undefined;
+      let existingReadable = false;
       if (existsSync(filePath)) {
         try {
           const existing = JSON.parse(readFileSync(filePath, 'utf8')) as unknown;
           existingVersion = asRecord(existing)?.['version'];
+          existingReadable = true;
         } catch {
-          // A corrupt file has no schema to protect; replace it.
-          existingVersion = undefined;
+          // A corrupt document has no schema to protect, but it is kept aside.
+          existingReadable = false;
         }
       }
       if (typeof existingVersion === 'number' && existingVersion > CURRENT_VERSION) {
         return { ok: false, reason: 'newer-schema' };
       }
       mkdirSync(path.dirname(filePath), { recursive: true });
-      if (existsSync(filePath) && existingVersion !== undefined) {
+      if (existsSync(filePath) && existingReadable) {
         copyFileSync(filePath, backupPath);
+      } else if (existsSync(filePath)) {
+        // Preserve the unreadable document for recovery instead of dropping it.
+        copyFileSync(filePath, `${filePath}.corrupt`);
       }
       const temporary = `${filePath}.tmp`;
       writeFileSync(temporary, `${JSON.stringify(state, null, 2)}\n`, { mode: 0o600 });

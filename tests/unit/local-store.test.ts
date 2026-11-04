@@ -110,11 +110,35 @@ describe('local state store', () => {
     expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({ version: 3, anything: true });
   });
 
-  it('treats a corrupt file as empty rather than crashing', () => {
+  it('treats a corrupt file as empty, keeps it aside and does not crash', () => {
     const file = tempFile();
     writeFileSync(file, '{ not json');
     const store = createLocalStore(file);
     expect(store.load()).toBeNull();
     expect(store.save(sample())).toEqual({ ok: true });
+    // The unreadable document is preserved for recovery, not dropped.
+    expect(readFileSync(`${file}.corrupt`, 'utf8')).toBe('{ not json');
+    expect(store.load()).toEqual(sample());
+  });
+
+  it('falls back to the last good backup when the main document is corrupt', () => {
+    const file = tempFile();
+    const store = createLocalStore(file);
+    store.save(sample());
+    store.save(sample());
+    writeFileSync(file, '{"version":2,"connections":');
+    expect(store.load()).toEqual(sample());
+    // The corrupt main file stays untouched until the next successful save.
+    expect(readFileSync(file, 'utf8')).toBe('{"version":2,"connections":');
+  });
+
+  it('falls back to the backup when the main document belongs to a newer schema', () => {
+    const file = tempFile();
+    const store = createLocalStore(file);
+    store.save(sample());
+    store.save(sample());
+    writeFileSync(file, JSON.stringify({ version: 99, connections: {} }));
+    expect(store.load()).toEqual(sample());
+    expect(store.save(sample())).toEqual({ ok: false, reason: 'newer-schema' });
   });
 });

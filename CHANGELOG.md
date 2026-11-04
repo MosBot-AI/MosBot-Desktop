@@ -167,6 +167,18 @@ until the release repository exists.
   timed transitions, every visible control has an accessible name and Tab reaches
   all main surfaces. Evidence: `docs/evidence/m5-gui-a11y.md`.
 
+- Packaging and signing: `forge.config.js` enables Developer ID signing, hardened runtime and
+  notarization from `MOSBOT_MACOS_SIGN_IDENTITY` / `MOSBOT_NOTARY_*`, with a minimal entitlements
+  file; without a certificate the build stays an unsigned ZIP and is reported as such.
+- `pnpm test:install` extracts the packaged ZIP into a temporary directory, launches it with a
+  fresh userData directory and checks title, version, bundle id, the offline roster and the
+  connection dialog; the report records size, SHA-256 and the ad-hoc/Developer ID signature state.
+- Local-state resilience: a corrupt primary document falls back to the last good `.bak` and is
+  preserved as `.corrupt` before the next save, and a newer schema is still never overwritten.
+- Upgrade migration E2E: a schema v1 document from the previous test build keeps drafts, the
+  selected Bot and the theme, upgrades in place to v2, and recovers from a corrupt document via
+  the backup. Evidence: `docs/evidence/m5-install-upgrade.md`.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,
