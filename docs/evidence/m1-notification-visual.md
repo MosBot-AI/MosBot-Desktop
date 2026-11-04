@@ -20,8 +20,13 @@ Application Support/MosBot` 下运行。
 
 ## 未完成
 
-- **真实审批通知横幅**（Bot 名 +「需要你确认」）的像素与真实鼠标点击尚未捕获：首次触发捕获到的
-  是权限提示；授权后在调试过程中签名版被重启/窗口未显示，触发时没有可用的前台/后台窗口状态。
-- 需要用户保持签名版 app 打开（窗口可见或最小化即可）后，再跑一次
-  `node scripts/gui-notification-signed.mjs`：脚本会用测试实例制造审批、连续抓屏，并在横幅出现
-  时尝试真实点击。
+- **真实审批通知横幅的像素与真实鼠标点击尚未捕获**：
+  - 用户 Finder 启动的签名版实例：测试实例制造审批后，签名版主窗口失焦/最小化，主进程诊断记录
+    通知已请求（title=专用 Bot 名，body=「需要你确认」，shown=true），但连续 20 张抓屏（每 700ms）
+    都没有出现横幅。
+  - 改用签名二进制 + 用户 userData 副本在 Playwright 中启动：同样记录 `shown=true`，抓屏无横幅；
+    合成点击（Swift CGEvent）后窗口仍最小化（点击未命中横幅）。
+  - 可能原因：非 LaunchServices 启动的进程/notification 授权同步差异，或系统的通知展示样式未按
+    预期；需要用户在自己的实例上确认（Notification Center 是否有 MosBot 条目、通知样式是否为
+    「横幅」），再决定是否继续验证。
+- 已提交的截图只是 macOS 权限提示（`screens/m1/notification-permission.png`），**不是审批横幅**。
