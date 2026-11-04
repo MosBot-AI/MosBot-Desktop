@@ -268,6 +268,12 @@ until the release repository exists.
   banner pixels and a real pointer click remain unverified because this shell has
   no screen-recording permission; the walkthrough records that limitation.
 
+- Approval survives the main window being closed, a Dock reopen and a full
+  quit/restart: the closed-window state requests a notification and the recreated
+  window re-delivers the card; after a restart the resumed chat re-delivers the
+  still-open request, and denying it shows the receipt. Evidence:
+  docs/evidence/m1-window-lifecycle.md.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,
