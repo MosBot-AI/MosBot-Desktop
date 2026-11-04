@@ -1,7 +1,7 @@
 # M5 · 打包产物 · 证据
 
-- 状态：**未签名（ad-hoc）macOS ZIP 可构建并通过本机干净安装检查**；Developer ID 签名/公证
-  配置就绪但无证书未验证；DMG 未做
+- 状态：**Apple Development 签名 ZIP 已构建并通过本机干净安装检查**（硬化运行时 + 最小
+  entitlements + `codesign --verify` 通过）；Developer ID 签名/公证仍阻塞于证书；DMG 未做
 - 记录时间：2026-11-04
 - 参考机：Apple M4，macOS 15.8.2，Node v26.13.0，pnpm 11.28.5
 
@@ -28,7 +28,8 @@
 
 ## 待办
 
-- 证书就绪后：`MOSBOT_MACOS_SIGN_IDENTITY` / `MOSBOT_NOTARY_*` + `pnpm make`，再用
-  `pnpm test:install` 验证 `kind=developer-id` 且 Gatekeeper 接受；随后在另一台 Mac / 新建用户
-  下复验下载、quarantine 与安装。
+- 取得 Developer ID Application 证书后：设置 `MOSBOT_MACOS_SIGN_IDENTITY` 与
+  `MOSBOT_NOTARY_*` 跑 `pnpm make`，用 `pnpm test:install` 验证 `kind=developer-id` 且 Gatekeeper
+  接受；随后在另一台 Mac / 新建用户下复验下载、quarantine 与安装（本机已用 Apple Development
+  证书验证签名链路，见 `m5-install-upgrade.md`）。
 - 评估是否引入 DMG 与体积优化；用真实旧的测试版安装包做覆盖升级。

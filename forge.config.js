@@ -53,7 +53,16 @@ module.exports = {
           osxSign: {
             identity: signingIdentity,
             hardenedRuntime: true,
-            entitlements: path.resolve(__dirname, 'build/entitlements.mac.plist'),
+            // @electron/osx-sign only honours per-file options; helpers keep their
+            // own default entitlements and the app bundle gets the minimal set.
+            optionsForFile: (filePath) => {
+              if (filePath.includes('.app/')) {
+                return {};
+              }
+              return {
+                entitlements: path.resolve(__dirname, 'build/entitlements.mac.plist'),
+              };
+            },
           },
         }
       : {}),

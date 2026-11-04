@@ -14,7 +14,7 @@
 | 运行时      | Node v26.13.0；Electron 45.2.1；应用 0.1.0                |
 | 产物        | `out/make/zip/darwin/arm64/MosBot-darwin-arm64-0.1.0.zip` |
 
-## 签名与公证配置（未验证）
+## 签名与公证配置
 
 `forge.config.js` 现在按环境变量启用签名与公证，缺省仍产出未签名 ZIP，不会把 ad-hoc 签名
 当成发布签名：
@@ -27,8 +27,27 @@
 | `MOSBOT_NOTARY_TEAM_ID`      | Apple Team ID                                                                                         |
 
 `build/entitlements.mac.plist` 只保留 Electron/硬化运行所需的两项：`allow-jit`、
-`allow-unsigned-executable-memory`。配置已在无证书时加载验证（不产生签名动作），
-**带证书的签名、公证与 Gatekeeper 通过尚未实测**，关闭条件见文末。
+`allow-unsigned-executable-memory`（`@electron/osx-sign` 只识别 `optionsForFile`，顶层
+`entitlements` 会被忽略——已按此修正，helper 保留各自默认 entitlements）。
+
+### 本机证书实测（2026-11-04，用户授权使用本机证书）
+
+本机仅有 **Apple Development** 证书（无 Developer ID Application），用它跑通了签名链路：
+
+| 检查                                | 结果                                                                                      |
+| ----------------------------------- | ----------------------------------------------------------------------------------------- |
+| 构建命令                            | `MOSBOT_MACOS_SIGN_IDENTITY="Apple Development: 345330319@qq.com (G5S2BZ4NZ6)" pnpm make` |
+| 签名身份                            | `Authority=Apple Development: 345330319@qq.com (G5S2BZ4NZ6)`，`TeamIdentifier=8G993L24AS` |
+| 硬化运行时                          | ✅ `flags=0x10000(runtime)`                                                               |
+| entitlements                        | ✅ 实际签入 `allow-jit`、`allow-unsigned-executable-memory`（修正后才生效）               |
+| `codesign --verify --deep --strict` | ✅ 退出码 0                                                                               |
+| 签名 ZIP                            | 313 MB，SHA-256 `ad688e8a611d7b10a9e6364c50004171b05faaa72960bfd58ca2294c5d6019af`        |
+| 解压 + 全新 userData 启动           | ✅ 标题/版本/bundle、fixture 名单、离线连接弹层均正常                                     |
+| Gatekeeper (`spctl`)                | ❌ rejected —— Apple Development 不是 Developer ID，不能对外分发                          |
+| 公证                                | ❌ 未做：notarytool 需要 Developer ID 与 Apple ID 专用密码，本机均无                      |
+
+结论：**签名配置、硬化运行时、entitlements、签名校验与签名产物的干净启动已验证**；
+对外分发所需的 Developer ID 签名 + 公证 + Gatekeeper 通过仍阻塞于证书。
 
 ## 干净安装（本机 ZIP 解压 + 全新 userData）
 
@@ -68,9 +87,9 @@
 
 ## 未覆盖 / 关闭条件
 
-- **签名、公证、Gatekeeper**：需要 Apple Developer 证书与 notarytool 凭据；配置就绪后用
-  `MOSBOT_MACOS_SIGN_IDENTITY` 等环境变量跑 `pnpm make`，再以 `pnpm test:install` 检查
-  `kind=developer-id` 且 `spctl` 接受，才可关闭。
+- **Developer ID 签名、公证、Gatekeeper**：本机证书已实测 Apple Development 签名链路；关闭
+  仍需要 Developer ID Application 证书与 notarytool 凭据（Apple ID 专用密码 + Team ID），
+  再以 `pnpm test:install` 检查 `kind=developer-id` 且 `spctl` 接受。
 - **真实干净系统**：本次在本机用临时目录 + 全新 userData 模拟解压安装，未在另一台 Mac 或
   新建 macOS 用户下验证；也未验证下载后的 quarantine 属性（无签名时会被 Gatekeeper 拦截）。
 - **前一测试版安装包**：当前没有已分发的旧版本安装包，升级用“v1 本地状态文档”模拟；

@@ -109,6 +109,10 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
 - `README.md` / `README_zh.md` 补齐用户指南：连接与登录、Bot/聊天/审批、文件与产物、
   本地数据与手动升级，并用当前限制替换过时的 M0a 列表。
 
+- 已用本机 Apple Development 证书端到端验证签名链路（硬化运行时、最小 entitlements、
+  `codesign --verify --deep --strict`、签名 ZIP 启动）；Developer ID 签名与公证仍需
+  Developer ID 证书与 notarytool 凭据。
+
 ### 变更
 
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。

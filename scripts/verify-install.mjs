@@ -56,13 +56,24 @@ function signingInfo(appPath) {
   const output = `${result.stdout ?? ''}${result.stderr ?? ''}`.trim();
   const adhoc = /Signature=adhoc|flags=0x[0-9a-f]*\(adhoc/.test(output);
   const developerId = output.includes('Authority=Developer ID Application');
-  const kind = developerId ? 'developer-id' : adhoc ? 'adhoc' : 'unsigned';
+  const appleDevelopment = output.includes('Authority=Apple Development');
+  const kind = developerId
+    ? 'developer-id'
+    : appleDevelopment
+      ? 'apple-development'
+      : adhoc
+        ? 'adhoc'
+        : 'unsigned';
+  const authority = /Authority=([^\n]+)/.exec(output)?.[1]?.trim() ?? null;
+  const hardenedRuntime = /flags=0x[0-9a-f]*\([^)]*runtime/.test(output);
   const assessment = spawnSync('spctl', ['--assess', '--type', 'execute', appPath], {
     encoding: 'utf8',
   });
   return {
     signed: developerId,
     kind,
+    authority,
+    hardenedRuntime,
     details: output.slice(0, 800),
     gatekeeper: `${assessment.stdout ?? ''}${assessment.stderr ?? ''}`.trim().slice(0, 400),
     gatekeeperAccepted: assessment.status === 0,

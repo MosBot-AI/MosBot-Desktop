@@ -190,6 +190,11 @@ until the release repository exists.
   chats and approvals, files and artifacts, local data and manual upgrades, plus the
   current limitations instead of the stale M0a list.
 
+- Signing was verified end-to-end with the machine's local Apple Development
+  certificate (hardened runtime, minimal entitlements, `codesign --verify --deep
+--strict`, signed ZIP launch). Developer ID signing and notarization still await
+  a Developer ID certificate and notarytool credentials.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,
