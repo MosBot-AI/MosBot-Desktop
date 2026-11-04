@@ -166,6 +166,10 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
   审批卡；重启后会恢复会话并重投仍未处理的请求，拒绝后显示回执。证据：
   `docs/evidence/m1-window-lifecycle.md`。
 
+- 跨客户端未打开 Bot 审批：A 保持 Chat 附着时，停在另一个 Bot 的客户端 B 由 pending watcher
+  发现等待会话，在窗口最小化时收到通知；点击通知直达并处理请求，A 随即将卡片折成
+  「已由另一端处理」回执。
+
 ### 变更
 
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。

@@ -274,6 +274,12 @@ until the release repository exists.
   still-open request, and denying it shows the receipt. Evidence:
   docs/evidence/m1-window-lifecycle.md.
 
+- Unopened-Bot approval across clients: with client A keeping the chat attached, a
+  second client on a different Bot discovers the waiting session through the
+  pending watcher, is notified while its window is minimised, opens the Bot through
+  the notification click, and denies the request; A then folds its card into a
+  "handled in another window" receipt.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,
