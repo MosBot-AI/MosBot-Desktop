@@ -16,6 +16,7 @@ import type {
 } from '../../shared/domain';
 import { botColorSwatches, normalizeColor, profileColor } from '../../shared/color';
 import type {
+  AttachedFile,
   AuthProviderInfo,
   ConnectionSnapshot,
   DashboardChatEvent,
@@ -161,6 +162,7 @@ export interface AppState {
   readonly remoteOrg: RemoteOrganization;
   /** One-line, dismissible notice shown above the transcript. */
   readonly notice: string | null;
+  readonly attachments: Readonly<Record<string, readonly AttachedFile[]>>;
   readonly workbench: {
     readonly open: boolean;
     readonly tab: WorkbenchTab;
@@ -271,6 +273,9 @@ export type AppAction =
     }
   | { type: 'pending-remove'; requestId: string }
   | { type: 'set-notice'; notice: string | null }
+  | { type: 'attachment-add'; botId: string; file: AttachedFile }
+  | { type: 'attachment-remove'; botId: string; index: number }
+  | { type: 'attachment-clear'; botId: string }
   | { type: 'workbench-open'; tab?: WorkbenchTab }
   | { type: 'workbench-tab'; tab: WorkbenchTab }
   | { type: 'workbench-close' };
@@ -475,6 +480,7 @@ export function createInitialState(seed: FixtureSeed, bootstrap: Bootstrap): App
     remoteOrg: { pinned: [], sections: [], unsortedCollapsed: false },
     pending: { items: {} },
     notice: null,
+    attachments: {},
     workbench: { open: false, tab: 'profiles' },
   };
 }
@@ -1133,6 +1139,26 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
     }
     case 'set-notice':
       return { ...state, notice: action.notice };
+    case 'attachment-add':
+      return {
+        ...state,
+        attachments: {
+          ...state.attachments,
+          [action.botId]: [...(state.attachments[action.botId] ?? []), action.file],
+        },
+      };
+    case 'attachment-remove': {
+      const current = state.attachments[action.botId] ?? [];
+      return {
+        ...state,
+        attachments: {
+          ...state.attachments,
+          [action.botId]: current.filter((_file, index) => index !== action.index),
+        },
+      };
+    }
+    case 'attachment-clear':
+      return { ...state, attachments: { ...state.attachments, [action.botId]: [] } };
     case 'workbench-open':
       return {
         ...state,

@@ -6,6 +6,8 @@ import type {
   CreateBotResult,
   KanbanBoard,
   KanbanBoardSummary,
+  DisplaySnapshot,
+  DisplayThumbnail,
   KanbanWatchEvent,
   ModelReadiness,
   WorkbenchMessage,
@@ -136,6 +138,12 @@ export interface MosBotDashboardBridge {
     provider: string,
     model: string,
   ): Promise<Result<{ provider: string; model: string }>>;
+  /** Remote computer: read-only status. */
+  displayStatus(): Promise<Result<DisplaySnapshot>>;
+  /** Remote computer: one preview frame. */
+  displayThumbnail(): Promise<Result<DisplayThumbnail>>;
+  /** Remote computer: explicit wake. */
+  displayStart(): Promise<Result<DisplaySnapshot>>;
   /** Tails one Kanban board's events from a cursor (board pinned per watcher). */
   kanbanWatch(board: string, since: number): Promise<Result<void>>;
   kanbanUnwatch(): Promise<Result<void>>;
@@ -149,6 +157,8 @@ export interface MosBotDashboardBridge {
   chatStop(): Promise<Result<void>>;
   /** Answers a server→client approval/clarify request. */
   chatAnswer(requestId: string, result: Readonly<Record<string, unknown>>): Promise<Result<void>>;
+  /** Picks a file with the system dialog, stages it in the live session and returns its reference. */
+  attachFile(): Promise<Result<{ name: string; refText: string }>>;
   /** Subscribes to live turn events; returns an unsubscribe function. */
   onChatEvent(listener: (event: DashboardChatEvent) => void): () => void;
   /** Subscribes to pending-request discovery events (Bots not currently open). */
@@ -197,6 +207,9 @@ export const DASHBOARD_CHANNELS = {
   kanbanCreateTask: 'mosbot:dashboard:kanbanCreateTask',
   kanbanSetTaskStatus: 'mosbot:dashboard:kanbanSetTaskStatus',
   setProfileModel: 'mosbot:dashboard:setProfileModel',
+  displayStatus: 'mosbot:dashboard:displayStatus',
+  displayThumbnail: 'mosbot:dashboard:displayThumbnail',
+  displayStart: 'mosbot:dashboard:displayStart',
   kanbanWatch: 'mosbot:dashboard:kanbanWatch',
   kanbanUnwatch: 'mosbot:dashboard:kanbanUnwatch',
   kanbanEvent: 'mosbot:dashboard:kanbanEvent',
@@ -204,6 +217,7 @@ export const DASHBOARD_CHANNELS = {
   chatSend: 'mosbot:dashboard:chatSend',
   chatStop: 'mosbot:dashboard:chatStop',
   chatAnswer: 'mosbot:dashboard:chatAnswer',
+  chatAttachFile: 'mosbot:dashboard:chatAttachFile',
   chatEvent: 'mosbot:dashboard:chatEvent',
   pendingEvent: 'mosbot:dashboard:pendingEvent',
   settings: 'mosbot:dashboard:settings',

@@ -24,6 +24,7 @@ export function Composer({ bot }: ComposerProps): ReactElement {
   const livePhase = useAppState((state) => state.live.phase);
   const liveConnection = useAppState((state) => state.live.connection);
   const modelReady = useAppState(selectModelReady);
+  const attachments = useAppState((state) => state.attachments[bot.id] ?? []);
   const fixtureReplying = useAppState(
     (state) => state.pendingReply?.botId === bot.id || bot.presence === 'replying',
   );
@@ -72,6 +73,21 @@ export function Composer({ bot }: ComposerProps): ReactElement {
     dispatch({ type: 'stop-reply', botId: bot.id, at: Date.now() });
   };
 
+  const pickAttachment = async (): Promise<void> => {
+    const dashboard = window.mosbot?.dashboard;
+    if (dashboard === undefined) {
+      return;
+    }
+    const result = await dashboard.attachFile();
+    if (result.ok) {
+      dispatch({ type: 'attachment-add', botId: bot.id, file: result.data });
+      return;
+    }
+    if (result.error.message !== 'No file selected.') {
+      dispatch({ type: 'set-notice', notice: result.error.message });
+    }
+  };
+
   const placeholder = t('chat.composer.placeholder', { name: bot.name });
   const disabled = remoteMode && (liveConnection === 'disconnected' || modelReady === false);
 
@@ -81,12 +97,36 @@ export function Composer({ bot }: ComposerProps): ReactElement {
         <button
           type="button"
           className={styles.attachButton}
-          disabled
+          disabled={!remoteMode || liveConnection !== 'connected'}
           aria-label={t('chat.composer.attach')}
-          title={t('chat.composer.attachDisabled')}
+          title={t('chat.composer.attach')}
+          onClick={() => {
+            void pickAttachment();
+          }}
         >
           <IconPaperclip size={16} />
         </button>
+        {attachments.length === 0 ? null : (
+          <div className={styles.attachmentChips}>
+            {attachments.map((file, index) => (
+              <span key={`${file.name}-${index}`} className={styles.attachmentChip}>
+                <span className={styles.attachmentName} title={file.name}>
+                  {file.name}
+                </span>
+                <button
+                  type="button"
+                  className={styles.attachmentRemove}
+                  aria-label={t('common.cancel')}
+                  onClick={() => {
+                    dispatch({ type: 'attachment-remove', botId: bot.id, index });
+                  }}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
         <textarea
           ref={areaRef}
           className={styles.textarea}
@@ -133,7 +173,7 @@ export function Composer({ bot }: ComposerProps): ReactElement {
             type="button"
             className={styles.sendButton}
             onClick={send}
-            disabled={draft.trim() === '' || disabled}
+            disabled={(draft.trim() === '' && attachments.length === 0) || disabled}
             aria-label={t('chat.composer.send')}
             title={t('chat.composer.send')}
           >

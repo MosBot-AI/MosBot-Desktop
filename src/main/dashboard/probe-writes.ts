@@ -1,3 +1,6 @@
+import { readFileSync, unlinkSync, writeFileSync } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import type { ZodType } from 'zod';
 import {
   protocolError,
@@ -936,6 +939,52 @@ export async function runChatProbe(deps: WriteProbeDeps): Promise<Result<ProbeRe
           : `approval_mode=${approvalMode}`,
       ),
     );
+
+    // Attachment path: stage a dedicated text file and ask the model to read its token.
+    const attachToken = `MOSBOT-ATTACH-${Math.random().toString(36).slice(2, 10).toUpperCase()}`;
+    const tempAttachment = path.join(os.tmpdir(), `mosbot-attach-${now()}.txt`);
+    writeFileSync(tempAttachment, `attachment token: ${attachToken}\n`, 'utf8');
+    const attachmentDataUrl = `data:text/plain;base64,${readFileSync(tempAttachment).toString('base64')}`;
+    const staged = await chat.attachFile('mosbot-probe-attachment.txt', attachmentDataUrl);
+    unlinkSync(tempAttachment);
+    rows.push(
+      row(
+        'chat_attach_stage',
+        '附件上传（file.attach）',
+        staged.ok && staged.data.refText !== '' ? 'pass' : 'fail',
+        staged.ok
+          ? `name=${staged.data.name} · ref=${staged.data.refText === '' ? '(none)' : 'present'}`
+          : errorDetail(staged.error),
+      ),
+    );
+    if (staged.ok && staged.data.refText !== '') {
+      events.length = 0;
+      const attachSend = await chat.send(
+        `请读取附件 ${staged.data.refText}，只回复文件中的 attachment token。`,
+      );
+      const attachDone = await waitFor(
+        () => events.some((event) => event.type === 'turn-complete'),
+        120_000,
+      );
+      const attachText = events
+        .filter((event) => event.type === 'delta')
+        .map((event) => (event.type === 'delta' ? event.text : ''))
+        .join('');
+      rows.push(
+        row(
+          'chat_attach_read',
+          '附件被真实推理读取',
+          attachDone && attachText.includes(attachToken) ? 'pass' : 'unverified',
+          attachDone
+            ? attachText.includes(attachToken)
+              ? 'model echoed the attachment token'
+              : 'turn completed but the token was not echoed'
+            : attachSend.ok
+              ? 'no terminal event within 120s'
+              : errorDetail(attachSend.error),
+        ),
+      );
+    }
 
     // Approval path: ask for a shell command; the gateway should raise a server
     // request that the client answers with choice=once.

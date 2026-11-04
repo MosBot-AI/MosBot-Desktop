@@ -38,6 +38,8 @@ export interface ChatManager {
   subscribe(listener: (event: DashboardChatEvent) => void): () => void;
   open(profileName: string, storedSessionId: string | null): Promise<Result<ChatOpenResult>>;
   send(text: string): Promise<Result<void>>;
+  /** Stages a file into the live session and returns its `@file:` reference. */
+  attachFile(name: string, dataUrl: string): Promise<Result<{ name: string; refText: string }>>;
   stop(): Promise<Result<void>>;
   answer(requestId: string, result: Readonly<Record<string, unknown>>): Promise<Result<void>>;
   close(): void;
@@ -455,6 +457,32 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
         connecting = null;
       });
       return connecting;
+    },
+
+    async attachFile(name, dataUrl) {
+      const rpc = client;
+      if (rpc === null || runtimeSessionId === null) {
+        return {
+          ok: false,
+          error: protocolError('unauthorized', 'Open a Bot Chat before attaching a file.'),
+        };
+      }
+      const attached = await rpc.call(
+        'file.attach',
+        { session_id: runtimeSessionId, name, data_url: dataUrl },
+        emptySchema,
+      );
+      if (!attached.ok) {
+        return attached;
+      }
+      const record = asRecord(attached.data);
+      return {
+        ok: true,
+        data: {
+          name: str(record?.['name']) || name,
+          refText: str(record?.['ref_text']),
+        },
+      };
     },
 
     async send(text) {

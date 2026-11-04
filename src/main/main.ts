@@ -1,6 +1,7 @@
 import {
   app,
   BrowserWindow,
+  dialog,
   ipcMain,
   nativeTheme,
   Notification,
@@ -8,6 +9,7 @@ import {
   session,
   shell,
 } from 'electron';
+import { readFile, stat } from 'node:fs/promises';
 import { DASHBOARD_CHANNELS, SHELL_CHANNELS } from '../shared/bridge';
 import { protocolError, type Result } from '../shared/protocol';
 import path from 'node:path';
@@ -246,6 +248,59 @@ function registerDashboard(): void {
     stopKanbanWatcher();
     return { ok: true, data: undefined };
   });
+
+  const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+  const mimeForPath = (filePath: string): string => {
+    const extension = path.extname(filePath).toLowerCase();
+    switch (extension) {
+      case '.png':
+        return 'image/png';
+      case '.jpg':
+      case '.jpeg':
+        return 'image/jpeg';
+      case '.gif':
+        return 'image/gif';
+      case '.webp':
+        return 'image/webp';
+      case '.pdf':
+        return 'application/pdf';
+      case '.txt':
+      case '.md':
+      case '.json':
+      case '.csv':
+      case '.log':
+        return 'text/plain';
+      default:
+        return 'application/octet-stream';
+    }
+  };
+  ipcMain.handle(
+    DASHBOARD_CHANNELS.chatAttachFile,
+    async (event): Promise<Result<{ name: string; refText: string }>> => {
+      if (!trusted(event) || mainWindow === null) {
+        return { ok: false, error: protocolError('internal', 'Untrusted renderer request.') };
+      }
+      const picked = await dialog.showOpenDialog(mainWindow, { properties: ['openFile'] });
+      const filePath = picked.filePaths[0];
+      if (picked.canceled || filePath === undefined) {
+        return { ok: false, error: protocolError('invalid_url', 'No file selected.') };
+      }
+      try {
+        const info = await stat(filePath);
+        if (info.size > MAX_ATTACHMENT_BYTES) {
+          return {
+            ok: false,
+            error: protocolError('invalid_url', 'The file is larger than 10 MB.'),
+          };
+        }
+        const buffer = await readFile(filePath);
+        const dataUrl = `data:${mimeForPath(filePath)};base64,${buffer.toString('base64')}`;
+        return chat.attachFile(path.basename(filePath), dataUrl);
+      } catch {
+        return { ok: false, error: protocolError('internal', 'The file could not be read.') };
+      }
+    },
+  );
 
   const watcher = createPendingWatcher({
     auth,

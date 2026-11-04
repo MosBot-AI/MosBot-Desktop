@@ -12,6 +12,8 @@ import type {
   AppearanceResult,
   CreateBotInput,
   CreateBotResult,
+  DisplaySnapshot,
+  DisplayThumbnail,
   KanbanBoard,
   KanbanBoardSummary,
   ModelReadiness,
@@ -31,6 +33,7 @@ import {
   setRemoteAppearance,
 } from './profiles';
 import { runChatProbe, runCreateBotProbe } from './probe-writes';
+import { readDisplayStatus, readDisplayThumbnail, startDisplay } from './display';
 import {
   createKanbanTask,
   listKanbanBoards,
@@ -132,6 +135,12 @@ export interface DashboardService {
     provider: string,
     model: string,
   ): Promise<Result<{ provider: string; model: string }>>;
+  /** Remote computer: read-only status. */
+  displayStatus(): Promise<Result<DisplaySnapshot>>;
+  /** Remote computer: one preview frame (suppressed while a human holds control). */
+  displayThumbnail(): Promise<Result<DisplayThumbnail>>;
+  /** Remote computer: explicit wake. */
+  displayStart(): Promise<Result<DisplaySnapshot>>;
   /** Non-secret connection preferences. */
   settings(): Result<DashboardSettings>;
   saveAddress(address: string | null): Result<void>;
@@ -166,6 +175,14 @@ function toProtocolError(error: unknown): ProtocolError {
  * The IPC-facing facade. It owns parsing addresses, keeping secrets inside the
  * main process and turning failures into structured results the UI can render.
  */
+function displayDeps(deps: DashboardServiceDeps) {
+  return {
+    auth: deps.auth,
+    fetchImpl: deps.fetchImpl,
+    ...(deps.requestTimeoutMs === undefined ? {} : { requestTimeoutMs: deps.requestTimeoutMs }),
+  };
+}
+
 function workbenchDeps(deps: DashboardServiceDeps) {
   return {
     auth: deps.auth,
@@ -316,6 +333,18 @@ export function createDashboardService(deps: DashboardServiceDeps): DashboardSer
 
     async setProfileModel(profileName, provider, model) {
       return setProfileModel(profileDeps(deps), profileName, provider, model);
+    },
+
+    async displayStatus() {
+      return readDisplayStatus(displayDeps(deps));
+    },
+
+    async displayThumbnail() {
+      return readDisplayThumbnail(displayDeps(deps));
+    },
+
+    async displayStart() {
+      return startDisplay(displayDeps(deps));
     },
 
     configUrl() {

@@ -8,6 +8,8 @@ import {
   type PreflightResult,
   type ProbeReport,
   type AppearanceResult,
+  type DisplaySnapshot,
+  type DisplayThumbnail,
   type KanbanBoard,
   type KanbanBoardSummary,
   type CreateBotResult,
@@ -240,6 +242,10 @@ export function registerDashboardIpc(options: {
   handle<readonly KanbanBoardSummary[]>(DASHBOARD_CHANNELS.kanbanBoards, () =>
     service.kanbanBoards(),
   );
+
+  handle<DisplaySnapshot>(DASHBOARD_CHANNELS.displayStatus, () => service.displayStatus());
+  handle<DisplayThumbnail>(DASHBOARD_CHANNELS.displayThumbnail, () => service.displayThumbnail());
+  handle<DisplaySnapshot>(DASHBOARD_CHANNELS.displayStart, () => service.displayStart());
 
   handle<KanbanBoard>(DASHBOARD_CHANNELS.kanbanBoard, (board) => {
     if (!isBoundedString(board, 128)) {

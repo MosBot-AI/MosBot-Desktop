@@ -25,7 +25,10 @@ into named sections (create/rename/delete), moved between them, and their look a
 edited through the compare-and-swap appearance write; the arrangement persists locally.
 The footer opens a Hermes workbench with Profiles, Sessions and Kanban pages backed
 by the Dashboard's REST APIs; returning to Bots keeps the chat, draft and scroll
-position untouched. The Kanban page can create tasks and move them between
+position untouched. Attachments are picked with the system dialog, staged through
+`file.attach` and sent with the prompt; the computer tab reads real status and a
+preview and offers an explicit wake action (the watch/control window is next).
+The Kanban page can create tasks and move them between
 columns, Profiles can write the default model/provider and read readiness back, and
 an open board keeps itself current through the Kanban event WebSocket (re-signed
 tickets, cursor resume, snapshot refetch on gaps). Without a connection the window

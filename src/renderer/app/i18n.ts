@@ -158,6 +158,15 @@ const zhHans = {
   'inspector.library.actionsUnavailable': '连接 Dashboard 后可以预览或保存产物',
   'inspector.computer.previewAlt': '{name} 的电脑预览',
   'inspector.computer.pending': '电脑观看与接管将在 M4 接入；当前不提供唤醒入口。',
+  'inspector.computer.remote.loading': '正在读取电脑状态…',
+  'inspector.computer.remote.asleep': '电脑休眠中',
+  'inspector.computer.remote.running': '电脑运行中',
+  'inspector.computer.remote.blocked': '当前无法唤醒：{reason}',
+  'inspector.computer.remote.failed': '读取电脑状态失败。',
+  'inspector.computer.remote.wake': '唤醒',
+  'inspector.computer.remote.waking': '正在唤醒…',
+  'inspector.computer.remote.otherViewer': '有人正在使用这台电脑，预览已暂停。',
+  'inspector.computer.remote.viewerNext': '观看与控制窗口将在下一段接入。',
 
   'search.title': '搜索',
   'search.placeholder': '搜索 Bot',
@@ -394,6 +403,16 @@ const en: Record<MessageKey, string> = {
   'inspector.computer.openUnavailable': 'The computer window opens once the Dashboard is connected',
   'inspector.library.actionsUnavailable': 'Preview and save arrive with the Dashboard connection',
   'inspector.computer.previewAlt': '{name} computer preview',
+  'inspector.computer.remote.loading': 'Reading computer status…',
+  'inspector.computer.remote.asleep': 'Computer asleep',
+  'inspector.computer.remote.running': 'Computer running',
+  'inspector.computer.remote.blocked': 'Cannot wake it now: {reason}',
+  'inspector.computer.remote.failed': 'Could not read the computer status.',
+  'inspector.computer.remote.wake': 'Wake',
+  'inspector.computer.remote.waking': 'Waking…',
+  'inspector.computer.remote.otherViewer':
+    'Someone else is using this computer; the preview is paused.',
+  'inspector.computer.remote.viewerNext': 'The watch/control window arrives in the next slice.',
   'inspector.computer.pending':
     'Computer viewing and takeover arrive in M4; no wake action is offered yet.',
 

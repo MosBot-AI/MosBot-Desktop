@@ -478,6 +478,31 @@ export function createProbeService(deps: ProbeDeps): ProbeService {
           );
         }
 
+        if (defaultProfile !== null) {
+          const thumbnail = await client.call(
+            'display.thumbnail',
+            { profile: defaultProfile },
+            emptySchema,
+          );
+          const thumbRecord = asRecord(thumbnail.ok ? thumbnail.data : null);
+          const dataUrl =
+            typeof thumbRecord?.['data_url'] === 'string' ? thumbRecord['data_url'] : '';
+          const suppressed =
+            typeof thumbRecord?.['suppressed'] === 'string' ? thumbRecord['suppressed'] : '';
+          rows.push(
+            row(
+              'display_thumbnail',
+              '电脑预览读取 display.thumbnail',
+              thumbnail.ok ? 'pass' : 'not-supported',
+              thumbnail.ok
+                ? dataUrl === ''
+                  ? `suppressed=${suppressed === '' ? '(none)' : suppressed} · no frame (computer may be asleep)`
+                  : `frame_bytes=${dataUrl.length} · suppressed=${suppressed === '' ? '(none)' : suppressed}`
+                : thumbnail.error.message,
+            ),
+          );
+        }
+
         // A consumed ticket must be rejected when replayed.
         const freshTicket = await requestJson(transport, {
           method: 'POST',

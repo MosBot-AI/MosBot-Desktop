@@ -56,7 +56,10 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
   探针验证并自动清理。
 - Kanban 实时事件：每个打开的 board 通过独立 WebSocket 尾随 `/api/plugins/kanban/events`，重连重签
   ticket 并用旧游标续上；切换 board 会关闭旧 watcher，迟到帧不会写入新 board；事件到达后防抖重读
-  快照，游标回退时从新尾部重新订阅。未连接时保持 fixture 演示。
+  快照，游标回退时从新尾部重新订阅。
+- M4 第一块：输入条经系统选择器与 `file.attach` 上传附件（10 MB 上限、可移除 chip、引用随消息发送），
+  专用 profile 探针验证真实推理能读取附件；电脑页轮询 `display.status`、显示 `display.thumbnail`
+  预览（他人持租约时隐藏），并提供显式 `display.start` 唤醒。未连接时保持 fixture 演示。
 - Gateway WebSocket 客户端（`ws`）：一次性 ticket 握手、`gateway.ready` 首帧、zod 校验的 JSON-RPC 请求响应、类型化服务端事件，以及 ticket 复用/过期拒绝检查。已在测试部署验证：`profiles.list`、`client.capabilities` 与精确 Bot Chat 查询通过；复用与过期 ticket 被拒绝。
 
 ### 变更

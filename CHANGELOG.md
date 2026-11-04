@@ -110,8 +110,13 @@ until the release repository exists.
   own WebSocket with a re-signed ticket per reconnect and cursor resume; a board
   switch closes the old watcher so late frames cannot touch the new board, events
   debounce a snapshot refetch, and a cursor that moves backwards resubscribes from
-  the new tail. Verified with dedicated-board and dedicated-profile probes that
-  clean up after themselves. Fixture windows keep the offline demo.
+  the new tail.
+- M4 first slice: the composer attaches files through the system dialog and
+  `file.attach` (10 MB cap, removable chips, refs sent with the prompt) and real
+  inference read the uploaded file back in a dedicated-profile probe. The computer
+  tab polls `display.status`, shows the `display.thumbnail` preview (hidden while
+  someone else holds the lease), and offers an explicit wake via `display.start`.
+  Fixture windows keep the offline demo.
 - Gateway WebSocket client (`ws`): one-time ticket handshake, `gateway.ready` first
   frame, JSON-RPC request/response with zod validation, typed server events, and
   ticket replay/expiry rejection checks. Verified against the test deployment:

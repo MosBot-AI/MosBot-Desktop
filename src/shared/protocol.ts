@@ -395,6 +395,31 @@ export type DashboardPendingEvent =
   | { readonly type: 'remove'; readonly requestId: string }
   | { readonly type: 'open'; readonly profile: string };
 
+export interface DisplayLease {
+  readonly holder: string;
+  readonly since: number | null;
+}
+
+export interface DisplaySnapshot {
+  readonly supported: boolean;
+  readonly installed: boolean;
+  readonly running: boolean;
+  readonly geometry: string;
+  readonly blocker: string | null;
+  readonly placement: string;
+  readonly lease: DisplayLease | null;
+}
+
+export interface DisplayThumbnail {
+  readonly dataUrl: string | null;
+  readonly suppressed: string | null;
+}
+
+export interface AttachedFile {
+  readonly name: string;
+  readonly refText: string;
+}
+
 export interface ChatOpenResult {
   readonly profile: string;
   readonly storedSessionId: string | null;

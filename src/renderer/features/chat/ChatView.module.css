@@ -542,6 +542,43 @@
   line-height: var(--leading-normal);
 }
 
+.attachmentChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2) 0;
+}
+
+.attachmentChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 220px;
+  padding: 2px var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: var(--surface-code);
+  font-size: var(--text-xs);
+}
+
+.attachmentName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachmentRemove {
+  border: 0;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.attachmentRemove:hover {
+  color: var(--text-primary);
+}
+
 .composer {
   display: flex;
   align-items: flex-end;

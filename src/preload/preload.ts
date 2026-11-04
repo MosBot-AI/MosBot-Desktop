@@ -13,6 +13,8 @@ import type {
   CreateBotResult,
   KanbanBoard,
   KanbanBoardSummary,
+  DisplaySnapshot,
+  DisplayThumbnail,
   KanbanWatchEvent,
   ModelReadiness,
   WorkbenchMessage,
@@ -176,6 +178,21 @@ const bridge: Omit<MosBotBridge, 'openExternal' | 'local'> = {
         model,
       ) as Promise<Result<{ provider: string; model: string }>>;
     },
+    displayStatus(): Promise<Result<DisplaySnapshot>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.displayStatus) as Promise<
+        Result<DisplaySnapshot>
+      >;
+    },
+    displayThumbnail(): Promise<Result<DisplayThumbnail>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.displayThumbnail) as Promise<
+        Result<DisplayThumbnail>
+      >;
+    },
+    displayStart(): Promise<Result<DisplaySnapshot>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.displayStart) as Promise<
+        Result<DisplaySnapshot>
+      >;
+    },
     kanbanWatch(board: string, since: number): Promise<Result<void>> {
       return ipcRenderer.invoke(DASHBOARD_CHANNELS.kanbanWatch, board, since) as Promise<
         Result<void>
@@ -239,6 +256,11 @@ const bridge: Omit<MosBotBridge, 'openExternal' | 'local'> = {
       return () => {
         ipcRenderer.removeListener(DASHBOARD_CHANNELS.pendingEvent, wrapped);
       };
+    },
+    attachFile(): Promise<Result<{ name: string; refText: string }>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.chatAttachFile) as Promise<
+        Result<{ name: string; refText: string }>
+      >;
     },
     onChatEvent(listener: (event: DashboardChatEvent) => void): () => void {
       const wrapped = (_event: Electron.IpcRendererEvent, payload: DashboardChatEvent): void => {
