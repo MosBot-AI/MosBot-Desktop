@@ -18,6 +18,21 @@ export function ComputerViewer(): ReactElement {
   const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
   const [online, setOnline] = useState<boolean>(() => navigator.onLine);
   const [acquireConflict, setAcquireConflict] = useState(false);
+  // Test-only (main appends ?diag=1 only with MOSBOT_DIAG=1): simulate the RFB
+  // socket dropping without touching the real network stack.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('diag') !== '1') {
+      return;
+    }
+    window.__mosbotViewerDiag = {
+      dropSocket: () => {
+        rfbRef.current?.disconnect();
+      },
+    };
+    return () => {
+      delete window.__mosbotViewerDiag;
+    };
+  }, []);
   const wasOnline = useRef(online);
 
   useEffect(() => {

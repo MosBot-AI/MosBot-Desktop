@@ -183,6 +183,9 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
   「其他人正在控制」，而不是先误报“仅观看”。强杀/重启 walkthrough 确认该部署不会留下卡死的
   人类租约：重启后为只读、可取控制，重新取得成功。
 
+- 观看窗口断线重连新增 walkthrough：测试专用 socket 断开（或 renderer offline/online 事件）会触发
+  重新 observe 并重建 RFB，其间显示断网文案。这是模拟验证，真实网卡断开仍未实测。
+
 ### 变更
 
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。

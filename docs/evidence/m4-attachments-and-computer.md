@@ -148,3 +148,19 @@ mtime=2026-11-04T06:37:52.972Z · broken=false`，`chat_artifact_read` 回显 to
 报告：`docs/evidence/tmp/stale-lease-2026-11-04T10-45-36-283Z.json`。
 
 仍未验证：真实断网后的画面重连、双 viewer 非抢占（M0c 服务端依赖）。
+
+## 2026-11-04 观看窗口断线重连（模拟 socket 断开 + offline/online 事件）
+
+`scripts/gui-viewer-reconnect.mjs`（`MOSBOT_DIAG=1` 时暴露测试专用 `dropSocket()`，不触碰真实网络）：
+
+| 检查                                        | 结果                      |
+| ------------------------------------------- | ------------------------- |
+| 观看窗口连接并有真实 canvas                 | ✅                        |
+| 强制断开 RFB socket 后自动重新 observe/重建 | ✅ 画面恢复、状态回到只读 |
+| `offline` 事件显示「网络已断开…」           | ✅                        |
+| `online` 事件自动重连                       | ✅ 画面恢复               |
+
+报告：`docs/evidence/tmp/viewer-reconnect-2026-11-04T10-50-35-732Z.json`。
+
+说明：这是**模拟**断线（测试 seam + DOM 事件）；真实 Wi-Fi/网卡断开后的画面重连仍未实测。
+本轮还修复了观看窗口打开时不读取 `display.observe` 租约快照的问题（现会立即显示“其他人正在控制”）。

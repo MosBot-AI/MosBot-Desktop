@@ -299,6 +299,11 @@ until the release repository exists.
   killed viewer does not leave a stuck human lease on this deployment: restart is
   view-only with Take control available, and re-acquiring succeeds.
 
+- Viewer reconnect is covered by a walkthrough: a test-only socket drop (or the
+  renderer's offline/online events) makes the viewer re-observe and rebuild its RFB
+  session, with the offline copy shown in between. This is a simulation; a real
+  network-interface loss is still unverified.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,
