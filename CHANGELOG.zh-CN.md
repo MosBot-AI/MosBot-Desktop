@@ -170,6 +170,11 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
   发现等待会话，在窗口最小化时收到通知；点击通知直达并处理请求，A 随即将卡片折成
   「已由另一端处理」回执。
 
+- 把发布候选验收整理进 `docs/evidence/acceptance.md`，并新增
+  `docs/evidence/final-checklist.md`：每个剩余项都写明归属、用户操作与复验命令。新增真实连接
+  冷启动 walkthrough（真实服务、专用 Bot、完整退出重启），验证恢复选中 Bot 与草稿；索引已链接
+  脚本与证据。另提供 7 天日用记录模板。
+
 ### 变更
 
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。

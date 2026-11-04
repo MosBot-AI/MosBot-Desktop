@@ -143,6 +143,7 @@ machines.
 - Task cards: [`docs/plans/03-agent-handoff.md`](docs/plans/03-agent-handoff.md)
 - Brand assets and licences: [`docs/assets/brand.md`](docs/assets/brand.md)
 - M0c atomic display-lease patch: [`docs/patches/0001-display-lease-atomic-claim.patch`](docs/patches/0001-display-lease-atomic-claim.patch)
+- Final user checklist: [`docs/evidence/final-checklist.md`](docs/evidence/final-checklist.md)
 - Acceptance evidence index: [`docs/evidence/acceptance.md`](docs/evidence/acceptance.md)
 - Performance evidence: [`docs/evidence/m5-performance.md`](docs/evidence/m5-performance.md)
 - Keyboard/accessibility evidence: [`docs/evidence/m5-gui-a11y.md`](docs/evidence/m5-gui-a11y.md)

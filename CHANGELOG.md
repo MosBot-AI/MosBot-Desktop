@@ -280,6 +280,13 @@ until the release repository exists.
   the notification click, and denies the request; A then folds its card into a
   "handled in another window" receipt.
 
+- Consolidated the release-candidate audit into docs/evidence/acceptance.md and
+  added docs/evidence/final-checklist.md: every remaining item now names the owner,
+  the exact user action and the re-verification command. A connected cold-start
+  walkthrough (real Dashboard, dedicated Bot, full quit/relaunch) verifies that the
+  selected Bot and the typed draft are restored; its script and evidence are
+  linked from the index. A dogfood log template is ready for the 7-day use.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,
