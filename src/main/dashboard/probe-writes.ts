@@ -543,6 +543,16 @@ export async function runKanbanWriteProbe(deps: WriteProbeDeps): Promise<Result<
   const rows: CapabilityRow[] = [];
   let boardCreated = false;
   let taskId: string | null = null;
+  // Test-only: keep the dedicated board so a GUI walkthrough can use it, and remove
+  // any stale probe boards from earlier runs that did the same.
+  const keepBoard = process.env['MOSBOT_PROBE_KEEP_BOARD'] === '1';
+  const leftover = await rest.get('/api/plugins/kanban/boards');
+  for (const entry of asArray(asRecord(leftover.ok ? leftover.data : null)?.['boards']) ?? []) {
+    const slug = stringField(asRecord(entry), 'slug') ?? '';
+    if (/^mosbot-probe-board-\d{12,14}$/.test(slug)) {
+      await rest.send('DELETE', `/api/plugins/kanban/boards/${encodeURIComponent(slug)}`);
+    }
+  }
 
   const boardPayload = async (): Promise<Record<string, unknown> | null> => {
     const result = await rest.get(`/api/plugins/kanban/board?board=${encodeURIComponent(marker)}`);
@@ -721,7 +731,9 @@ export async function runKanbanWriteProbe(deps: WriteProbeDeps): Promise<Result<
         `/api/plugins/kanban/tasks/${encodeURIComponent(taskId)}?board=${encodeURIComponent(marker)}`,
       );
     }
-    if (boardCreated) {
+    if (boardCreated && keepBoard) {
+      rows.push(row('board_kept', '保留专用 board 供 GUI 验证', 'pass', `slug=${marker}`));
+    } else if (boardCreated) {
       const deleted = await rest.send(
         'DELETE',
         `/api/plugins/kanban/boards/${encodeURIComponent(marker)}`,

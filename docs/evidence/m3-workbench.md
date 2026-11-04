@@ -43,3 +43,21 @@
 
 - 连接态工作台的真实窗口截图与用户验收（需登录后实际操作）。
 - 已修复：验证时发现 `probeWorkbench` IPC handler 重复注册导致启动失败，已删除重复项并复验。
+
+## 2026-11-04 跨客户端 Kanban 刷新（专用 board）
+
+`scripts/gui-workbench-refresh.mjs`（隐藏窗口、两个客户端、同一账号）：
+probe 创建并**保留**专用 board（`MOSBOT_PROBE_KEEP_BOARD=1`，只动 `mosbot-probe-board-*`），
+客户端 A 打开工作台选中该 board，客户端 B 通过 `kanbanCreateTask` 新建任务，A 点「刷新」后看到
+任务。结束后再跑一次普通 probe：启动时删除遗留的 probe board 并自建自删。
+
+| 检查                             | 结果                      |
+| -------------------------------- | ------------------------- |
+| 专用 board 创建并保留            | ✅ `mosbot-probe-board-*` |
+| A 打开工作台并选中该 board       | ✅                        |
+| B 创建任务                       | ✅ `t_… ready`            |
+| **A 刷新后看到另一客户端的任务** | ✅ `另一客户端任务-…`     |
+
+报告：`docs/evidence/tmp/workbench-refresh-2026-11-04T11-19-10-251Z.json`。
+
+仍未验证：插件禁用状态的真实部署证据、切换 board/profile 后迟到响应的真实双端隔离。

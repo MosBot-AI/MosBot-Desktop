@@ -195,6 +195,9 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
   connected）、既有 transcript 保留、重连后新消息仍收到真实回复、回放不重复消息。真实网卡断开仍
   需可复现环境。
 
+- 跨客户端 Kanban 刷新能源真实服务验证：在专用 probe board（walkthrough 期间保留、随后由 probe
+  清理）上，另一端创建任务，本端点「刷新」后可见。
+
 ### 变更
 
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。

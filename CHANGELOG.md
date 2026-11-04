@@ -316,6 +316,10 @@ until the release repository exists.
   real reply to a new prompt afterwards and does not duplicate the replay. This is a
   simulation; a real network-interface loss still needs a reproducible environment.
 
+- Cross-client Kanban refresh verified against the real service on a dedicated
+  probe board (kept for the walkthrough, removed by the next probe run): a second
+  client creates a task and the first client sees it after clicking Refresh.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,
