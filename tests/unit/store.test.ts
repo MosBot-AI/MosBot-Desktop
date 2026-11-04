@@ -30,6 +30,18 @@ function build(): AppState {
   });
 }
 
+describe('network status', () => {
+  it('records the online/offline state and ignores redundant updates', () => {
+    const state = build();
+    const offline = reduceAppState(state, { type: 'set-network-online', online: false });
+    expect(offline.networkOnline).toBe(false);
+    const again = reduceAppState(offline, { type: 'set-network-online', online: false });
+    expect(again).toBe(offline);
+    const online = reduceAppState(offline, { type: 'set-network-online', online: true });
+    expect(online.networkOnline).toBe(true);
+  });
+});
+
 describe('fixtures', () => {
   it('covers every M0a state: two sections, six pinned slots, long name, empty chat, long reply, offline Bot, pending approval, sleeping computer', () => {
     const seed = createFixtureSeed();

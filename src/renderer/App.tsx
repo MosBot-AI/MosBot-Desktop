@@ -1,7 +1,7 @@
 import { useEffect, type ReactElement } from 'react';
 import type { MenuCommand } from '../shared/bridge';
 import styles from './App.module.css';
-import { LOCALE_TAGS } from './app/i18n';
+import { LOCALE_TAGS, useMessages } from './app/i18n';
 import {
   appStore,
   buildLocalState,
@@ -37,6 +37,8 @@ export function App(): ReactElement {
       Object.values(state.computers).find((item) => item.status === 'waking')?.profileId ?? null,
   );
   const dispatch = useDispatch();
+  const t = useMessages();
+  const networkOnline = useAppState((state) => state.networkOnline);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -73,6 +75,21 @@ export function App(): ReactElement {
   useEffect(() => {
     void window.mosbot?.menu.setLanguage(language);
   }, [language]);
+
+  // Network loss must be visible: the Dashboard connection and the viewer drop
+  // silently otherwise. Chromium's online/offline events cover Wi-Fi/Ethernet.
+  useEffect(() => {
+    const update = (): void => {
+      dispatch({ type: 'set-network-online', online: navigator.onLine });
+    };
+    update();
+    window.addEventListener('online', update);
+    window.addEventListener('offline', update);
+    return () => {
+      window.removeEventListener('online', update);
+      window.removeEventListener('offline', update);
+    };
+  }, [dispatch]);
 
   useEffect(() => {
     const dark = window.matchMedia('(prefers-color-scheme: dark)');
@@ -404,6 +421,11 @@ export function App(): ReactElement {
 
   return (
     <>
+      {networkOnline ? null : (
+        <div className={styles.networkBanner} role="alert">
+          {t('network.offline')}
+        </div>
+      )}
       <div
         className={workbenchOpen ? styles.appHidden : styles.app}
         data-inspector-open={inspectorOpen ? 'true' : 'false'}

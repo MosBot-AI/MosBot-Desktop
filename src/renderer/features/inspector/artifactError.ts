@@ -20,6 +20,9 @@ export function artifactErrorKey(error: ProtocolError): MessageKey {
   if (error.httpStatus === 413) {
     return 'inspector.library.error.tooLarge';
   }
+  if (error.code === 'unreachable' || error.code === 'timeout') {
+    return 'inspector.library.error.offline';
+  }
   if (error.code === 'unauthorized') {
     return 'inspector.library.error.signIn';
   }

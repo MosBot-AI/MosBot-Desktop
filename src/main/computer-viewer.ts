@@ -67,6 +67,8 @@ export function createComputerViewer(deps: ComputerViewerDeps): ComputerViewer {
   let client: RpcClient | null = null;
   let viewerId = '';
   let leaseHeld = false;
+  let currentProfile: string | null = null;
+  let currentBootstrap: ComputerBootstrap | null = null;
 
   const sendLease = (lease: DisplayLease | null): void => {
     window?.webContents.send(DASHBOARD_CHANNELS.computerLease, lease);
@@ -80,26 +82,56 @@ export function createComputerViewer(deps: ComputerViewerDeps): ComputerViewer {
     void client.call('display.lease.release', { viewer_id: viewerId }, emptySchema);
   };
 
+  const bootstrapFor = (observed: {
+    ticket: string;
+    viewerId: string;
+    profile: string;
+  }): ComputerBootstrap => {
+    const wsBase = (() => {
+      const target = deps.auth.target();
+      if (target === null) {
+        return '';
+      }
+      const url = new URL(target.origin);
+      url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+      const prefix = target.basePath === '/' ? '' : target.basePath.replace(/\/$/, '');
+      return `${url.origin}${prefix}`;
+    })();
+    return {
+      wsUrl: `${wsBase}/api/display/ws?display_ticket=${encodeURIComponent(observed.ticket)}`,
+      viewerId: observed.viewerId,
+      profile: observed.profile,
+      botName: observed.profile,
+    };
+  };
+
   const teardown = (): void => {
     releaseIfHeld();
     client?.close();
     client = null;
     window = null;
     viewerId = '';
+    currentProfile = null;
+    currentBootstrap = null;
   };
 
-  const createWindow = async (observed: {
-    ticket: string;
-    viewerId: string;
-    profile: string;
-  }): Promise<Result<void>> => {
+  /** Only the viewer window's own top-level frame may drive its lease/window. */
+  const viewerTrusted = (event: IpcMainInvokeEvent): boolean => {
+    const contents = window?.webContents;
+    if (contents === undefined || contents === null || contents.isDestroyed()) {
+      return false;
+    }
+    return event.sender === contents;
+  };
+
+  const createWindow = async (bootstrap: ComputerBootstrap): Promise<Result<void>> => {
     const parent = deps.getParent();
     const viewer = new BrowserWindow({
       width: 980,
       height: 660,
       minWidth: 640,
       minHeight: 420,
-      title: `${observed.profile} · 电脑`,
+      title: `${bootstrap.profile} · 电脑`,
       backgroundColor: '#101014',
       ...(parent === null ? {} : { parent }),
       show: false,
@@ -114,25 +146,10 @@ export function createComputerViewer(deps: ComputerViewerDeps): ComputerViewer {
       },
     });
     window = viewer;
-    const wsBase = (() => {
-      const target = deps.auth.target();
-      if (target === null) {
-        return '';
-      }
-      const url = new URL(target.origin);
-      url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-      const prefix = target.basePath === '/' ? '' : target.basePath.replace(/\/$/, '');
-      return `${url.origin}${prefix}`;
-    })();
-    const wsUrl = `${wsBase}/api/display/ws?display_ticket=${encodeURIComponent(observed.ticket)}`;
-    const bootstrap: ComputerBootstrap = {
-      wsUrl,
-      viewerId: observed.viewerId,
-      profile: observed.profile,
-      botName: observed.profile,
-    };
     viewer.webContents.on('did-finish-load', () => {
-      viewer.webContents.send(DASHBOARD_CHANNELS.computerBootstrap, bootstrap);
+      if (currentBootstrap !== null) {
+        viewer.webContents.send(DASHBOARD_CHANNELS.computerBootstrap, currentBootstrap);
+      }
       viewer.show();
     });
     viewer.on('closed', () => {
@@ -153,8 +170,15 @@ export function createComputerViewer(deps: ComputerViewerDeps): ComputerViewer {
     return open(rawProfile);
   });
 
+  ipcMain.handle(DASHBOARD_CHANNELS.computerReconnect, async (event): Promise<Result<void>> => {
+    if (!viewerTrusted(event)) {
+      return { ok: false, error: protocolError('internal', 'Untrusted renderer request.') };
+    }
+    return reconnect();
+  });
+
   ipcMain.handle(DASHBOARD_CHANNELS.computerAcquire, async (event): Promise<Result<void>> => {
-    if (!deps.isTrustedEvent(event) || client === null || viewerId === '') {
+    if (!viewerTrusted(event) || client === null || viewerId === '') {
       return { ok: false, error: protocolError('internal', 'The viewer is not ready.') };
     }
     const acquired = await client.call(
@@ -171,7 +195,7 @@ export function createComputerViewer(deps: ComputerViewerDeps): ComputerViewer {
   });
 
   ipcMain.handle(DASHBOARD_CHANNELS.computerRelease, async (event): Promise<Result<void>> => {
-    if (!deps.isTrustedEvent(event) || client === null || viewerId === '') {
+    if (!viewerTrusted(event) || client === null || viewerId === '') {
       return { ok: false, error: protocolError('internal', 'The viewer is not ready.') };
     }
     const released = await client.call(
@@ -188,7 +212,7 @@ export function createComputerViewer(deps: ComputerViewerDeps): ComputerViewer {
   });
 
   ipcMain.handle(DASHBOARD_CHANNELS.computerClose, (event): void => {
-    if (!deps.isTrustedEvent(event)) {
+    if (!viewerTrusted(event)) {
       return;
     }
     window?.close();
@@ -245,7 +269,41 @@ export function createComputerViewer(deps: ComputerViewerDeps): ComputerViewer {
       };
     }
     viewerId = mintedViewerId;
-    return createWindow({ ticket, viewerId: mintedViewerId, profile: profileName });
+    currentProfile = profileName;
+    currentBootstrap = bootstrapFor({ ticket, viewerId: mintedViewerId, profile: profileName });
+    return createWindow(currentBootstrap);
+  };
+
+  /** Re-mints the ticket and sends a fresh bootstrap to the existing viewer. */
+  const reconnect = async (): Promise<Result<void>> => {
+    if (window === null || window.isDestroyed() || client === null || currentProfile === null) {
+      return {
+        ok: false,
+        error: protocolError('internal', 'The viewer window is not open.'),
+      };
+    }
+    const observed = await client.call('display.observe', { profile: currentProfile }, emptySchema);
+    if (!observed.ok) {
+      return observed;
+    }
+    const record = asRecord(observed.data);
+    const ticket = str(record?.['ticket']);
+    const mintedViewerId = str(record?.['viewer_id']);
+    if (ticket === '' || mintedViewerId === '') {
+      return {
+        ok: false,
+        error: protocolError('malformed_response', 'The Dashboard returned no display ticket.'),
+      };
+    }
+    viewerId = mintedViewerId;
+    leaseHeld = false;
+    currentBootstrap = bootstrapFor({
+      ticket,
+      viewerId: mintedViewerId,
+      profile: currentProfile,
+    });
+    window.webContents.send(DASHBOARD_CHANNELS.computerBootstrap, currentBootstrap);
+    return { ok: true, data: undefined };
   };
 
   return {

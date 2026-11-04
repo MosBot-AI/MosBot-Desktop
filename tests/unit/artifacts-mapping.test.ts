@@ -69,6 +69,9 @@ describe('artifact file entry mapping', () => {
     expect(artifactErrorKey(protocolError('unauthorized', 'sign in'))).toBe(
       'inspector.library.error.signIn',
     );
+    expect(artifactErrorKey(protocolError('unreachable', 'offline'))).toBe(
+      'inspector.library.error.offline',
+    );
     expect(artifactErrorKey(protocolError('http_error', 'server', { httpStatus: 500 }))).toBe(
       'inspector.library.remote.error',
     );

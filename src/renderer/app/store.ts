@@ -149,6 +149,8 @@ export interface AppState {
   readonly resolvedTheme: ResolvedTheme;
   readonly language: Language;
   readonly reduceMotion: boolean;
+  /** False when the OS reports no network; the UI shows it instead of failing silently. */
+  readonly networkOnline: boolean;
   readonly connection: ConnectionInfo;
   readonly computers: Record<string, ComputerState>;
   readonly artifacts: Artifact[];
@@ -225,6 +227,7 @@ export type AppAction =
   | { type: 'resolve-theme'; resolvedTheme: ResolvedTheme }
   | { type: 'set-language'; language: Language }
   | { type: 'set-reduce-motion'; reduceMotion: boolean }
+  | { type: 'set-network-online'; online: boolean }
   | { type: 'set-footer-menu'; open: boolean }
   | { type: 'set-pinned-menu'; open: boolean }
   | { type: 'connection-open'; address: string }
@@ -439,6 +442,7 @@ export function createInitialState(seed: FixtureSeed, bootstrap: Bootstrap): App
     resolvedTheme: bootstrap.resolvedTheme,
     language: bootstrap.language,
     reduceMotion: bootstrap.reduceMotion,
+    networkOnline: true,
     connection: seed.connection,
     computers: { ...seed.computers },
     artifacts: seed.artifacts.slice(),
@@ -819,6 +823,10 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
       return { ...state, language: action.language };
     case 'set-reduce-motion':
       return { ...state, reduceMotion: action.reduceMotion };
+    case 'set-network-online':
+      return state.networkOnline === action.online
+        ? state
+        : { ...state, networkOnline: action.online };
     case 'connection-open':
       return {
         ...state,

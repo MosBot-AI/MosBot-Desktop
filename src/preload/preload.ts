@@ -392,6 +392,9 @@ const computerBridge: MosBotBridge['computer'] = {
   release(): Promise<Result<void>> {
     return ipcRenderer.invoke(DASHBOARD_CHANNELS.computerRelease) as Promise<Result<void>>;
   },
+  reconnect(): Promise<Result<void>> {
+    return ipcRenderer.invoke(DASHBOARD_CHANNELS.computerReconnect) as Promise<Result<void>>;
+  },
   close(): Promise<void> {
     return ipcRenderer.invoke(DASHBOARD_CHANNELS.computerClose) as Promise<void>;
   },

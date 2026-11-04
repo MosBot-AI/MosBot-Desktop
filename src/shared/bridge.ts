@@ -65,6 +65,8 @@ export interface MosBotComputerBridge {
   onLease(listener: (lease: DisplayLease | null) => void): () => void;
   acquire(): Promise<Result<void>>;
   release(): Promise<Result<void>>;
+  /** Re-mint the display ticket and reconnect after the network comes back. */
+  reconnect(): Promise<Result<void>>;
   close(): Promise<void>;
 }
 
@@ -261,6 +263,7 @@ export const DASHBOARD_CHANNELS = {
   computerBootstrap: 'mosbot:computer:bootstrap',
   computerLease: 'mosbot:computer:lease',
   computerAcquire: 'mosbot:computer:acquire',
+  computerReconnect: 'mosbot:computer:reconnect',
   computerRelease: 'mosbot:computer:release',
   computerClose: 'mosbot:computer:close',
   kanbanWatch: 'mosbot:dashboard:kanbanWatch',

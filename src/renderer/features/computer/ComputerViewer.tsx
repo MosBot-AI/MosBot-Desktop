@@ -16,6 +16,8 @@ export function ComputerViewer(): ReactElement {
   const [bootstrap, setBootstrap] = useState<ComputerBootstrap | null>(null);
   const [lease, setLease] = useState<DisplayLease | null>(null);
   const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
+  const [online, setOnline] = useState<boolean>(() => navigator.onLine);
+  const wasOnline = useRef(online);
 
   useEffect(() => {
     const computer = window.mosbot?.computer;
@@ -23,6 +25,12 @@ export function ComputerViewer(): ReactElement {
       return;
     }
     const offBootstrap = computer.onBootstrap((payload) => {
+      // A re-minted ticket (network recovery) replaces the old RFB session.
+      if (rfbRef.current !== null) {
+        rfbRef.current.disconnect();
+        rfbRef.current = null;
+      }
+      setStatus('connecting');
       setBootstrap(payload);
     });
     const offLease = computer.onLease((next) => {
@@ -34,12 +42,43 @@ export function ComputerViewer(): ReactElement {
     };
   }, []);
 
+  // Network loss is shown explicitly; when it returns the main process re-mints
+  // the display ticket and this window reconnects instead of staying dead.
+  useEffect(() => {
+    const onOnline = (): void => {
+      setOnline(true);
+    };
+    const onOffline = (): void => {
+      setOnline(false);
+    };
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (online && !wasOnline.current) {
+      setStatus('connecting');
+      void window.mosbot?.computer.reconnect().then((result) => {
+        if (result.ok !== true) {
+          setStatus('disconnected');
+        }
+      });
+    }
+    wasOnline.current = online;
+  }, [online]);
+
   useEffect(() => {
     const screen = screenRef.current;
     if (bootstrap === null || screen === null || rfbRef.current !== null) {
       return;
     }
-    const rfb = new RFB(screen, bootstrap.wsUrl, { shared: true, wsProtocols: ['binary'] });
+    // The deployment's RFB bridge does not negotiate a WebSocket subprotocol, so
+    // noVNC must not offer one (otherwise the handshake is rejected with 1006).
+    const rfb = new RFB(screen, bootstrap.wsUrl, { shared: true, wsProtocols: [] });
     rfb.viewOnly = true;
     rfb.scaleViewport = true;
     rfb.resizeSession = false;
@@ -89,15 +128,21 @@ export function ComputerViewer(): ReactElement {
       <div ref={screenRef} className={styles.screen} aria-label={t('computer.viewer.screen')} />
       <footer className={styles.controls}>
         <span className={styles.status} role="status" aria-live="polite">
-          {status === 'connecting'
-            ? t('computer.viewer.connecting')
-            : status === 'disconnected'
-              ? t('computer.viewer.disconnected')
-              : mine
-                ? t('computer.viewer.controlling')
-                : someoneElse
-                  ? t('computer.viewer.otherViewer')
-                  : t('computer.viewer.viewOnly')}
+          {!online
+            ? t('computer.viewer.offline')
+            : status === 'connecting'
+              ? t(
+                  bootstrap !== null && rfbRef.current === null
+                    ? 'computer.viewer.reconnecting'
+                    : 'computer.viewer.connecting',
+                )
+              : status === 'disconnected'
+                ? t('computer.viewer.disconnected')
+                : mine
+                  ? t('computer.viewer.controlling')
+                  : someoneElse
+                    ? t('computer.viewer.otherViewer')
+                    : t('computer.viewer.viewOnly')}
         </span>
         {mine ? (
           <button type="button" className={styles.controlButton} onClick={() => void release()}>
@@ -107,7 +152,7 @@ export function ComputerViewer(): ReactElement {
           <button
             type="button"
             className={styles.controlButton}
-            disabled={someoneElse || status !== 'connected'}
+            disabled={!online || someoneElse || status !== 'connected'}
             onClick={() => void acquire()}
           >
             {t('computer.viewer.acquire')}

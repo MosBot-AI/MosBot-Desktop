@@ -35,6 +35,7 @@ export function ChatView(): ReactElement {
   const livePhase = state.live.phase;
   const liveError = state.live.error;
   const liveTextLength = state.live.botText.length;
+  const networkOnline = state.networkOnline;
   const modelReady = selectModelReady(state);
   const timelineRef = useRef<HTMLDivElement | null>(null);
   const lastBotRef = useRef(state.selectedBotId);
@@ -121,13 +122,15 @@ export function ChatView(): ReactElement {
         />
       </header>
 
-      {remoteMode && (liveConnection !== 'connected' || livePhase === 'error') ? (
+      {remoteMode && (!networkOnline || liveConnection !== 'connected' || livePhase === 'error') ? (
         <p className={styles.connectionBanner} role="status">
-          {livePhase === 'error' && liveError !== null
-            ? t('chat.live.failed', { message: liveError })
-            : liveConnection === 'reconnecting'
-              ? t('chat.connection.reconnecting')
-              : t('chat.connection.disconnected')}
+          {!networkOnline
+            ? t('chat.connection.offline')
+            : livePhase === 'error' && liveError !== null
+              ? t('chat.live.failed', { message: liveError })
+              : liveConnection === 'reconnecting'
+                ? t('chat.connection.reconnecting')
+                : t('chat.connection.disconnected')}
         </p>
       ) : null}
 

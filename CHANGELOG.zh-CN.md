@@ -135,6 +135,14 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
   跨会话事件游标泄漏导致的 false history-stale、审批回执随请求被删除、以及输入条在自身会话
   就绪前接收输入（可能发到上一个 Bot）等问题。
 
+- 网络断开现在可见：主窗口根据系统 online/offline 事件显示固定提示，聊天连接横幅有专门的断网
+  文案，资料库把 unreachable/timeout 映射为断网提示，电脑观看窗口显示断网状态并在网络恢复时
+  通过 `computer.reconnect` 重新取得 display ticket、重建 RFB。E2E 增加了断网/恢复提示用例。
+
+- 电脑观看窗口：noVNC 不再发送 WebSocket 子协议（部署 RFB bridge 不协商子协议，之前每次
+  握手都失败）；viewer 窗口被允许驱动自己的租约/重连/关闭 IPC，而不再被当作不可信发送者拒绝。
+  真实画面可渲染（1440 × 900 canvas），可以取得/归还控制并关闭窗口。
+
 ### 变更
 
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。

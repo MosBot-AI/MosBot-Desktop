@@ -77,6 +77,36 @@
 mtime=2026-11-04T06:37:52.972Z · broken=false`，`chat_artifact_read` 回显 token，
   附件上传/推理读取同时复验通过；报告 `docs/evidence/tmp/dashboard-chat-2026-11-04T06-39-26-736Z.json`。
 
+## 观看窗口真实验收（2026-11-04 完成）
+
+`scripts/gui-computer-walkthrough.mjs`（打包产物 + 真实 Dashboard + 专用 viewer，不采集远端画面像素）：
+
+| 步骤                                    | 结果                                     |
+| --------------------------------------- | ---------------------------------------- |
+| 详情栏「电脑」读取真实 `display.status` | ✅ 电脑运行中                            |
+| 打开独立观看窗口                        | ✅ 新 BrowserWindow                      |
+| noVNC RFB 连接与画面                    | ✅ canvas **1440 × 900**（真实远端画面） |
+| 取得控制权（lease）                     | ✅ `你正在控制`，按钮切为「归还控制」    |
+| 归还控制                                | ✅ 回到 `仅观看 · 取得控制权`            |
+| 关闭窗口                                | ✅ 窗口销毁                              |
+
+本轮修复的两个真实缺陷（此前观看窗口从未真正可用）：
+
+1. noVNC 发送 `Sec-WebSocket-Protocol: binary`，而部署的 RFB bridge 不协商子协议 → 握手 1006。
+   改为 `wsProtocols: []` 后连通。
+2. viewer 窗口的 `computerAcquire/Release/Reconnect/Close` IPC 被主进程按“仅信任主窗口”拒绝，
+   返回 `The viewer is not ready`，控制权永远取不到。现在 viewer 只信任自己的顶层 frame。
+
+证据：`docs/evidence/tmp/computer-gui-2026-11-04T08-38-29-331Z.json`。
+仍未验证：双 viewer 并发接管（M0c 服务端原子认领）、断网后真实画面重连（逻辑已加，
+`computer.reconnect` 重新取票并重建 RFB）。
+
+## 网络断开处理（2026-11-04 补充）
+
+- 主窗口新增全局断网提示；观看窗口显示「网络已断开，恢复后会自动重连画面。」并在 `online` 时
+  通过 `computer.reconnect` 重新 `display.observe` 取得 ticket、重建 RFB。
+- 之前一次观看失败是用户切换网络导致，并非客户端缺陷；上面已用稳定网络完成真实画面验收。
+
 ## 未完成 / 下一段
 
 - 资料库来源消息关联与过期/无权限/已删除状态细化（当前按工作区文件索引，来源消息待补）。

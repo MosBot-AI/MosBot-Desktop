@@ -226,6 +226,19 @@ until the release repository exists.
   history-stale resets, approval receipts being dropped with the request, and the
   composer accepting input before its own Bot's session was live.
 
+- Network loss is now visible: the main window shows a fixed alert from the OS
+  online/offline events, the chat connection banner has dedicated offline copy,
+  the library maps unreachable/timeout to an offline message, and the computer
+  viewer shows the offline state and re-mints its display ticket through
+  `computer.reconnect` when the network returns. An E2E test toggles offline and
+  checks the alert appears and clears.
+
+- Remote-computer viewer: the noVNC client no longer offers a WebSocket subprotocol
+  (the deployment's RFB bridge does not negotiate one, which made every handshake
+  fail), and the viewer window is now trusted for its own lease/reconnect/close
+  IPC instead of being rejected as an untrusted sender. The real screen renders
+  (1440 x 900 canvas), control can be taken and returned, and the window closes.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,

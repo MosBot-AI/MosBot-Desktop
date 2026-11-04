@@ -151,6 +151,15 @@ test.describe('M5 keyboard, IME, zoom and accessibility', () => {
     await expect(log).toContainText('中文草稿');
   });
 
+  test('losing the network shows a visible alert and recovers', async () => {
+    const page = app.page;
+    await page.context().setOffline(true);
+    const alert = page.getByRole('alert').filter({ hasText: '网络已断开' });
+    await expect(alert).toBeVisible({ timeout: 10_000 });
+    await page.context().setOffline(false);
+    await expect(alert).toBeHidden({ timeout: 10_000 });
+  });
+
   test('reduced motion preference removes the timed transitions', async () => {
     const page = app.page;
     await page.emulateMedia({ reducedMotion: 'reduce' });
