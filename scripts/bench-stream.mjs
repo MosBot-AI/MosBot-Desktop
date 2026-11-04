@@ -294,6 +294,8 @@ async function openWindow(isolated, userDataDir) {
   }
   env.NODE_ENV = 'production';
   env.MOSBOT_BENCH = '1';
+  // Keep benchmark windows hidden so the person using the machine is not disturbed.
+  env.MOSBOT_TEST_BACKGROUND = '1';
   env.MOSBOT_BENCH_QUERY = new URLSearchParams({
     seconds: String(options.seconds),
     rate: String(options.rate),

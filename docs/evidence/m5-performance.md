@@ -134,3 +134,16 @@ BENCH_SECONDS=600 BENCH_BURST_SECONDS=5 ./node_modules/.bin/pnpm bench:pipeline
 
 仓库脚本入口：`npm run bench:stream`（先 `electron-forge package` 再跑回放器）、
 `npm run bench:pipeline`。测试标签：本页全部为 fixture/本地回放，不含真实服务或安装包结果。
+
+## 2026-11-04 回归后隐藏模式冒烟
+
+在完成工作台旧响应、审批回执、观看窗口等修复后，用隐藏窗口重跑 30s 流式冒烟：
+
+| 指标                  | 结果                                                   |
+| --------------------- | ------------------------------------------------------ |
+| steady（100/s）       | p50 18.2ms · p95 **30.8ms** · 无未决批次 · longTasks 0 |
+| burst（~500/s）       | p50 18.0ms · p95 **30.6ms** · 无未决批次 · longTasks 0 |
+| 发送/切换本地反馈 p95 | 16.9ms / 17.0ms（≤100ms）                              |
+| 隐藏窗口              | 是（`MOSBOT_TEST_BACKGROUND=1`，不打扰用户）           |
+
+报告：`docs/evidence/tmp/perf-stream-2026-11-04T12-22-02-571Z.json`。

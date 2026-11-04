@@ -353,6 +353,10 @@ until the release repository exists.
 - Stale search responses are now verified too: a slow no-match query followed by a
   matching one cannot clear the new results (test-only delay injection).
 
+- The stream benchmark also runs with hidden windows now, so performance gates do
+  not disturb the machine. A post-fix smoke (30s steady + burst) passes with p95
+  30.8ms / 30.6ms, no unresolved batches and no long tasks.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,
