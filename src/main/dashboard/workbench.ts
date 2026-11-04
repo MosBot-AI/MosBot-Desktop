@@ -94,6 +94,14 @@ export async function listWorkbenchSessions(
   if (target === null) {
     return connectionError();
   }
+  // Test-only latency injection for one profile so a walkthrough can prove stale
+  // session lists are discarded after a profile switch.
+  const slowProfile = process.env['MOSBOT_TEST_SESSIONS_SLOW_PROFILE'];
+  if (slowProfile !== undefined && slowProfile !== '' && slowProfile === profile) {
+    const raw = Number.parseInt(process.env['MOSBOT_TEST_SESSIONS_DELAY_MS'] ?? '', 10);
+    const delay = Number.isFinite(raw) && raw > 0 ? Math.min(raw, 10_000) : 1_500;
+    await new Promise((resolve) => setTimeout(resolve, delay));
+  }
   const response = await requestJson(options(deps, target), {
     method: 'GET',
     path: `/api/sessions?profile=${encodeURIComponent(profile)}&order=recent&limit=${limit}&offset=${offset}`,

@@ -83,3 +83,23 @@ probe 创建并**保留**专用 board（`MOSBOT_PROBE_KEEP_BOARD=1`，只动 `mo
 （`MOSBOT_TEST_KANBAN_SLOW_BOARD`），正常启动不生效。
 
 仍未验证：切换 profile/账号后的迟到响应隔离；插件禁用状态的部署证据。
+
+## 2026-11-04 切换 profile 的旧 sessions 响应隔离（注入延迟）
+
+`scripts/gui-sessions-stale.mjs`：专用空 profile 注入 2.5s 延迟；先选中它（慢），立即切到一个
+已有会话的 Bot（快）。旧空列表晚到不得覆盖快 profile 的会话列表。
+
+| 检查                                       | 结果     |
+| ------------------------------------------ | -------- |
+| 快 profile 基线有可见会话                  | ✅ 50 条 |
+| 切走后旧 sessions 响应被丢弃（列表仍非空） | ✅ 50 条 |
+| 快 profile 保持选中                        | ✅       |
+| 切回空 profile 显示“还没有会话”            | ✅       |
+
+报告：`docs/evidence/tmp/sessions-stale-2026-11-04T12-09-15-586Z.json`。
+
+**修复**：`SessionsPage` 的 `load` / 搜索 / 打开会话 / 加载更多消息都增加“请求的 profile / query /
+session 是否仍是当前值”的守卫，旧响应直接丢弃；切换 profile 时同步更新 ref。延迟仅为测试 seam
+（`MOSBOT_TEST_SESSIONS_SLOW_PROFILE`）。
+
+仍未验证：搜索输入与消息面板的同类守卫未单独做真实延迟复现；插件禁用状态。

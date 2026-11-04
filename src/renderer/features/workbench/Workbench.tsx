@@ -326,6 +326,11 @@ function SessionsPage(): ReactElement {
   const [messages, setMessages] = useState<readonly WorkbenchMessage[]>([]);
   const [messageOffset, setMessageOffset] = useState(0);
   const [messageHasMore, setMessageHasMore] = useState(false);
+  // Guards against late responses from a profile/search/session the person has
+  // already switched away from.
+  const currentProfile = useRef(profile);
+  const currentQuery = useRef('');
+  const currentSession = useRef<string | null>(null);
 
   const pageSize = 50;
 
@@ -337,6 +342,9 @@ function SessionsPage(): ReactElement {
       }
       setStatus('loading');
       const result = await dashboard.workbenchSessions(nextProfile, nextOffset, pageSize);
+      if (nextProfile !== currentProfile.current) {
+        return;
+      }
       if (!result.ok) {
         setStatus('error');
         return;
@@ -352,6 +360,7 @@ function SessionsPage(): ReactElement {
   );
 
   useEffect(() => {
+    currentProfile.current = profile;
     if (profile !== '') {
       void load(profile, 0);
     }
@@ -367,7 +376,11 @@ function SessionsPage(): ReactElement {
         setResults(null);
         return;
       }
-      const result = await dashboard.workbenchSearch(profile, value);
+      const requestedProfile = profile;
+      const result = await dashboard.workbenchSearch(requestedProfile, value);
+      if (value !== currentQuery.current || requestedProfile !== currentProfile.current) {
+        return;
+      }
       if (result.ok) {
         setResults(result.data);
       }
@@ -381,8 +394,13 @@ function SessionsPage(): ReactElement {
       if (dashboard === undefined) {
         return;
       }
+      currentSession.current = session.id;
       setSelected(session.id);
-      const result = await dashboard.workbenchMessages(profile, session.id, 0);
+      const requestedProfile = profile;
+      const result = await dashboard.workbenchMessages(requestedProfile, session.id, 0);
+      if (session.id !== currentSession.current || requestedProfile !== currentProfile.current) {
+        return;
+      }
       if (result.ok) {
         setMessages(result.data.messages);
         setMessageOffset(result.data.messages.length);
@@ -410,6 +428,8 @@ function SessionsPage(): ReactElement {
             value={profile}
             aria-label="Profile"
             onChange={(event) => {
+              currentProfile.current = event.target.value;
+              currentSession.current = null;
               setProfile(event.target.value);
               setResults(null);
               setSelected(null);
@@ -429,6 +449,7 @@ function SessionsPage(): ReactElement {
             placeholder={t('workbench.search')}
             aria-label={t('workbench.search')}
             onChange={(event) => {
+              currentQuery.current = event.target.value;
               setQuery(event.target.value);
               void runSearch(event.target.value);
             }}
@@ -489,9 +510,17 @@ function SessionsPage(): ReactElement {
                   if (dashboard === undefined) {
                     return;
                   }
+                  const requestedSession = selected;
+                  const requestedProfile = profile;
                   void dashboard
-                    .workbenchMessages(profile, selected, messageOffset)
+                    .workbenchMessages(requestedProfile, requestedSession, messageOffset)
                     .then((result) => {
+                      if (
+                        requestedSession !== currentSession.current ||
+                        requestedProfile !== currentProfile.current
+                      ) {
+                        return;
+                      }
                       if (result.ok) {
                         setMessages((current) => [...result.data.messages, ...current]);
                         setMessageOffset((current) => current + result.data.messages.length);

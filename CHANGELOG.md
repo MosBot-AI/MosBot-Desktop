@@ -344,6 +344,12 @@ until the release repository exists.
   profile inherits a usable model), so that guidance path needs a real unconfigured
   environment or explicit permission to clear a test profile's model.
 
+- Sessions page stale responses are now guarded like the Kanban board: list loads,
+  searches, opened sessions and message pages are discarded when their profile /
+  query / session is no longer the current one. A walkthrough with injected latency
+  on an empty dedicated profile verifies that switching away keeps the fast
+  profile's 50 sessions and switching back loads the empty list.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,
