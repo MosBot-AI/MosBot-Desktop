@@ -327,6 +327,12 @@ until the release repository exists.
   concurrent-approval walkthrough confirms each window keeps its own receipt (the
   remaining mismatch is the server's missing "who won" event).
 
+- Two clients sending different prompts to the same chat at the same time was
+  verified: each prompt appears once (nothing lost or duplicated) and both turns
+  complete. The gateway does not broadcast other clients' user-message events, so
+  live user bubbles stay local and are reconciled by history on reopen/resume
+  (recorded as a server-side limitation).
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,
