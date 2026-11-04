@@ -410,6 +410,8 @@ export interface BotArtifact {
   readonly mimeType: string;
   readonly kind: 'image' | 'text' | 'pdf' | 'other';
   readonly modifiedAt: number;
+  /** A dangling symlink reported by the Dashboard; it cannot be opened. */
+  readonly brokenLink?: boolean;
 }
 
 export interface BotArtifactContent {

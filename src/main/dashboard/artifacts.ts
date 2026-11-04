@@ -75,6 +75,37 @@ function kindFor(name: string, mime: string): BotArtifact['kind'] {
   return 'other';
 }
 
+/**
+ * Maps one `/api/files` entry to the client artifact shape. The deployment
+ * reports `mtime` in epoch seconds (and omits it for broken links), while older
+ * builds may use `modified_at` milliseconds; both are accepted.
+ */
+export function mapFileEntry(value: unknown): BotArtifact | null {
+  const entry = asRecord(value);
+  if (entry === null || bool(entry['is_directory'])) {
+    return null;
+  }
+  const path = str(entry['path']);
+  const name = str(entry['name']);
+  if (path === '' || name === '') {
+    return null;
+  }
+  const mime = str(entry['mime_type']) || 'application/octet-stream';
+  const modifiedAtMs = num(entry['modified_at']);
+  const mtimeSeconds = num(entry['mtime']);
+  const modifiedAt =
+    modifiedAtMs > 0 ? modifiedAtMs : mtimeSeconds > 0 ? Math.round(mtimeSeconds * 1000) : 0;
+  return {
+    name,
+    path,
+    size: num(entry['size']),
+    mimeType: mime,
+    kind: kindFor(name, mime),
+    modifiedAt,
+    ...(bool(entry['broken_link']) ? { brokenLink: true } : {}),
+  };
+}
+
 /** The Bot Chat's workspace directory, used as the artifact root. */
 async function botWorkspace(deps: ArtifactDeps, profile: string): Promise<Result<string | null>> {
   const target = requireTarget(deps);
@@ -147,24 +178,11 @@ export async function listBotArtifacts(
   const entries = asArray(asRecord(listing.data)?.['entries']);
   const artifacts: BotArtifact[] = [];
   for (const value of entries) {
-    const entry = asRecord(value);
-    if (entry === null || bool(entry['is_directory'])) {
+    const artifact = mapFileEntry(value);
+    if (artifact === null) {
       continue;
     }
-    const path = str(entry['path']);
-    const name = str(entry['name']);
-    if (path === '' || name === '') {
-      continue;
-    }
-    const mime = str(entry['mime_type']) || 'application/octet-stream';
-    artifacts.push({
-      name,
-      path,
-      size: num(entry['size']),
-      mimeType: mime,
-      kind: kindFor(name, mime),
-      modifiedAt: num(entry['modified_at']),
-    });
+    artifacts.push(artifact);
     if (artifacts.length >= MAX_LISTED) {
       break;
     }

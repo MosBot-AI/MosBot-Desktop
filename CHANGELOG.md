@@ -13,6 +13,13 @@ until the release repository exists.
 
 ### Added
 
+- Artifact library: the workspace listing now understands the deployment's
+  `mtime` (epoch seconds) instead of only `modified_at`, so files sort by real
+  modification time; dangling symlinks (`broken_link`) show a "resource deleted"
+  badge and cannot be opened; library failures map to deleted / no-permission /
+  too-large / session-expired messages with a retry action. The deployment's file
+  API has no source-message field, recorded as a capability gap.
+
 - Electron Forge + Vite + React 19 + TypeScript (strict) baseline with a sandboxed,
   context-isolated main window (1000 × 760, minimum 720 × 500), denied navigation,
   no remote module, a strict production CSP and a narrow preload bridge.

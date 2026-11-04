@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState, type ReactElement } from 'react';
 import type { Artifact, ArtifactState, ChatMessage } from '../../../shared/domain';
-import type { BotArtifact, BotArtifactContent } from '../../../shared/protocol';
+import type { BotArtifact, BotArtifactContent, ProtocolError } from '../../../shared/protocol';
 import { formatRelativeMinutes } from '../../app/format';
 import { type MessageKey, useMessages } from '../../app/i18n';
 import { useAppState } from '../../app/store';
+import { artifactErrorKey } from './artifactError';
 import styles from './InspectorPanel.module.css';
 
 export interface LibraryTabProps {
@@ -86,6 +87,8 @@ export function LibraryTab({ botId }: LibraryTabProps): ReactElement {
   );
   const [remoteArtifacts, setRemoteArtifacts] = useState<readonly BotArtifact[]>([]);
   const [remoteStatus, setRemoteStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [loadError, setLoadError] = useState<ProtocolError | null>(null);
+  const [actionError, setActionError] = useState<ProtocolError | null>(null);
   const [preview, setPreview] = useState<BotArtifactContent | null>(null);
   const [previewText, setPreviewText] = useState<string | null>(null);
   const [savedPath, setSavedPath] = useState<string | null>(null);
@@ -98,9 +101,11 @@ export function LibraryTab({ botId }: LibraryTabProps): ReactElement {
     }
     const result = await dashboard.listArtifacts(botId, workspace);
     if (!result.ok) {
+      setLoadError(result.error);
       setRemoteStatus('error');
       return;
     }
+    setLoadError(null);
     setRemoteArtifacts(result.data);
     setRemoteStatus('ready');
   }, [botId, workspace]);
@@ -110,6 +115,8 @@ export function LibraryTab({ botId }: LibraryTabProps): ReactElement {
       return;
     }
     setRemoteStatus('loading');
+    setLoadError(null);
+    setActionError(null);
     setPreview(null);
     setPreviewText(null);
     setSavedPath(null);
@@ -123,9 +130,10 @@ export function LibraryTab({ botId }: LibraryTabProps): ReactElement {
         return;
       }
       setSavedPath(null);
+      setActionError(null);
       const content = await dashboard.readArtifact(artifact.path);
       if (!content.ok) {
-        setRemoteStatus('error');
+        setActionError(content.error);
         return;
       }
       setPreview(content.data);
@@ -151,7 +159,24 @@ export function LibraryTab({ botId }: LibraryTabProps): ReactElement {
         {remoteStatus === 'loading' ? (
           <p className={styles.hint}>{t('inspector.library.remote.loading')}</p>
         ) : remoteStatus === 'error' ? (
-          <p className={styles.hint}>{t('inspector.library.remote.error')}</p>
+          <div role="alert">
+            <p className={styles.hint}>
+              {t(
+                loadError === null ? 'inspector.library.remote.error' : artifactErrorKey(loadError),
+              )}
+            </p>
+            <button
+              type="button"
+              className={styles.wakeButton}
+              onClick={() => {
+                setRemoteStatus('loading');
+                setLoadError(null);
+                void loadRemote();
+              }}
+            >
+              {t('inspector.library.retry')}
+            </button>
+          </div>
         ) : remoteArtifacts.length === 0 ? (
           <p className={styles.empty}>{t('inspector.library.empty')}</p>
         ) : (
@@ -162,21 +187,36 @@ export function LibraryTab({ botId }: LibraryTabProps): ReactElement {
                   type="button"
                   className={styles.artifactHead}
                   aria-current={preview?.path === artifact.path ? 'true' : undefined}
+                  disabled={artifact.brokenLink === true}
                   onClick={() => {
+                    if (artifact.brokenLink === true) {
+                      return;
+                    }
                     void open(artifact);
                   }}
                 >
                   <span className={styles.artifactName} title={artifact.name}>
                     {artifact.name}
                   </span>
-                  <span className={styles.typeChip}>{artifact.kind.toUpperCase()}</span>
+                  {artifact.brokenLink === true ? (
+                    <span className={[styles.badge, styles.badgeMuted].join(' ')}>
+                      {t('inspector.library.state.deleted')}
+                    </span>
+                  ) : (
+                    <span className={styles.typeChip}>{artifact.kind.toUpperCase()}</span>
+                  )}
                 </button>
                 <div className={styles.artifactMeta}>
-                  <span>{formatBytes(artifact.size)}</span>
+                  <span>{artifact.brokenLink === true ? '—' : formatBytes(artifact.size)}</span>
                 </div>
               </li>
             ))}
           </ul>
+        )}
+        {actionError === null ? null : (
+          <p className={styles.hint} role="alert">
+            {t(artifactErrorKey(actionError))}
+          </p>
         )}
         {preview === null ? null : (
           <section className={styles.artifactPreview}>
@@ -197,10 +237,11 @@ export function LibraryTab({ botId }: LibraryTabProps): ReactElement {
                 }
                 void dashboard.saveArtifact(preview.path, preview.name).then((result) => {
                   if (result.ok) {
+                    setActionError(null);
                     setSavedPath(result.data);
                   } else {
                     setSavedPath(null);
-                    setRemoteStatus('error');
+                    setActionError(result.error);
                   }
                 });
               }}

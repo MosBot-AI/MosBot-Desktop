@@ -56,6 +56,24 @@
 | `pnpm test:e2e`                     | 12 通过（fixture 路径不受影响）                                                                                                   |
 | typecheck / lint / format / package | 通过                                                                                                                              |
 
+## 资料库字段与错误态（2026-11-04 补充）
+
+部署源码 `~/.hermes/hermes-agent`（`bf0203a794`）的 `/api/files` 行为与本轮修正：
+
+- 目录项字段为 `name / path / is_directory / size / mtime / mime_type`，其中 **`mtime` 是
+  epoch 秒**，不是 `modified_at` 毫秒；客户端此前只读 `modified_at`，导致所有文件按 0 排序。
+  现优先 `modified_at`，否则用 `mtime × 1000`，保留“按修改时间倒序”。
+- 悬空符号链接返回 `broken_link: true`、`size: null`。资料库现在显示「资源已删除」徽标并禁用
+  打开，不再展示为 0 B 可点击项。
+- 错误映射：`401→session_expired`、`403→unauthorized(httpStatus 403)`、`404→http_error`、
+  `413→http_error`；资料库按 已删除 / 无权限 / 过大 / 登录过期 / 未连接 给出专门文案，并提供
+  「重试」按钮（`src/renderer/features/inspector/artifactError.ts`）。
+- **部署 API 不提供产物到来源消息的关联字段**：`/api/files` 只有文件系统元数据。因此“来源消息”
+  目前只能用于 fixture 演示，真实资料库不显示来源；这是部署能力缺口，登记到 `acceptance.md`
+  第 6 项，不能用客户端猜测补造。
+- 验证：`tests/unit/artifacts-mapping.test.ts`（字段/排序/损坏链接/错误映射）；真实服务上的
+  重新探针待 soak 结束后执行并补充。
+
 ## 未完成 / 下一段
 
 - 资料库来源消息关联与过期/无权限/已删除状态细化（当前按工作区文件索引，来源消息待补）。
