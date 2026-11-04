@@ -37,11 +37,18 @@ interface FakeGateway {
   readonly client: RpcClient;
   readonly calls: Array<{ method: string; params: Record<string, unknown> }>;
   readonly responses: Array<{ id: string; result: Record<string, unknown> }>;
-  emit(type: string, payload: Record<string, unknown>): void;
+  emit(type: string, payload: Record<string, unknown>, seq?: number): void;
   request(id: string, method: string, params: Record<string, unknown>): void;
+  closeSocket(): void;
 }
 
-function createFakeGateway(options: GatewayOptions): FakeGateway {
+interface FakeReplay {
+  readonly events: readonly Record<string, unknown>[];
+  readonly openRequests?: readonly Record<string, unknown>[];
+  readonly truncated?: boolean;
+}
+
+function createFakeGateway(options: GatewayOptions, replay?: FakeReplay): FakeGateway {
   const calls: Array<{ method: string; params: Record<string, unknown> }> = [];
   const responses: Array<{ id: string; result: Record<string, unknown> }> = [];
 
@@ -54,6 +61,15 @@ function createFakeGateway(options: GatewayOptions): FakeGateway {
     }
     if (method === 'session.list') {
       return { sessions: [] };
+    }
+    if (method === 'session.events.since' && replay !== undefined) {
+      return {
+        events: replay.events,
+        latest_seq: 4,
+        truncated: replay.truncated === true,
+        epoch: 'epoch',
+        open_requests: replay.openRequests ?? [],
+      };
     }
     return {};
   };
@@ -95,11 +111,17 @@ function createFakeGateway(options: GatewayOptions): FakeGateway {
     client,
     calls,
     responses,
-    emit(type, payload) {
-      options.onEvent?.(type, { payload });
+    emit(type, payload, seq) {
+      options.onEvent?.(type, {
+        payload,
+        ...(seq === undefined ? {} : { seq, session_id: 'runtime-1' }),
+      });
     },
     request(id, method, params) {
       options.onRequest?.({ id, method, params });
+    },
+    closeSocket() {
+      options.onClose?.(1006, 'test-close');
     },
   };
 }
@@ -201,6 +223,78 @@ describe('chat manager', () => {
 
     await manager.answer('srq-1', { choice: 'once' });
     expect(captured.gateway?.responses).toContainEqual({ id: 'srq-1', result: { choice: 'once' } });
+  });
+
+  it('replays missed events and re-delivers open requests after a reconnect', async () => {
+    const gateways: FakeGateway[] = [];
+    const manager = createChatManager({
+      auth: fakeAuth,
+      fetchImpl: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => '{"ticket":"t","ttl_seconds":30}',
+      }),
+      connect: async (options) => {
+        const gateway = createFakeGateway(
+          options,
+          gateways.length === 1
+            ? {
+                events: [
+                  {
+                    type: 'message.delta',
+                    session_id: 'runtime-1',
+                    payload: { text: 'missed' },
+                    seq: 3,
+                  },
+                ],
+                openRequests: [
+                  {
+                    id: 'srq-9',
+                    method: 'approval',
+                    params: { choices: ['once', 'deny'] },
+                  },
+                ],
+              }
+            : undefined,
+        );
+        gateways.push(gateway);
+        return { ok: true, data: gateway.client };
+      },
+    });
+    const received: Array<{ type: string; [key: string]: unknown }> = [];
+    manager.subscribe((event) => {
+      received.push(event as { type: string });
+    });
+
+    const opened = await manager.open('project-bot', 'stored-1');
+    expect(opened.ok).toBe(true);
+    gateways[0]?.emit('message.delta', { text: 'first' }, 1);
+    expect(received.filter((event) => event.type === 'delta')).toHaveLength(1);
+
+    gateways[0]?.closeSocket();
+    await new Promise((resolve) => setTimeout(resolve, 1_300));
+    expect(gateways).toHaveLength(2);
+    const deltas = received.filter(
+      (event) => event.type === 'delta' && (event as { text?: string }).text === 'missed',
+    );
+    expect(deltas).toHaveLength(1);
+    expect(
+      received.some(
+        (event) =>
+          event.type === 'request' &&
+          (event as { request?: { id?: string } }).request?.id === 'srq-9',
+      ),
+    ).toBe(true);
+
+    // A replayed sequence is never applied twice.
+    gateways[1]?.emit('message.delta', { text: 'missed' }, 3);
+    expect(
+      received.filter(
+        (event) => event.type === 'delta' && (event as { text?: string }).text === 'missed',
+      ),
+    ).toHaveLength(1);
+    manager.close();
   });
 });
 

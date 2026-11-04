@@ -1,11 +1,17 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import { DASHBOARD_CHANNELS, SHELL_CHANNELS, type MosBotBridge } from '../shared/bridge';
+import {
+  DASHBOARD_CHANNELS,
+  LOCAL_CHANNELS,
+  SHELL_CHANNELS,
+  type MosBotBridge,
+} from '../shared/bridge';
 import type {
   ChatOpenResult,
   ConnectionSnapshot,
   DashboardChatEvent,
   DashboardSettings,
   DashboardStatus,
+  LocalState,
   PreflightResult,
   ProbeReport,
   RemoteBot,
@@ -18,7 +24,7 @@ import type {
  * beyond the preload-safe `process` snapshot; every Dashboard call is a
  * validated IPC invoke handled in the main process.
  */
-const bridge: Omit<MosBotBridge, 'openExternal'> = {
+const bridge: Omit<MosBotBridge, 'openExternal' | 'local'> = {
   platform: process.platform,
   versions: {
     electron: process.versions.electron,
@@ -133,6 +139,15 @@ const bridge: Omit<MosBotBridge, 'openExternal'> = {
 const shellBridge: MosBotBridge['openExternal'] = (url: string): Promise<boolean> =>
   ipcRenderer.invoke(SHELL_CHANNELS.openExternal, url) as Promise<boolean>;
 
-const fullBridge: MosBotBridge = { ...bridge, openExternal: shellBridge };
+const localBridge: MosBotBridge['local'] = {
+  load(): Promise<Result<LocalState | null>> {
+    return ipcRenderer.invoke(LOCAL_CHANNELS.load) as Promise<Result<LocalState | null>>;
+  },
+  save(state: LocalState): Promise<Result<void>> {
+    return ipcRenderer.invoke(LOCAL_CHANNELS.save, state) as Promise<Result<void>>;
+  },
+};
+
+const fullBridge: MosBotBridge = { ...bridge, openExternal: shellBridge, local: localBridge };
 
 contextBridge.exposeInMainWorld('mosbot', fullBridge);

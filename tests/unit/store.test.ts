@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { createFixtureSeed } from '../../src/renderer/app/fixtures';
 import {
+  buildLocalState,
   createAppStore,
   createInitialState,
+  connectionKey,
   isRemoteRoster,
   reduceAppState,
   searchEntries,
@@ -397,5 +399,50 @@ describe('remote roster', () => {
     const state = build();
     expect(isRemoteRoster(state)).toBe(false);
     expect(selectRosterBots(state)).toBe(state.bots);
+  });
+});
+
+describe('local state persistence', () => {
+  it('projects drafts, selection and preferences for the current connection', () => {
+    let state = build();
+    state = reduceAppState(state, { type: 'set-draft', botId: 'bot-project', text: 'keep me' });
+    state = reduceAppState(state, { type: 'set-draft', botId: 'bot-design', text: '   ' });
+    state = reduceAppState(state, { type: 'set-inspector-open', open: true, tab: 'library' });
+    state = reduceAppState(state, { type: 'set-inspector-width', width: 400 });
+    state = reduceAppState(state, { type: 'set-theme', theme: 'dark' });
+    state = reduceAppState(state, { type: 'set-language', language: 'en' });
+
+    const local = buildLocalState(state);
+    expect(local.version).toBe(1);
+    const bucket = local.connections[connectionKey(state)];
+    expect(bucket?.selectedProfile).toBe('bot-project');
+    expect(bucket?.drafts).toEqual({ 'bot-project': 'keep me' });
+    expect(bucket?.inspector).toEqual({ open: true, tab: 'library', width: 400 });
+    expect(local.preferences).toEqual({ theme: 'dark', language: 'en' });
+  });
+
+  it('hydrates drafts, inspector and preferences back into the window', () => {
+    const state = build();
+    const hydrated = reduceAppState(state, {
+      type: 'hydrate-local',
+      state: {
+        version: 1,
+        connections: {
+          fixture: {
+            selectedProfile: 'bot-design',
+            drafts: { 'bot-design': 'restored draft' },
+            inspector: { open: true, tab: 'computer', width: 420 },
+          },
+        },
+        preferences: { theme: 'light', language: 'en' },
+      },
+    });
+    expect(hydrated.language).toBe('en');
+    expect(hydrated.theme).toBe('light');
+    expect(hydrated.drafts['bot-design']).toBe('restored draft');
+    expect(hydrated.inspector.open).toBe(true);
+    expect(hydrated.inspector.tab).toBe('computer');
+    expect(hydrated.inspector.width).toBe(420);
+    expect(hydrated.savedSelectedProfile).toBe('bot-design');
   });
 });

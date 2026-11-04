@@ -1,0 +1,91 @@
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { afterEach, describe, expect, it } from 'vitest';
+import { createLocalStore } from '../../src/main/local/store';
+import type { LocalState } from '../../src/shared/protocol';
+
+const directories: string[] = [];
+
+function tempFile(): string {
+  const directory = mkdtempSync(path.join(os.tmpdir(), 'mosbot-local-'));
+  directories.push(directory);
+  return path.join(directory, 'local-state.json');
+}
+
+afterEach(() => {
+  for (const directory of directories.splice(0)) {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+function sample(): LocalState {
+  return {
+    version: 1,
+    connections: {
+      'https://hermes.example.com': {
+        selectedProfile: 'project-bot',
+        drafts: { 'project-bot': 'unfinished message' },
+        inspector: { open: true, tab: 'library', width: 380 },
+      },
+    },
+    preferences: { theme: 'dark', language: 'en' },
+  };
+}
+
+describe('local state store', () => {
+  it('round-trips a valid document and keeps a backup of the previous version', () => {
+    const file = tempFile();
+    const store = createLocalStore(file);
+    expect(store.load()).toBeNull();
+    expect(store.save(sample())).toEqual({ ok: true });
+    expect(store.load()).toEqual(sample());
+    store.save({ ...sample(), preferences: { theme: 'light', language: 'zh-Hans' } });
+    expect(JSON.parse(readFileSync(`${file}.bak`, 'utf8'))).toEqual(sample());
+    expect(store.load()?.preferences.theme).toBe('light');
+  });
+
+  it('sanitises oversized or malformed drafts instead of trusting them', () => {
+    const file = tempFile();
+    writeFileSync(
+      file,
+      JSON.stringify({
+        version: 1,
+        connections: {
+          fixture: {
+            selectedProfile: 42,
+            drafts: { ok: 'text', empty: '', long: 'x'.repeat(30_000), bad: 7 },
+            inspector: { open: 'yes', tab: 'nope', width: 'wide' },
+          },
+        },
+        preferences: { theme: 'purple', language: 'fr' },
+      }),
+    );
+    const loaded = createLocalStore(file).load();
+    expect(loaded?.connections['fixture']?.selectedProfile).toBeNull();
+    expect(loaded?.connections['fixture']?.drafts).toEqual({ ok: 'text' });
+    expect(loaded?.connections['fixture']?.inspector).toEqual({
+      open: false,
+      tab: 'details',
+      width: 360,
+    });
+    expect(loaded?.preferences).toEqual({ theme: 'system', language: 'zh-Hans' });
+  });
+
+  it('refuses to overwrite a newer schema and reports a reason', () => {
+    const file = tempFile();
+    writeFileSync(file, JSON.stringify({ version: 2, anything: true }));
+    const store = createLocalStore(file);
+    expect(store.load()).toBeNull();
+    expect(store.save(sample())).toEqual({ ok: false, reason: 'newer-schema' });
+    expect(JSON.parse(readFileSync(file, 'utf8'))).toEqual({ version: 2, anything: true });
+  });
+
+  it('treats a corrupt file as empty rather than crashing', () => {
+    const file = tempFile();
+    writeFileSync(file, '{ not json');
+    const store = createLocalStore(file);
+    expect(store.load()).toBeNull();
+    expect(store.save(sample())).toEqual({ ok: true });
+  });
+});

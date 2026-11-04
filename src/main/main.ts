@@ -4,6 +4,7 @@ import path from 'node:path';
 import { createAuthManager } from './dashboard/auth';
 import { createChatManager } from './dashboard/chat';
 import { registerChatIpc } from './dashboard/chat-ipc';
+import { registerLocalIpc } from './local/ipc';
 import { createTrustedSenderCheck, registerDashboardIpc } from './dashboard/ipc';
 import { createDashboardService } from './dashboard/service';
 import { createSettingsStore } from './dashboard/settings';
@@ -193,6 +194,11 @@ function registerDashboard(): void {
     ipcMain,
     chat,
     getWebContents: () => mainWindow?.webContents ?? null,
+    isTrustedEvent: trusted,
+  });
+  registerLocalIpc({
+    ipcMain,
+    filePath: path.join(app.getPath('userData'), 'local-state.json'),
     isTrustedEvent: trusted,
   });
   app.on('before-quit', () => {

@@ -1,7 +1,14 @@
 import { useEffect, type ReactElement } from 'react';
 import styles from './App.module.css';
 import { LOCALE_TAGS } from './app/i18n';
-import { appStore, chatEventAction, useAppState, useDispatch } from './app/store';
+import {
+  appStore,
+  buildLocalState,
+  chatEventAction,
+  connectionKey,
+  useAppState,
+  useDispatch,
+} from './app/store';
 import { BotSidebar } from './features/bots/BotSidebar';
 import { ChatView } from './features/chat/ChatView';
 import { ConnectionDialog } from './features/connection/ConnectionDialog';
@@ -96,6 +103,70 @@ export function App(): ReactElement {
     void restoreConnectionOnStartup(dispatch);
   }, [dispatch]);
 
+  // Hydrate non-secret local state (drafts, selection, preferences).
+  useEffect(() => {
+    const local = window.mosbot?.local;
+    if (local === undefined) {
+      return;
+    }
+    void local.load().then((result) => {
+      if (result.ok) {
+        dispatch({ type: 'hydrate-local', state: result.data });
+      }
+    });
+  }, [dispatch]);
+
+  const activeConnectionKey = useAppState(connectionKey);
+  useEffect(() => {
+    const current = appStore.getState().localState;
+    if (current !== null) {
+      dispatch({ type: 'hydrate-local', state: current });
+    }
+  }, [activeConnectionKey, dispatch]);
+
+  // Persist drafts/selection/preferences with a short debounce, and flush on close.
+  useEffect(() => {
+    const local = window.mosbot?.local;
+    if (local === undefined) {
+      return;
+    }
+    let timer: number | null = null;
+    let lastSaved = '';
+    const flush = (): void => {
+      const next = buildLocalState(appStore.getState());
+      const serialized = JSON.stringify(next);
+      if (serialized === lastSaved) {
+        return;
+      }
+      lastSaved = serialized;
+      void local.save(next);
+    };
+    const unsubscribe = appStore.subscribe(() => {
+      if (timer !== null) {
+        window.clearTimeout(timer);
+      }
+      timer = window.setTimeout(() => {
+        timer = null;
+        flush();
+      }, 600);
+    });
+    const onBeforeUnload = (): void => {
+      if (timer !== null) {
+        window.clearTimeout(timer);
+        timer = null;
+      }
+      flush();
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => {
+      unsubscribe();
+      if (timer !== null) {
+        window.clearTimeout(timer);
+      }
+      window.removeEventListener('beforeunload', onBeforeUnload);
+    };
+  }, []);
+
   // Once connected, replace the fixture roster with the real profiles.
   const connected = useAppState((state) => state.connectionUi.snapshot?.connected === true);
   useEffect(() => {
@@ -119,7 +190,11 @@ export function App(): ReactElement {
         return;
       }
       dispatch({ type: 'remote-ready', bots: [...result.data] });
-      const preferred = result.data.find((bot) => bot.isDefault) ?? result.data[0];
+      const saved = appStore.getState().savedSelectedProfile;
+      const preferred =
+        result.data.find((bot) => bot.profileName === saved) ??
+        result.data.find((bot) => bot.isDefault) ??
+        result.data[0];
       if (preferred !== undefined) {
         dispatch({ type: 'remote-select', profile: preferred.profileName });
       }
@@ -183,6 +258,27 @@ export function App(): ReactElement {
       }
     });
   }, [connected, selectedProfile, remoteChat, liveProfile, dispatch]);
+
+  // A replay gap means the live transcript is stale: refetch the page and reset it.
+  const staleReason = useAppState((state) => state.live.staleReason);
+  useEffect(() => {
+    if (staleReason === null) {
+      return;
+    }
+    const dashboard = window.mosbot?.dashboard;
+    const profile = appStore.getState().remote.selectedProfile;
+    if (dashboard === undefined || profile === null) {
+      dispatch({ type: 'live-history-refreshed' });
+      return;
+    }
+    void dashboard.openChat(profile).then((result) => {
+      if (result.ok) {
+        dispatch({ type: 'remote-chat', chat: result.data });
+        dispatch({ type: 'live-reset', profile });
+      }
+      dispatch({ type: 'live-history-refreshed' });
+    });
+  }, [staleReason, dispatch]);
 
   useEffect(() => {
     const media = window.matchMedia('(max-width: 968px)');

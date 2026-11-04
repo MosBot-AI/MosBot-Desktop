@@ -36,14 +36,14 @@ export function appEnvironment(): Record<string, string> {
  * tests: it denies the OS calls Electron's own sandbox and GPU cache need. A
  * normal desktop launch (pnpm dev / installed app) uses none of these.
  */
-export function sandboxedArgs(): string[] {
-  return ['--no-sandbox', '--disable-gpu', `--user-data-dir=${path.resolve('.tmp/userdata-e2e')}`];
+export function sandboxedArgs(userDataDir = '.tmp/userdata-e2e'): string[] {
+  return ['--no-sandbox', '--disable-gpu', `--user-data-dir=${path.resolve(userDataDir)}`];
 }
 
-export async function launchApp(): Promise<LaunchedApp> {
+export async function launchApp(options: { userDataDir?: string } = {}): Promise<LaunchedApp> {
   const application = await electron.launch({
     executablePath: packagedAppPath(),
-    args: sandboxedArgs(),
+    args: sandboxedArgs(options.userDataDir),
     env: appEnvironment(),
   });
   const page = await application.firstWindow();

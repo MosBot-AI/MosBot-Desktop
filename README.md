@@ -14,8 +14,9 @@ first-connection dialog stores the sign-in securely and restores it silently on
 the next launch. When connected, the roster and the selected Bot Chat come from the real Dashboard:
 prompts are submitted, replies stream into the transcript with full Markdown
 rendering, Stop interrupts the turn, approval/clarify cards answer over the same
-gateway connection, older history pages load in place, and a dropped socket
-reconnects and resumes the stored session. Without a connection the window
+gateway connection, older history pages load in place, and a dropped socket reconnects, replays
+missed events and re-delivers pending requests. Drafts, the selected Bot, the
+details column and language/appearance preferences survive a restart. Without a connection the window
 keeps using fixtures. No signed installer or upgrade path
 exists yet. See
 [`docs/evidence/m0a-design-slice.md`](docs/evidence/m0a-design-slice.md) and

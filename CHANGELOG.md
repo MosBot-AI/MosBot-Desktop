@@ -70,7 +70,16 @@ until the release repository exists.
   `server_requests` (16 methods on the test deployment). Older history pages load
   from the top of the transcript with scroll anchoring, and replies render as
   Markdown (headings, lists, tables, code) with raw HTML kept as text and only
-  https links clickable. Fixture windows keep the offline demo.
+  https links clickable.
+- Local state persistence: the main process owns a versioned `local-state.json`
+  (atomic writes, previous-version backup, corrupt/newer-schema guards) holding
+  per-connection drafts, the selected Bot and the details column, plus theme and
+  language. The renderer hydrates on launch and saves with a short debounce and a
+  close-time flush.
+- Reconnect replay: the chat manager tracks the gateway replay epoch and event
+  sequence numbers, replays `session.events.since` after resuming, de-duplicates
+  by sequence, re-delivers open approval/clarify requests, and refetches history
+  when the replay ring or epoch has moved on. Fixture windows keep the offline demo.
 - Gateway WebSocket client (`ws`): one-time ticket handshake, `gateway.ready` first
   frame, JSON-RPC request/response with zod validation, typed server events, and
   ticket replay/expiry rejection checks. Verified against the test deployment:

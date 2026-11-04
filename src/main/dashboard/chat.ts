@@ -81,6 +81,9 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
   let runtimeSessionId: string | null = null;
   let approvalMode: string | null = null;
   let serverRequests: string[] = [];
+  let replayEpoch: string | null = null;
+  let runningTurn = false;
+  let lastSeenSeq = 0;
   let connection: ChatState['connection'] = 'disconnected';
   let closing = false;
   let reconnectAttempt = 0;
@@ -99,6 +102,17 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
   };
 
   const handleEvent = (type: string, params: Record<string, unknown>): void => {
+    const sessionId = str(params['session_id']);
+    if (sessionId !== '' && runtimeSessionId !== null && sessionId !== runtimeSessionId) {
+      return;
+    }
+    const seq = typeof params['seq'] === 'number' ? params['seq'] : null;
+    if (seq !== null) {
+      if (seq <= lastSeenSeq) {
+        return;
+      }
+      lastSeenSeq = seq;
+    }
     const payload = asRecord(params['payload']) ?? {};
     switch (type) {
       case 'message.start':
@@ -184,6 +198,65 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
     }
   };
 
+  /** Replays missed events (or flags a stale transcript when the ring or epoch moved). */
+  const replayMissedEvents = async (rpc: RpcClient, epochChanged: boolean): Promise<void> => {
+    if (runtimeSessionId === null) {
+      return;
+    }
+    if (epochChanged) {
+      lastSeenSeq = 0;
+      emit({ type: 'history-stale', reason: 'epoch-changed' });
+      return;
+    }
+    if (lastSeenSeq <= 0) {
+      return;
+    }
+    const replay = await rpc.call(
+      'session.events.since',
+      { session_id: runtimeSessionId, last_seen: lastSeenSeq },
+      emptySchema,
+    );
+    if (!replay.ok) {
+      emit({ type: 'history-stale', reason: 'replay-failed' });
+      return;
+    }
+    const record = asRecord(replay.data);
+    const latestSeq =
+      typeof record?.['latest_seq'] === 'number' ? record['latest_seq'] : lastSeenSeq;
+    if (record?.['truncated'] === true) {
+      lastSeenSeq = Math.max(lastSeenSeq, latestSeq);
+      emit({ type: 'history-stale', reason: 'replay-truncated' });
+    } else {
+      const frames = Array.isArray(record?.['events']) ? (record['events'] as unknown[]) : [];
+      for (const frame of frames) {
+        const event = asRecord(frame);
+        if (event !== null) {
+          handleEvent(str(event['type']), event);
+        }
+      }
+      lastSeenSeq = Math.max(lastSeenSeq, latestSeq);
+    }
+    // Requests still waiting are re-delivered; the replay ring cannot carry them.
+    const openRequests = Array.isArray(record?.['open_requests'])
+      ? (record['open_requests'] as unknown[])
+      : [];
+    for (const entry of openRequests) {
+      const request = asRecord(entry);
+      if (request === null) {
+        continue;
+      }
+      const id = str(request['id']);
+      const method = str(request['method']);
+      if (id !== '' && method !== '') {
+        handleServerRequest({
+          id,
+          method,
+          params: asRecord(request['params']) ?? {},
+        });
+      }
+    }
+  };
+
   const resumeSession = async (rpc: RpcClient): Promise<Result<ChatOpenResult>> => {
     if (profile === null) {
       return {
@@ -210,6 +283,7 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
         runtimeSessionId = str(record?.['session_id']) || null;
         storedSessionId = str(record?.['session_key']) || storedSessionId;
         approvalMode = str(asRecord(record?.['info'])?.['approval_mode']) || approvalMode;
+        runningTurn = record?.['running'] === true;
         return {
           ok: true,
           data: { profile, storedSessionId, runtimeSessionId },
@@ -283,11 +357,18 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
       return result as Result<ChatOpenResult>;
     }
     await attachClient(result.data);
+    const nextEpoch = result.data.ready.replayEpoch;
+    const epochChanged = replayEpoch !== null && nextEpoch !== null && replayEpoch !== nextEpoch;
+    replayEpoch = nextEpoch;
     const opened = await resumeSession(result.data);
     if (!opened.ok) {
       result.data.close();
       setConnection('disconnected', opened.error.message);
       return opened;
+    }
+    await replayMissedEvents(result.data, epochChanged);
+    if (runningTurn) {
+      emit({ type: 'turn-start' });
     }
     reconnectAttempt = 0;
     setConnection('connected');
@@ -419,6 +500,9 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
       runtimeSessionId = null;
       approvalMode = null;
       serverRequests = [];
+      replayEpoch = null;
+      lastSeenSeq = 0;
+      runningTurn = false;
       connection = 'disconnected';
     },
 

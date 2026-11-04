@@ -1,5 +1,6 @@
 import type {
   ChatOpenResult,
+  LocalState,
   ConnectionSnapshot,
   DashboardChatEvent,
   DashboardSettings,
@@ -24,6 +25,13 @@ export interface MosBotBridge {
   readonly dashboard: MosBotDashboardBridge;
   /** Opens an https URL in the system browser (main process validates the scheme). */
   openExternal(url: string): Promise<boolean>;
+  /** Versioned, non-secret local state (drafts, selection, preferences). */
+  readonly local: MosBotLocalBridge;
+}
+
+export interface MosBotLocalBridge {
+  load(): Promise<Result<LocalState | null>>;
+  save(state: LocalState): Promise<Result<void>>;
 }
 
 export interface MosBotDashboardBridge {
@@ -74,6 +82,11 @@ export interface MosBotDashboardBridge {
   settings(): Promise<Result<DashboardSettings>>;
   saveAddress(address: string | null): Promise<Result<void>>;
 }
+
+export const LOCAL_CHANNELS = {
+  load: 'mosbot:local:load',
+  save: 'mosbot:local:save',
+} as const;
 
 export const SHELL_CHANNELS = {
   openExternal: 'mosbot:shell:openExternal',

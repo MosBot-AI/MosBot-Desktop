@@ -6,6 +6,8 @@
  * else must be HTTPS so bearer tokens never travel in clear text.
  */
 
+import type { InspectorTab, Language, ThemePreference } from './domain';
+
 export const TEST_DASHBOARD_URL = 'http://192.168.2.171:9119';
 
 export type ProtocolErrorCode =
@@ -275,6 +277,7 @@ export type DashboardChatEvent =
       readonly phase: 'start' | 'progress' | 'complete';
       readonly name: string;
     }
+  | { readonly type: 'history-stale'; readonly reason: string }
   | { readonly type: 'request'; readonly request: ChatServerRequest }
   | { readonly type: 'request-cancel'; readonly requestId: string }
   | { readonly type: 'error'; readonly message: string };
@@ -311,4 +314,24 @@ export interface DashboardSettings {
 export interface DashboardStatus {
   readonly connection: ConnectionSnapshot;
   readonly lastProbe: ProbeReport | null;
+}
+
+export interface LocalConnectionState {
+  readonly selectedProfile: string | null;
+  readonly drafts: Readonly<Record<string, string>>;
+  readonly inspector: {
+    readonly open: boolean;
+    readonly tab: InspectorTab;
+    readonly width: number;
+  };
+}
+
+/** Versioned, non-secret local state persisted by the main process. */
+export interface LocalState {
+  readonly version: 1;
+  readonly connections: Readonly<Record<string, LocalConnectionState>>;
+  readonly preferences: {
+    readonly theme: ThemePreference;
+    readonly language: Language;
+  };
 }

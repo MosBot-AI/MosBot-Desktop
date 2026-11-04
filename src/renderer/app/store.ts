@@ -19,6 +19,7 @@ import type {
   AuthProviderInfo,
   ConnectionSnapshot,
   DashboardChatEvent,
+  LocalState,
   ProtocolError,
   RemoteBot,
   RemoteChat,
@@ -99,6 +100,8 @@ export interface LiveChatState {
   readonly receipts: Readonly<Record<string, string>>;
   readonly runtimeSessionId: string | null;
   readonly storedSessionId: string | null;
+  /** Set when a replay gap means the transcript must be refetched. */
+  readonly staleReason: string | null;
 }
 
 export interface PendingReply {
@@ -129,6 +132,8 @@ export interface AppState {
   readonly connectionUi: ConnectionUiState;
   readonly remote: RemoteState;
   readonly live: LiveChatState;
+  readonly localState: LocalState | null;
+  readonly savedSelectedProfile: string | null;
 }
 
 export type AppAction =
@@ -199,7 +204,10 @@ export type AppAction =
   | { type: 'live-request'; request: LiveRequest }
   | { type: 'live-request-cancel'; requestId: string }
   | { type: 'live-request-resolved'; requestId: string; receipt: string }
-  | { type: 'live-error'; message: string };
+  | { type: 'live-error'; message: string }
+  | { type: 'live-history-stale'; reason: string }
+  | { type: 'live-history-refreshed' }
+  | { type: 'hydrate-local'; state: LocalState | null };
 
 export interface Bootstrap {
   readonly resolvedTheme: ResolvedTheme;
@@ -389,7 +397,10 @@ export function createInitialState(seed: FixtureSeed, bootstrap: Bootstrap): App
       receipts: {},
       runtimeSessionId: null,
       storedSessionId: null,
+      staleReason: null,
     },
+    localState: null,
+    savedSelectedProfile: null,
   };
 }
 
@@ -827,7 +838,7 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
         live: {
           profile: action.profile,
           phase: 'idle',
-          connection: 'reconnecting',
+          connection: state.live.connection,
           userText: null,
           userAt: 0,
           botText: '',
@@ -837,6 +848,7 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
           receipts: {},
           runtimeSessionId: null,
           storedSessionId: null,
+          staleReason: null,
         },
       };
     case 'live-session':
@@ -972,6 +984,50 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
         ...state,
         live: { ...state.live, phase: 'error', error: action.message },
       };
+    case 'live-history-stale':
+      return { ...state, live: { ...state.live, staleReason: action.reason } };
+    case 'live-history-refreshed':
+      return { ...state, live: { ...state.live, staleReason: null } };
+    case 'hydrate-local': {
+      if (action.state === null) {
+        return { ...state, localState: null, savedSelectedProfile: null };
+      }
+      const key = connectionKey(state);
+      const connection = action.state.connections[key];
+      const savedProfile = connection?.selectedProfile ?? null;
+      const fixtureSelection =
+        state.remote.status !== 'ready' &&
+        savedProfile !== null &&
+        state.bots.some((bot) => bot.id === savedProfile)
+          ? savedProfile
+          : state.selectedBotId;
+      return {
+        ...state,
+        selectedBotId: fixtureSelection,
+        localState: action.state,
+        theme: action.state.preferences.theme,
+        language: action.state.preferences.language,
+        resolvedTheme:
+          action.state.preferences.theme === 'system'
+            ? state.resolvedTheme
+            : action.state.preferences.theme,
+        drafts: connection === undefined ? state.drafts : { ...state.drafts, ...connection.drafts },
+        inspector:
+          connection === undefined
+            ? state.inspector
+            : {
+                ...state.inspector,
+                open: connection.inspector.open,
+                tab: connection.inspector.tab,
+                width: clamp(
+                  Math.round(connection.inspector.width),
+                  MIN_INSPECTOR_WIDTH,
+                  MAX_INSPECTOR_WIDTH,
+                ),
+              },
+        savedSelectedProfile: savedProfile,
+      };
+    }
     case 'set-footer-menu':
       return state.footerMenuOpen === action.open && !state.pinnedMenuOpen
         ? state
@@ -1060,6 +1116,43 @@ export function useDispatch(): (action: AppAction) => void {
 }
 
 // --- Selectors -------------------------------------------------------------
+
+/** Projects the current window into the versioned local-state document. */
+export function buildLocalState(state: AppState): LocalState {
+  const key = connectionKey(state);
+  const drafts: Record<string, string> = {};
+  for (const [botId, text] of Object.entries(state.drafts)) {
+    if (text.trim() !== '') {
+      drafts[botId] = text;
+    }
+  }
+  const connections: Record<string, LocalState['connections'][string]> = {
+    ...(state.localState?.connections ?? {}),
+    [key]: {
+      selectedProfile: isRemoteRoster(state)
+        ? (state.remote.selectedProfile ?? state.savedSelectedProfile)
+        : state.remote.status === 'off'
+          ? state.selectedBotId
+          : state.savedSelectedProfile,
+      drafts,
+      inspector: {
+        open: state.inspector.open,
+        tab: state.inspector.tab,
+        width: state.inspector.width,
+      },
+    },
+  };
+  return {
+    version: 1,
+    connections,
+    preferences: { theme: state.theme, language: state.language },
+  };
+}
+
+/** Local-state bucket for the current connection (fixtures share one bucket). */
+export function connectionKey(state: AppState): string {
+  return state.connectionUi.snapshot?.displayUrl ?? 'fixture';
+}
 
 const REMOTE_SECTION_ID = 'remote-all';
 
@@ -1303,6 +1396,8 @@ export function chatEventAction(event: DashboardChatEvent): AppAction | null {
         text: event.text,
         error: event.error,
       };
+    case 'history-stale':
+      return { type: 'live-history-stale', reason: event.reason };
     case 'request':
       return { type: 'live-request', request: event.request };
     case 'request-cancel':
