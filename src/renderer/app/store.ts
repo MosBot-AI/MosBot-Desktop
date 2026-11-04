@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import type {
   ApprovalActionId,
+  ApprovalResolutionAction,
   Artifact,
   BotProfile,
   BotSection,
@@ -264,7 +265,7 @@ export type AppAction =
     }
   | { type: 'live-connection'; state: LiveChatState['connection'] }
   | { type: 'live-request'; request: LiveRequest }
-  | { type: 'live-request-cancel'; requestId: string }
+  | { type: 'live-request-cancel'; requestId: string; reason?: string }
   | { type: 'live-request-resolved'; requestId: string; receipt: string }
   | { type: 'live-error'; message: string }
   | { type: 'live-history-stale'; reason: string }
@@ -559,11 +560,15 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
       if (target === undefined) {
         return state;
       }
+      const remote = isRemoteRoster(state);
       return {
         ...state,
         selectedBotId: target.id,
-        bots: patchBot(state.bots, target.id, { unread: 0 }),
-        search: { open: false, query: '', activeIndex: 0 },
+        // A real roster switch must move the remote/live selection too, otherwise
+        // the chat and the composer stay on the previously selected Bot.
+        remote: remote ? { ...state.remote, selectedProfile: target.id } : state.remote,
+        bots: remote ? state.bots : patchBot(state.bots, target.id, { unread: 0 }),
+        search: { ...state.search, open: false, query: '', activeIndex: 0 },
       };
     }
     case 'create-open':
@@ -1090,14 +1095,23 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
           ],
         },
       };
-    case 'live-request-cancel':
+    case 'live-request-cancel': {
+      // Another client settled the shared request: keep a receipt so this window
+      // does not silently lose the card.
+      const handledElsewhere = action.reason === 'resolved-elsewhere';
       return {
         ...state,
         live: {
           ...state.live,
-          requests: state.live.requests.filter((request) => request.id !== action.requestId),
+          requests: handledElsewhere
+            ? state.live.requests
+            : state.live.requests.filter((request) => request.id !== action.requestId),
+          receipts: handledElsewhere
+            ? { ...state.live.receipts, [action.requestId]: 'remote' }
+            : state.live.receipts,
         },
       };
+    }
     case 'live-request-resolved':
       // Keep the request so the transcript can fold it into its receipt; the
       // resolution map drives the resolved card. Removing it made the answered
@@ -1667,7 +1681,8 @@ function liveRequestMessage(request: LiveRequest, state: AppState): ChatMessage 
         title,
         detail,
         actions,
-        resolution: receipt === null ? null : { action: receipt as ApprovalActionId, at: 0 },
+        resolution:
+          receipt === null ? null : { action: receipt as ApprovalResolutionAction, at: 0 },
       },
     };
   }
@@ -1801,7 +1816,11 @@ export function chatEventAction(event: DashboardChatEvent): AppAction | null {
     case 'request':
       return { type: 'live-request', request: event.request };
     case 'request-cancel':
-      return { type: 'live-request-cancel', requestId: event.requestId };
+      return {
+        type: 'live-request-cancel',
+        requestId: event.requestId,
+        ...(event.reason === undefined ? {} : { reason: event.reason }),
+      };
     case 'error':
       return { type: 'live-error', message: event.message };
     case 'tool':

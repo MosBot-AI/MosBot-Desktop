@@ -88,23 +88,26 @@ const BENCH_QUERY_KEYS = [
 ] as const;
 
 /** `?bench=1&…` for the frame replayer, or null in every normal launch. */
-function benchWindowQuery(): Record<string, string> | null {
-  if (process.env['MOSBOT_BENCH'] !== '1') {
-    return null;
+function windowQuery(): Record<string, string> | null {
+  const query: Record<string, string> = {};
+  if (process.env['MOSBOT_DIAG'] === '1') {
+    query['diag'] = '1';
   }
-  const raw = new URLSearchParams(process.env['MOSBOT_BENCH_QUERY'] ?? '');
-  const query: Record<string, string> = { bench: '1' };
-  for (const key of BENCH_QUERY_KEYS) {
-    const value = raw.get(key);
-    if (value !== null) {
-      query[key] = value;
+  if (process.env['MOSBOT_BENCH'] === '1') {
+    query['bench'] = '1';
+    const raw = new URLSearchParams(process.env['MOSBOT_BENCH_QUERY'] ?? '');
+    for (const key of BENCH_QUERY_KEYS) {
+      const value = raw.get(key);
+      if (value !== null) {
+        query[key] = value;
+      }
     }
   }
-  return query;
+  return Object.keys(query).length === 0 ? null : query;
 }
 
 function createMainWindow(): void {
-  const benchQuery = benchWindowQuery();
+  const benchQuery = windowQuery();
   mainWindow = new BrowserWindow({
     width: 1000,
     height: 760,

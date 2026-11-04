@@ -15,6 +15,13 @@ const benchMode = new URLSearchParams(window.location.search).get('bench') === '
 
 createRoot(container).render(<StrictMode>{viewerMode ? <ComputerViewer /> : <App />}</StrictMode>);
 
+if (new URLSearchParams(window.location.search).get('diag') === '1') {
+  // Test-only diagnostics (main process appends ?diag=1 only when MOSBOT_DIAG=1).
+  void import('./app/store').then(({ appStore }) => {
+    window.__mosbotDiag = { state: () => appStore.getState() };
+  });
+}
+
 if (benchMode) {
   // Test-only harness: `pnpm bench:stream` loads the shipped app with ?bench=1 and
   // replays desensitised frames through the real store and React tree.

@@ -30,6 +30,50 @@ function build(): AppState {
   });
 }
 
+describe('remote search selection', () => {
+  it('moves the remote selected profile when a search result is activated', () => {
+    const bots = [
+      {
+        profileName: 'alpha',
+        displayName: 'Alpha',
+        description: '',
+        shape: null,
+        color: '#4f86d6',
+        metaRevision: 0,
+        model: 'm',
+        provider: 'p',
+        isDefault: true,
+        summary: '',
+        canonicalSessionId: 's-alpha',
+        lastActiveAt: null,
+        messageCount: 0,
+      },
+      {
+        profileName: 'beta',
+        displayName: 'Beta',
+        description: '',
+        shape: null,
+        color: '#4f86d6',
+        metaRevision: 0,
+        model: 'm',
+        provider: 'p',
+        isDefault: false,
+        summary: '',
+        canonicalSessionId: 's-beta',
+        lastActiveAt: null,
+        messageCount: 0,
+      },
+    ];
+    let state = reduceAppState(build(), { type: 'remote-ready', bots });
+    state = reduceAppState(state, { type: 'remote-select', profile: 'alpha' });
+    state = reduceAppState(state, { type: 'search-open' });
+    state = reduceAppState(state, { type: 'search-query', query: 'beta' });
+    state = reduceAppState(state, { type: 'search-activate' });
+    expect(state.selectedBotId).toBe('beta');
+    expect(state.remote.selectedProfile).toBe('beta');
+  });
+});
+
 describe('network status', () => {
   it('records the online/offline state and ignores redundant updates', () => {
     const state = build();

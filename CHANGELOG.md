@@ -252,6 +252,15 @@ until the release repository exists.
   deployment baseline but is a reference implementation only: the test server is API-only
   for this workstream (no server changes or restarts authorised), so M4 stays partially verified.
 
+- Fixed: selecting a Bot from search only changed `selectedBotId` and left the
+  remote/live selection on the previous Bot, so the chat and composer stayed on
+  the old session (and a fast send could reach the wrong Bot).
+- Two-client approval sync: the gateway does not push a resolution to other
+  clients, so an open chat now reconciles `session.resume`'s `open_requests` every
+  five seconds; a request answered elsewhere folds into a "handled in another
+  window" receipt. The two-client walkthrough verifies shared chat observation and
+  that receipt. Evidence: docs/evidence/m1-dual-client.md.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,

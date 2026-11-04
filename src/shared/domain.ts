@@ -54,13 +54,16 @@ export interface WorkStep {
 
 export type ApprovalActionId = 'allow' | 'allow-session' | 'allow-always' | 'deny';
 
+/** A local resolution also covers "settled by another client" (no wire choice). */
+export type ApprovalResolutionAction = ApprovalActionId | 'remote';
+
 export interface ApprovalAction {
   readonly id: ApprovalActionId;
   readonly tone: 'primary' | 'neutral' | 'danger';
 }
 
 export interface ApprovalResolution {
-  readonly action: ApprovalActionId;
+  readonly action: ApprovalResolutionAction;
   readonly at: number;
 }
 

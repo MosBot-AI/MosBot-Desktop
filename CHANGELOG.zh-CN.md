@@ -152,6 +152,12 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
   控制”而不是断线。补丁仅作为参考实现：本工作流对测试服只有 Dashboard API 授权（不改/不部署/
   不重启服务），因此 M4 该项保持部分验证。
 
+- 修复：通过搜索结果切 Bot 只更新 `selectedBotId`，未同步 remote/live 选中，聊天与输入条仍停在
+  上一个 Bot（快速发送可能发错会话）。
+- 双客户端审批同步：网关不会向其他客户端推送处理结果，打开的聊天在有待处理请求时每 5 秒用
+  `session.resume` 的 `open_requests` 对账；被另一端处理的请求折成「已由另一端处理」回执。
+  双客户端 walkthrough 验证了共享聊天观察与该回执。证据：`docs/evidence/m1-dual-client.md`。
+
 ### 变更
 
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。

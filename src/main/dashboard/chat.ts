@@ -94,6 +94,8 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
   let reconnectAttempt = 0;
   let reconnectTimer: NodeJS.Timeout | null = null;
   let connecting: Promise<Result<ChatOpenResult>> | null = null;
+  const openRequestIds = new Set<string>();
+  let requestPollTimer: NodeJS.Timeout | null = null;
 
   const deliver = (event: DashboardChatEvent): void => {
     for (const listener of listeners) {
@@ -182,13 +184,82 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
       case 'request.cancel': {
         const requestId = str(payload['id']);
         if (requestId !== '') {
-          emit({ type: 'request-cancel', requestId });
+          openRequestIds.delete(requestId);
+          stopRequestPollIfIdle();
+          emit({
+            type: 'request-cancel',
+            requestId,
+            reason: str(payload['reason']) || 'cancelled',
+          });
         }
         return;
       }
       default:
         return;
     }
+  };
+
+  /**
+   * The gateway does not push when another client answers a shared request; it only
+   * leaves it out of `session.resume`'s `open_requests`. While any request is open we
+   * therefore reconcile through that API every few seconds and fold vanished ids into
+   * a "handled elsewhere" receipt.
+   */
+  const startRequestPoll = (): void => {
+    if (requestPollTimer !== null) {
+      return;
+    }
+    requestPollTimer = setInterval(() => {
+      void reconcileOpenRequests();
+    }, 5_000);
+    requestPollTimer.unref?.();
+  };
+
+  const stopRequestPollIfIdle = (): void => {
+    if (openRequestIds.size > 0 || requestPollTimer === null) {
+      return;
+    }
+    clearInterval(requestPollTimer);
+    requestPollTimer = null;
+  };
+
+  const reconcileOpenRequests = async (): Promise<void> => {
+    const rpc = client;
+    // `session.resume` takes the stored session id (the persisted key), not the
+    // runtime id used by prompt/session.* calls.
+    const sessionId = storedSessionId ?? runtimeSessionId;
+    if (rpc === null || sessionId === null || openRequestIds.size === 0) {
+      stopRequestPollIfIdle();
+      return;
+    }
+    const resumed = await rpc.call(
+      'session.resume',
+      { session_id: sessionId, profile, omit_messages: true },
+      emptySchema,
+    );
+    if (!resumed.ok) {
+      return;
+    }
+    const record = asRecord(resumed.data);
+    const open = Array.isArray(record?.['open_requests'])
+      ? (record['open_requests'] as unknown[])
+      : [];
+    const stillOpen = new Set<string>();
+    for (const entry of open) {
+      const request = asRecord(entry);
+      const id = str(request?.['id']);
+      if (id !== '') {
+        stillOpen.add(id);
+      }
+    }
+    for (const requestId of [...openRequestIds]) {
+      if (stillOpen.has(requestId)) {
+        continue;
+      }
+      openRequestIds.delete(requestId);
+      emit({ type: 'request-cancel', requestId, reason: 'resolved-elsewhere' });
+    }
+    stopRequestPollIfIdle();
   };
 
   const handleServerRequest = (request: GatewayServerRequest): void => {
@@ -203,6 +274,8 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
       method: request.method,
       payload: request.params,
     };
+    openRequestIds.add(request.id);
+    startRequestPoll();
     emit({ type: 'request', request: payload });
   };
 
@@ -587,6 +660,11 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
       // Deliver any text that already arrived before the session goes away.
       deltaBatcher.flush();
       deltaBatcher.reset();
+      openRequestIds.clear();
+      if (requestPollTimer !== null) {
+        clearInterval(requestPollTimer);
+        requestPollTimer = null;
+      }
       if (reconnectTimer !== null) {
         clearTimeout(reconnectTimer);
         reconnectTimer = null;

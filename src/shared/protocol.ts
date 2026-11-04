@@ -383,7 +383,11 @@ export type DashboardChatEvent =
     }
   | { readonly type: 'history-stale'; readonly reason: string }
   | { readonly type: 'request'; readonly request: ChatServerRequest }
-  | { readonly type: 'request-cancel'; readonly requestId: string }
+  | {
+      readonly type: 'request-cancel';
+      readonly requestId: string;
+      readonly reason?: string;
+    }
   | { readonly type: 'error'; readonly message: string };
 
 /** Events the main-process pending watcher pushes for Bots the window is not showing. */

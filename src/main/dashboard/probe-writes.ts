@@ -792,8 +792,8 @@ export async function runChatProbe(deps: WriteProbeDeps): Promise<Result<ProbeRe
     const existingRows = asArray(asRecord(dataOf(existing))?.['profiles']) ?? [];
     for (const entry of existingRows) {
       const name = stringField(asRecord(entry), 'name') ?? '';
-      if (/^mosbot-probe-gui-\d{6}$/.test(name)) {
-        // GUI approval-probe leftovers are safe to remove unconditionally.
+      if (/^mosbot-probe-(?:gui|dual)-\d{6}$/.test(name)) {
+        // Local GUI walkthrough leftovers are safe to remove unconditionally.
         await rest.send('DELETE', `/api/profiles/${encodeURIComponent(name)}`);
         continue;
       }

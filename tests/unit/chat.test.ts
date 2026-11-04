@@ -636,6 +636,29 @@ describe('live transcript', () => {
     }
   });
 
+  it('folds a request settled by another window into a handled-elsewhere receipt', () => {
+    let state = remoteState();
+    state = reduceAppState(state, {
+      type: 'live-request',
+      request: {
+        id: 'srq-remote',
+        method: 'approval',
+        payload: { choices: ['once', 'session', 'always', 'deny'], command: 'chmod 777 x' },
+      },
+    });
+    state = reduceAppState(state, {
+      type: 'live-request-cancel',
+      requestId: 'srq-remote',
+      reason: 'resolved-elsewhere',
+    });
+    const messages = selectChatMessages(state, 'default');
+    expect(messages).toHaveLength(1);
+    expect(messages[0]?.kind).toBe('approval');
+    if (messages[0]?.kind === 'approval') {
+      expect(messages[0].approval.resolution?.action).toBe('remote');
+    }
+  });
+
   it('maps clarify requests with qid-encoded options', () => {
     let state = remoteState();
     state = reduceAppState(state, {
