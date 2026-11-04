@@ -252,9 +252,14 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
       return;
     }
     const record = asRecord(resumed.data);
-    const open = Array.isArray(record?.['open_requests'])
-      ? (record['open_requests'] as unknown[])
-      : [];
+    // A gateway that does not report open_requests cannot tell us anything was
+    // answered; treating a missing field as "all gone" would wrongly wipe every
+    // pending card after the first poll.
+    const rawOpen = record?.['open_requests'];
+    if (!Array.isArray(rawOpen)) {
+      return;
+    }
+    const open = rawOpen as unknown[];
     const stillOpen = new Set<string>();
     for (const entry of open) {
       const request = asRecord(entry);

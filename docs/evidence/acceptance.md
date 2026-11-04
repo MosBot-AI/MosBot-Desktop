@@ -63,6 +63,14 @@ node scripts/gui-unopened-approval.mjs             # 未打开 Bot 审批 + 通�
 node scripts/gui-window-lifecycle.mjs              # 关窗/Dock 重开/退出重启
 node scripts/gui-computer-walkthrough.mjs          # 电脑观看真实画面/控制
 node scripts/gui-connected-draft.mjs               # 真实连接冷启动 + 草稿
+node scripts/gui-chat-reconnect.mjs                # 聊天断线重连/回放（模拟）
+node scripts/gui-concurrent-approval.mjs           # 双端并发审批
+node scripts/gui-concurrent-send.mjs               # 双端同时发送
+node scripts/gui-workbench-refresh.mjs             # 跨客户端 Kanban 刷新
+node scripts/gui-workbench-stale.mjs               # board 迟到响应隔离
+node scripts/gui-sessions-stale.mjs                # profile 切换会话列表隔离
+node scripts/gui-search-stale.mjs                  # 搜索迟到响应隔离
+node scripts/gui-force-quit.mjs                    # 强退不自动重发
 ```
 
 只有 1–10 全部满足且用户完成最终操作验收，才可标记首版完成；当前 11 未开始，9/10 有证书与旧包

@@ -357,6 +357,11 @@ until the release repository exists.
   not disturb the machine. A post-fix smoke (30s steady + burst) passes with p95
   30.8ms / 30.6ms, no unresolved batches and no long tasks.
 
+- Fixed: the approval reconciliation poll treated a missing `open_requests` field
+  in `session.resume` as "every request was answered", which would clear all
+  pending cards after the first poll on a gateway that omits the field. It now
+  skips reconciliation when the field is absent; a unit test covers it.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,

@@ -43,6 +43,14 @@ node scripts/gui-unopened-approval.mjs
 node scripts/gui-window-lifecycle.mjs
 node scripts/gui-computer-walkthrough.mjs
 node scripts/gui-connected-draft.mjs
+node scripts/gui-chat-reconnect.mjs
+node scripts/gui-concurrent-approval.mjs
+node scripts/gui-concurrent-send.mjs
+node scripts/gui-workbench-refresh.mjs
+node scripts/gui-workbench-stale.mjs
+node scripts/gui-sessions-stale.mjs
+node scripts/gui-search-stale.mjs
+node scripts/gui-force-quit.mjs
 ```
 
 ## 五、当前不能宣称“首版完成”的原因（如实）

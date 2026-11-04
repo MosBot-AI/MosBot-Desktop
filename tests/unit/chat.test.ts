@@ -277,6 +277,40 @@ describe('chat manager', () => {
     }
   });
 
+  it('keeps pending requests when the gateway omits open_requests', async () => {
+    vi.useFakeTimers();
+    try {
+      const captured: { gateway: FakeGateway | null } = { gateway: null };
+      const manager = createChatManager({
+        auth: fakeAuth,
+        fetchImpl: async () => ({
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          text: async () => '{"ticket":"t","ttl_seconds":30}',
+        }),
+        connect: async (options) => {
+          captured.gateway = createFakeGateway(options);
+          return { ok: true, data: captured.gateway.client };
+        },
+      });
+      const cancelled: string[] = [];
+      manager.subscribe((event) => {
+        if (event.type === 'request-cancel') {
+          cancelled.push(event.requestId);
+        }
+      });
+      await manager.open('project-bot', 'stored-1');
+      captured.gateway?.request('srq-open', 'approval', { choices: ['deny'], command: 'ls' });
+      // No setOpenRequests(): session.resume omits the field entirely.
+      await vi.advanceTimersByTimeAsync(5_100);
+      expect(cancelled).not.toContain('srq-open');
+      manager.close();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('does not fold a request answered in this window into a remote receipt', async () => {
     vi.useFakeTimers();
     try {
