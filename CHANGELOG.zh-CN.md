@@ -233,6 +233,9 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
   抑制按该 profile 读取，而不是按网关当前会话上下文。单测覆盖参数路由；runtime/geometry 仍是
   主机级共享值。
 
+- 检查器三个 tab 现在按 Bot 加 key，切换 Bot 不会复用上一个 Bot 的资料库列表、电脑状态/缩略图或
+  cron 行；电脑页的加载器依赖 profile，并丢弃已非当前 Bot 的响应。
+
 ### 变更
 
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。

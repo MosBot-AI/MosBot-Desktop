@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ReactElement } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
 import type { ComputerState, ComputerStatus } from '../../../shared/domain';
 import { type MessageKey, useMessages } from '../../app/i18n';
 import { useAppState, useDispatch } from '../../app/store';
@@ -65,13 +65,19 @@ export function ComputerTab({ profileId, botName }: ComputerTabProps): ReactElem
   const computer = useAppState((state) => state.computers[profileId]) ?? ASLEEP_FALLBACK;
   const copy = STATUS_COPY[computer.status];
   const showsFrame = FRAME_STATUSES.includes(computer.status);
+  const currentProfile = useRef(profileId);
+  currentProfile.current = profileId;
 
   const loadRemote = useCallback(async (): Promise<void> => {
     const dashboard = window.mosbot?.dashboard;
     if (dashboard === undefined) {
       return;
     }
-    const status = await dashboard.displayStatus(profileId);
+    const requestedProfile = profileId;
+    const status = await dashboard.displayStatus(requestedProfile);
+    if (requestedProfile !== currentProfile.current) {
+      return;
+    }
     if (!status.ok) {
       setRemoteState((current) => ({ ...current, status: 'error' }));
       return;
@@ -79,7 +85,10 @@ export function ComputerTab({ profileId, botName }: ComputerTabProps): ReactElem
     let frame: string | null = null;
     let suppressed: string | null = null;
     if (status.data.running) {
-      const thumbnail = await dashboard.displayThumbnail(profileId);
+      const thumbnail = await dashboard.displayThumbnail(requestedProfile);
+      if (requestedProfile !== currentProfile.current) {
+        return;
+      }
       if (thumbnail.ok) {
         frame = thumbnail.data.dataUrl;
         suppressed = thumbnail.data.suppressed;
@@ -92,7 +101,7 @@ export function ComputerTab({ profileId, botName }: ComputerTabProps): ReactElem
       frame,
       suppressed,
     }));
-  }, []);
+  }, [profileId]);
 
   useEffect(() => {
     if (!remoteRoster) {

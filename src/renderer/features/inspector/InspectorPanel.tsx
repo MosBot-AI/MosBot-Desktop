@@ -366,9 +366,13 @@ export function InspectorPanel(): ReactElement | null {
           aria-labelledby={tabElementId(tab)}
           tabIndex={0}
         >
-          {tab === 'details' ? <DetailsTab bot={bot} /> : null}
-          {tab === 'library' ? <LibraryTab botId={bot.id} /> : null}
-          {tab === 'computer' ? <ComputerTab profileId={bot.id} botName={bot.name} /> : null}
+          {/* Keyed by Bot: switching must not reuse the previous Bot's local state
+              (artifact list, computer status/thumbnail, cron rows). */}
+          {tab === 'details' ? <DetailsTab key={bot.id} bot={bot} /> : null}
+          {tab === 'library' ? <LibraryTab key={bot.id} botId={bot.id} /> : null}
+          {tab === 'computer' ? (
+            <ComputerTab key={bot.id} profileId={bot.id} botName={bot.name} />
+          ) : null}
         </div>
       </aside>
     </>

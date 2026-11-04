@@ -184,3 +184,17 @@ mtime=2026-11-04T06:37:52.972Z · broken=false`，`chat_artifact_read` 回显 to
 
 说明：runtime 的 running/geometry 是主机级共享值，不能靠“未启动的 Bot”区分 profile；因此没有
 用该现象做真实服务断言，避免误判。
+
+## 2026-11-04 检查器跨 Bot 状态复用（代码修复）
+
+`InspectorPanel` 的三个 tab 在切换 Bot 时不会重建：资料库的列表/预览、电脑页的 status/frame、
+详情页的 cron 行都会被下一个 Bot 短暂复用。更严重的是 `ComputerTab.loadRemote` 的 `useCallback`
+依赖为空，闭包里捕获的是**首次挂载时的 profileId**，切换 Bot 后仍可能查询旧 Bot。
+
+修复：
+
+- `InspectorPanel` 用 `key={bot.id}` 让三个 tab 在 Bot 切换时重建；
+- `ComputerTab` 的 `loadRemote` 依赖 `profileId`，并在响应返回后校验仍是当前 Bot（丢弃旧响应）。
+
+说明：`display.status` 的 runtime/lease 语义在部署上表现为主机级共享，因此没有用“两个 Bot 的
+不同 computer 状态”做真实 GUI 断言，避免误判；该修复由类型检查/单测与既有真实电脑 page 验证覆盖。

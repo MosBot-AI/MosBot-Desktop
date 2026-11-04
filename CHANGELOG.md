@@ -372,6 +372,11 @@ until the release repository exists.
   session context. Unit tests cover the parameter routing; runtime/geometry remain
   host-level by design.
 
+- Inspector tabs are now keyed by Bot, so switching Bots cannot reuse the previous
+  Bot's artifact list, computer status/thumbnail or cron rows; the computer tab's
+  loader also depends on the profile and drops responses for a Bot that is no
+  longer selected.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,
