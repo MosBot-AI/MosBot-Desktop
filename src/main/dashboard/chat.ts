@@ -466,15 +466,25 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
       }
       const run = async (): Promise<Result<ChatOpenResult>> => {
         if (client !== null && profile === profileName && storedSessionId === stored) {
-          return {
-            ok: true,
-            data: {
-              profile: profileName,
-              storedSessionId,
-              runtimeSessionId,
-              workspace: workspaceCwd,
-            },
-          };
+          // The renderer may have been reloaded or its window reopened while this
+          // chat manager stayed connected: re-emit the connection/session state
+          // (and any still-open requests) so the new surface is not stuck on
+          // "disconnected" with a cached, event-less result.
+          const resumed = await resumeSession(client);
+          if (!resumed.ok) {
+            return resumed;
+          }
+          setConnection('connected');
+          emit({
+            type: 'session',
+            profile: profileName,
+            storedSessionId,
+            runtimeSessionId,
+          });
+          if (runningTurn) {
+            emit({ type: 'turn-start' });
+          }
+          return resumed;
         }
         // Switching sessions drops any text still waiting in the coalescing
         // window; it belongs to the previous Bot and the transcript is reset.

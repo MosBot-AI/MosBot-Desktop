@@ -23,6 +23,7 @@ export function Composer({ bot }: ComposerProps): ReactElement {
   const remoteMode = useAppState((state) => isRemoteRoster(state));
   const livePhase = useAppState((state) => state.live.phase);
   const liveConnection = useAppState((state) => state.live.connection);
+  const liveSessionReady = useAppState((state) => state.live.runtimeSessionId !== null);
   const modelReady = useAppState(selectModelReady);
   const attachments = useAppState((state) => state.attachments[bot.id] ?? []);
   const fixtureReplying = useAppState(
@@ -89,7 +90,8 @@ export function Composer({ bot }: ComposerProps): ReactElement {
   };
 
   const placeholder = t('chat.composer.placeholder', { name: bot.name });
-  const disabled = remoteMode && (liveConnection === 'disconnected' || modelReady === false);
+  const disabled =
+    remoteMode && (liveConnection !== 'connected' || !liveSessionReady || modelReady === false);
 
   return (
     <div className={styles.composerWrap}>

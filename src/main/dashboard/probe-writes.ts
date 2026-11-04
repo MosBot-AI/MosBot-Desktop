@@ -792,6 +792,11 @@ export async function runChatProbe(deps: WriteProbeDeps): Promise<Result<ProbeRe
     const existingRows = asArray(asRecord(dataOf(existing))?.['profiles']) ?? [];
     for (const entry of existingRows) {
       const name = stringField(asRecord(entry), 'name') ?? '';
+      if (/^mosbot-probe-gui-\d{6}$/.test(name)) {
+        // GUI approval-probe leftovers are safe to remove unconditionally.
+        await rest.send('DELETE', `/api/profiles/${encodeURIComponent(name)}`);
+        continue;
+      }
       const match = /^mosbot-chat-probe-(\d{14})$/.exec(name);
       if (match === null) {
         continue;
@@ -1055,6 +1060,24 @@ export async function runChatProbe(deps: WriteProbeDeps): Promise<Result<ProbeRe
       );
     }
 
+    // Read-only approval configuration, to explain why a request may or may not
+    // appear (no write: only the mode/timeout are reported, never credentials).
+    const configRead = await rest.get('/api/config?include_defaults=false');
+    const approvalsConfig = asRecord(asRecord(dataOf(configRead))?.['approvals']);
+    const configuredApprovalMode = stringField(approvalsConfig, 'mode');
+    rows.push(
+      row(
+        'chat_approval_config',
+        '审批配置（只读）',
+        configRead.ok ? 'pass' : 'unverified',
+        configRead.ok
+          ? `approvals.mode=${configuredApprovalMode ?? '(default manual)'} · timeout=${String(
+              numberField(approvalsConfig, 'timeout') ?? '(default 300)',
+            )}`
+          : errorDetail(configRead.error),
+      ),
+    );
+
     // Approval path: ask for a shell command; the gateway should raise a server
     // request that the client answers with choice=once.
     events.length = 0;
@@ -1128,6 +1151,146 @@ export async function runChatProbe(deps: WriteProbeDeps): Promise<Result<ProbeRe
           : 'no terminal event within 120s',
       ),
     );
+
+    // A second, scoped attempt: the only target is the probe artifact created in
+    // this run's dedicated profile workspace. If the deployment asks for approval
+    // we deny it; if it auto-approves, only our own probe file is removed.
+    events.length = 0;
+    const scopedApprovalSend = await chat.send(
+      '请用 shell 工具在当前工作区运行命令：chmod 777 mosbot-probe-artifact.txt （只改这个探针文件的权限）。完成后只回复 done。',
+    );
+    const scopedApproval = await waitFor(
+      () => events.some((event) => event.type === 'request' && event.request.method === 'approval'),
+      90_000,
+    );
+    const scopedEvent = events.find(
+      (event) => event.type === 'request' && event.request.method === 'approval',
+    );
+    const scopedChoices =
+      scopedEvent?.type === 'request'
+        ? (scopedEvent.request.payload['choices'] as unknown[] | undefined)
+        : undefined;
+    let scopedAnswered = false;
+    if (scopedEvent?.type === 'request') {
+      const choices = (scopedChoices ?? []).filter(
+        (choice): choice is string => typeof choice === 'string',
+      );
+      const denial = choices.find((choice) => /deny|reject|no/i.test(choice)) ?? 'deny';
+      scopedAnswered = (await chat.answer(scopedEvent.request.id, { choice: denial })).ok;
+    }
+    const scopedCompleted = await waitFor(
+      () => events.some((event) => event.type === 'turn-complete'),
+      120_000,
+    );
+    rows.push(
+      row(
+        'chat_approval_scoped_request',
+        '审批请求（危险模式命令 chmod 777 探针文件）',
+        scopedApproval ? 'pass' : 'unverified',
+        scopedApproval
+          ? `request raised · choices=${(scopedChoices ?? []).length}`
+          : scopedApprovalSend.ok
+            ? `no request within 90s · approvals.mode=${configuredApprovalMode ?? 'unknown'} · 可能智能放行`
+            : errorDetail(scopedApprovalSend.error),
+      ),
+    );
+    rows.push(
+      row(
+        'chat_approval_scoped_answer',
+        '审批回执（拒绝）',
+        scopedAnswered ? 'pass' : 'unverified',
+        scopedAnswered ? 'answered deny' : 'no request to answer',
+      ),
+    );
+    rows.push(
+      row(
+        'chat_approval_scoped_turn',
+        '审批后的回合终态（scoped）',
+        scopedCompleted ? 'pass' : 'unverified',
+        scopedCompleted ? 'turn completed after the answer' : 'no terminal event within 120s',
+      ),
+    );
+    if (scopedApproval) {
+      const afterDeny = await listBotArtifacts(
+        { auth: deps.auth, fetchImpl: deps.fetchImpl },
+        marker,
+        opened.data.workspace,
+      );
+      const stillPresent =
+        afterDeny.ok && afterDeny.data.some((item) => item.name === 'mosbot-probe-artifact.txt');
+      rows.push(
+        row(
+          'chat_approval_scoped_effect',
+          '拒绝后命令未执行（探针文件仍在）',
+          scopedAnswered && stillPresent ? 'pass' : 'fail',
+          afterDeny.ok
+            ? `file_present=${String(stillPresent)} · denied=${String(scopedAnswered)}`
+            : errorDetail(afterDeny.error),
+        ),
+      );
+
+      // Allow branch: a second dangerous-but-harmless command, answered once.
+      events.length = 0;
+      const allowSend = await chat.send(
+        '请用 shell 工具在当前工作区运行命令：chmod 666 mosbot-probe-artifact.txt （只改这个探针文件的权限）。完成后只回复 done。',
+      );
+      const allowApproval = await waitFor(
+        () =>
+          events.some((event) => event.type === 'request' && event.request.method === 'approval'),
+        90_000,
+      );
+      const allowEvent = events.find(
+        (event) => event.type === 'request' && event.request.method === 'approval',
+      );
+      const allowChoices =
+        allowEvent?.type === 'request'
+          ? (allowEvent.request.payload['choices'] as unknown[] | undefined)
+          : undefined;
+      let allowAnswered = false;
+      if (allowEvent?.type === 'request') {
+        const choices = (allowChoices ?? []).filter(
+          (choice): choice is string => typeof choice === 'string',
+        );
+        const allowChoice =
+          choices.find((choice) => /^(once|allow|approve|yes)$/i.test(choice)) ??
+          choices.find((choice) => /once|allow|approve/i.test(choice)) ??
+          choices[0] ??
+          'once';
+        allowAnswered = (await chat.answer(allowEvent.request.id, { choice: allowChoice })).ok;
+      }
+      const allowCompleted = await waitFor(
+        () => events.some((event) => event.type === 'turn-complete'),
+        120_000,
+      );
+      rows.push(
+        row(
+          'chat_approval_allow_request',
+          '审批请求（允许分支）',
+          allowApproval ? 'pass' : 'unverified',
+          allowApproval
+            ? `request raised · choices=${(allowChoices ?? []).length}`
+            : allowSend.ok
+              ? 'no request within 90s'
+              : errorDetail(allowSend.error),
+        ),
+      );
+      rows.push(
+        row(
+          'chat_approval_allow_answer',
+          '审批回执（允许一次）',
+          allowAnswered ? 'pass' : 'unverified',
+          allowAnswered ? 'answered allow' : 'no request to answer',
+        ),
+      );
+      rows.push(
+        row(
+          'chat_approval_allow_turn',
+          '允许后的回合终态',
+          allowCompleted ? 'pass' : 'unverified',
+          allowCompleted ? 'turn completed after allow' : 'no terminal event within 120s',
+        ),
+      );
+    }
   } finally {
     chat?.close();
     if (profileCreated) {

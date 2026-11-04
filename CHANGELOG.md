@@ -208,6 +208,16 @@ until the release repository exists.
   and artifact read all pass. The approval request still does not fire because the
   deployment auto-approves the terminal tool; recorded as open.
 
+- Fixed: reopening an already-connected chat (renderer reload, window close and
+  Dock reopen) now re-emits the connection, session and open requests instead of
+  returning a cached, event-less result; the cached remote chat picks up the
+  canonical stored session from the live session, and the composer only enables
+  once that session is ready, preventing "session is not ready" sends.
+- The real-service chat probe now reads `approvals.mode` (read-only) and triggers
+  scoped dangerous-command approvals on its own probe file: request, deny (command
+  not executed), allow and the terminal status are verified on the test
+  deployment. Evidence: docs/evidence/m1-background-approvals.md.
+
 ### Changed
 
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,

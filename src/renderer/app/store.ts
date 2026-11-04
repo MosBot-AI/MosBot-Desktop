@@ -951,9 +951,28 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
           staleReason: null,
         },
       };
-    case 'live-session':
+    case 'live-session': {
+      // The live session may be the canonical one this profile just created;
+      // keep the cached remote chat pointing at it so jumping back (attention
+      // chip, notification click, window reopen) resumes the same session
+      // instead of creating a second, empty one.
+      const cached = state.remote.chats[action.profile];
+      const remote =
+        cached === undefined || action.storedSessionId === null
+          ? state.remote
+          : {
+              ...state.remote,
+              chats: {
+                ...state.remote.chats,
+                [action.profile]: {
+                  ...cached,
+                  storedSessionId: action.storedSessionId,
+                },
+              },
+            };
       return {
         ...state,
+        remote,
         live: {
           ...state.live,
           profile: action.profile,
@@ -961,6 +980,7 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
           runtimeSessionId: action.runtimeSessionId,
         },
       };
+    }
     case 'live-user':
       return {
         ...state,

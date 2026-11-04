@@ -123,6 +123,13 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
   含真实 `mtime` 的产物索引与读取全部通过；审批仍因部署对 terminal 工具自动放行而未触发，
   记为未关闭项。
 
+- 修复：已连接的聊天在 renderer 重载 / 关窗后从 Dock 重开时，`chat.open` 现在重新发送
+  connection、session 与未处理请求，而不是返回无事件的缓存结果；远端 chat 缓存会同步
+  canonical stored session；输入条在会话真正就绪前保持禁用，避免 “session is not ready”。
+- 真实服务 chat 探针现在只读 `approvals.mode`，并用自己的探针文件触发一个受控危险命令审批：
+  请求、拒绝（命令未执行）、允许与终态均已在测试部署验证。证据：
+  `docs/evidence/m1-background-approvals.md`。
+
 ### 变更
 
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。

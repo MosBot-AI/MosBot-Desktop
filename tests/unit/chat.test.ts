@@ -57,7 +57,11 @@ function createFakeGateway(options: GatewayOptions, replay?: FakeReplay): FakeGa
       return { session_id: 'runtime-1', stored_session_id: 'stored-1' };
     }
     if (method === 'session.resume') {
-      return { session_id: 'runtime-1', session_key: 'stored-1' };
+      return {
+        session_id: 'runtime-1',
+        session_key: 'stored-1',
+        ...(replay?.openRequests === undefined ? {} : { open_requests: replay.openRequests }),
+      };
     }
     if (method === 'session.list') {
       return { sessions: [] };
@@ -223,6 +227,49 @@ describe('chat manager', () => {
 
     await manager.answer('srq-1', { choice: 'once' });
     expect(captured.gateway?.responses).toContainEqual({ id: 'srq-1', result: { choice: 'once' } });
+  });
+
+  it('re-emits connection, session and open requests when the same chat is reopened', async () => {
+    const captured: { gateway: FakeGateway | null } = { gateway: null };
+    const manager = createChatManager({
+      auth: fakeAuth,
+      fetchImpl: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => '{"ticket":"t","ttl_seconds":30}',
+      }),
+      connect: async (options) => {
+        captured.gateway = createFakeGateway(options, {
+          events: [],
+          openRequests: [
+            { id: 'srq-reopen', method: 'approval', params: { choices: ['once', 'deny'] } },
+          ],
+        });
+        return { ok: true, data: captured.gateway.client };
+      },
+    });
+    const received: Array<{ type: string; state?: string }> = [];
+    manager.subscribe((event) => {
+      received.push(event as { type: string; state?: string });
+    });
+
+    expect((await manager.open('project-bot', 'stored-1')).ok).toBe(true);
+    received.length = 0;
+    // A renderer reload/window reopen calls open() again while main stays connected.
+    expect((await manager.open('project-bot', 'stored-1')).ok).toBe(true);
+    expect(
+      received.some((event) => event.type === 'connection' && event.state === 'connected'),
+    ).toBe(true);
+    expect(received.some((event) => event.type === 'session')).toBe(true);
+    expect(
+      received.some(
+        (event) =>
+          event.type === 'request' &&
+          (event as { request?: { id?: string } }).request?.id === 'srq-reopen',
+      ),
+    ).toBe(true);
+    manager.close();
   });
 
   it('replays missed events and re-delivers open requests after a reconnect', async () => {
@@ -461,6 +508,22 @@ function remoteState(): AppState {
   state = reduceAppState(state, { type: 'live-reset', profile: 'default' });
   return state;
 }
+
+describe('live session projection', () => {
+  it('updates the cached remote chat when the live session is the canonical one', () => {
+    let state = remoteState();
+    expect(state.remote.chats['default']?.storedSessionId).toBe('stored-1');
+    state = reduceAppState(state, {
+      type: 'live-session',
+      profile: 'default',
+      storedSessionId: 'stored-canonical',
+      runtimeSessionId: 'runtime-9',
+    });
+    expect(state.remote.chats['default']?.storedSessionId).toBe('stored-canonical');
+    expect(state.live.storedSessionId).toBe('stored-canonical');
+    expect(state.live.runtimeSessionId).toBe('runtime-9');
+  });
+});
 
 describe('live transcript', () => {
   it('appends the optimistic user bubble and streamed bot text', () => {
