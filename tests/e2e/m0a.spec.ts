@@ -1,3 +1,5 @@
+import { rmSync } from 'node:fs';
+import path from 'node:path';
 import { expect, test } from '@playwright/test';
 import { launchApp, packagedAppPath, resizeWindow, type LaunchedApp } from './harness';
 
@@ -13,6 +15,8 @@ test.describe('M0a design slice', () => {
 
   test.beforeAll(async () => {
     expect(packagedAppPath()).toBeTruthy();
+    // Start from a clean profile: local state (drafts, selection) persists now.
+    rmSync(path.resolve('.tmp/userdata-e2e'), { recursive: true, force: true });
     app = await launchApp();
   });
 

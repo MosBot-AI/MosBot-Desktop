@@ -204,6 +204,29 @@ export function App(): ReactElement {
     };
   }, [connected, dispatch]);
 
+  // Pending requests discovered for Bots that are not open: badge + notification click.
+  useEffect(() => {
+    const dashboard = window.mosbot?.dashboard;
+    if (dashboard === undefined) {
+      return;
+    }
+    return dashboard.onPendingEvent((event) => {
+      if (event.type === 'add') {
+        dispatch({
+          type: 'pending-add',
+          requestId: event.requestId,
+          profile: event.profile,
+          method: event.method,
+          title: event.title,
+        });
+      } else if (event.type === 'remove') {
+        dispatch({ type: 'pending-remove', requestId: event.requestId });
+      } else {
+        dispatch({ type: 'select-bot', botId: event.profile });
+      }
+    });
+  }, [dispatch]);
+
   // Subscribe to live turn events from the main process (stream, requests, reconnect).
   useEffect(() => {
     const dashboard = window.mosbot?.dashboard;

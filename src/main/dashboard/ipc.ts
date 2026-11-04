@@ -31,6 +31,8 @@ export function registerDashboardIpc(options: {
   readonly isTrustedEvent: (event: IpcMainInvokeEvent) => boolean;
   /** Called after a successful local sign-out (e.g. to close the live chat socket). */
   readonly onSignOut?: () => void;
+  /** Called when a sign-in/restore leaves the app connected (e.g. to start the pending watcher). */
+  readonly onSessionReady?: () => void;
 }): void {
   const { ipcMain, service, isTrustedEvent } = options;
 
@@ -86,7 +88,12 @@ export function registerDashboardIpc(options: {
         error: protocolError('invalid_url', 'Enter the Dashboard address.'),
       };
     }
-    return service.restore(address);
+    return service.restore(address).then((result) => {
+      if (result.ok && result.data.connected) {
+        options.onSessionReady?.();
+      }
+      return result;
+    });
   });
 
   handle<ProbeReport>(DASHBOARD_CHANNELS.probe, () => service.probe());

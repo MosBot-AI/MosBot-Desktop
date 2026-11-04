@@ -4,13 +4,13 @@ import { useMessages } from '../../app/i18n';
 import type { MessageKey } from '../../app/i18n';
 import {
   isRemoteRoster,
-  selectPendingBotId,
+  selectPendingCount,
+  selectPendingProfile,
   selectPinnedBots,
   selectRosterBots,
   selectRosterSections,
   selectSectionBots,
   selectUnreadTotal,
-  selectUnresolvedCount,
   useAppState,
   useDispatch,
 } from '../../app/store';
@@ -47,9 +47,9 @@ export function BotSidebar(): ReactElement {
   const sections = selectRosterSections(state);
   const roster = selectRosterBots(state);
   const remote = isRemoteRoster(state);
-  const unresolved = selectUnresolvedCount(state);
+  const unresolved = selectPendingCount(state);
   const unreadTotal = selectUnreadTotal(state);
-  const pendingBotId = selectPendingBotId(state);
+  const pendingProfile = selectPendingProfile(state);
   const connectionUi = state.connectionUi;
   const connectedName =
     connectionUi.snapshot?.connected === true
@@ -121,8 +121,8 @@ export function BotSidebar(): ReactElement {
           type="button"
           className={styles.attention}
           onClick={() => {
-            if (pendingBotId !== null) {
-              selectBot(pendingBotId);
+            if (pendingProfile !== null) {
+              selectBot(pendingProfile);
             }
           }}
           aria-label={t('sidebar.attention', { count: unresolved })}

@@ -284,6 +284,21 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
         storedSessionId = str(record?.['session_key']) || storedSessionId;
         approvalMode = str(asRecord(record?.['info'])?.['approval_mode']) || approvalMode;
         runningTurn = record?.['running'] === true;
+        // Resume carries unanswered requests for reconnecting clients.
+        const openRequests = Array.isArray(record?.['open_requests'])
+          ? (record['open_requests'] as unknown[])
+          : [];
+        for (const entry of openRequests) {
+          const request = asRecord(entry);
+          if (request === null) {
+            continue;
+          }
+          const id = str(request['id']);
+          const method = str(request['method']);
+          if (id !== '' && method !== '') {
+            handleServerRequest({ id, method, params: asRecord(request['params']) ?? {} });
+          }
+        }
         return {
           ok: true,
           data: { profile, storedSessionId, runtimeSessionId },

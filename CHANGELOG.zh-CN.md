@@ -36,7 +36,10 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
   并在关闭前刷盘。
 - 断线回放：聊天管理器记录 gateway replay epoch 与事件 seq，重连 resume 后用
   `session.events.since` 回放、按 seq 去重、重投未回答的审批/澄清请求；回放环被截断或 epoch
-  变化时重新拉取历史。未连接时保持 fixture 演示。
+  变化时重新拉取历史。
+- 后台审批：独立 Gateway watcher 轮询活跃会话列表，只读附加等待中的 canonical Bot Chat，把其待处理
+  审批/澄清汇总为左栏「待确认」计数；窗口未聚焦时为每个请求发一次系统通知，点击恢复窗口并打开
+  对应 Bot。未连接时保持 fixture 演示。
 - Gateway WebSocket 客户端（`ws`）：一次性 ticket 握手、`gateway.ready` 首帧、zod 校验的 JSON-RPC 请求响应、类型化服务端事件，以及 ticket 复用/过期拒绝检查。已在测试部署验证：`profiles.list`、`client.capabilities` 与精确 Bot Chat 查询通过；复用与过期 ticket 被拒绝。
 
 ### 变更

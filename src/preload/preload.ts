@@ -9,6 +9,7 @@ import type {
   ChatOpenResult,
   ConnectionSnapshot,
   DashboardChatEvent,
+  DashboardPendingEvent,
   DashboardSettings,
   DashboardStatus,
   LocalState,
@@ -100,6 +101,15 @@ const bridge: Omit<MosBotBridge, 'openExternal' | 'local'> = {
       return ipcRenderer.invoke(DASHBOARD_CHANNELS.chatAnswer, requestId, result) as Promise<
         Result<void>
       >;
+    },
+    onPendingEvent(listener: (event: DashboardPendingEvent) => void): () => void {
+      const wrapped = (_event: Electron.IpcRendererEvent, payload: DashboardPendingEvent): void => {
+        listener(payload);
+      };
+      ipcRenderer.on(DASHBOARD_CHANNELS.pendingEvent, wrapped);
+      return () => {
+        ipcRenderer.removeListener(DASHBOARD_CHANNELS.pendingEvent, wrapped);
+      };
     },
     onChatEvent(listener: (event: DashboardChatEvent) => void): () => void {
       const wrapped = (_event: Electron.IpcRendererEvent, payload: DashboardChatEvent): void => {

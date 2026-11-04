@@ -10,6 +10,8 @@ import {
   searchEntries,
   selectChatMessages,
   selectPendingBotId,
+  selectPendingCount,
+  selectPendingProfile,
   selectPinnedBots,
   selectRosterBots,
   selectSelectedBot,
@@ -338,6 +340,23 @@ describe('remote roster', () => {
     const reset = reduceAppState(withChat, { type: 'remote-reset' });
     expect(isRemoteRoster(reset)).toBe(false);
     expect(selectChatMessages(reset, 'bot-project').length).toBeGreaterThan(0);
+  });
+
+  it('tracks pending requests discovered for other Bots', () => {
+    let state = reduceAppState(build(), { type: 'remote-ready', bots: [...bots] });
+    expect(selectPendingCount(state)).toBe(0);
+    state = reduceAppState(state, {
+      type: 'pending-add',
+      requestId: 'srq-1',
+      profile: 'writer',
+      method: 'approval',
+      title: 'Run a command',
+    });
+    expect(selectPendingCount(state)).toBe(1);
+    expect(selectPendingProfile(state)).toBe('writer');
+    state = reduceAppState(state, { type: 'pending-remove', requestId: 'srq-1' });
+    expect(selectPendingCount(state)).toBe(0);
+    expect(selectPendingProfile(state)).toBeNull();
   });
 
   it('prepends older history pages without duplicating messages', () => {

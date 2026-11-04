@@ -16,7 +16,9 @@ prompts are submitted, replies stream into the transcript with full Markdown
 rendering, Stop interrupts the turn, approval/clarify cards answer over the same
 gateway connection, older history pages load in place, and a dropped socket reconnects, replays
 missed events and re-delivers pending requests. Drafts, the selected Bot, the
-details column and language/appearance preferences survive a restart. Without a connection the window
+details column and language/appearance preferences survive a restart. A background
+watcher finds approvals/questions waiting in Bot Chats you have not opened, shows
+an attention count and sends a system notification (clicking it opens that Bot). Without a connection the window
 keeps using fixtures. No signed installer or upgrade path
 exists yet. See
 [`docs/evidence/m0a-design-slice.md`](docs/evidence/m0a-design-slice.md) and

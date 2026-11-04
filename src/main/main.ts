@@ -1,9 +1,19 @@
-import { app, BrowserWindow, ipcMain, nativeTheme, safeStorage, session, shell } from 'electron';
-import { SHELL_CHANNELS } from '../shared/bridge';
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  nativeTheme,
+  Notification,
+  safeStorage,
+  session,
+  shell,
+} from 'electron';
+import { DASHBOARD_CHANNELS, SHELL_CHANNELS } from '../shared/bridge';
 import path from 'node:path';
 import { createAuthManager } from './dashboard/auth';
 import { createChatManager } from './dashboard/chat';
 import { registerChatIpc } from './dashboard/chat-ipc';
+import { createPendingWatcher } from './dashboard/pending';
 import { registerLocalIpc } from './local/ipc';
 import { createTrustedSenderCheck, registerDashboardIpc } from './dashboard/ipc';
 import { createDashboardService } from './dashboard/service';
@@ -141,6 +151,16 @@ function loginTimeoutMs(): number | undefined {
   return parsed;
 }
 
+/** Shows the main window, recreating it when the person closed it earlier. */
+function ensureWindow(): void {
+  if (mainWindow === null || mainWindow.isDestroyed()) {
+    createMainWindow();
+    return;
+  }
+  mainWindow.show();
+  mainWindow.focus();
+}
+
 function registerShellIpc(): void {
   ipcMain.handle(SHELL_CHANNELS.openExternal, async (_event, rawUrl: unknown): Promise<boolean> => {
     if (typeof rawUrl !== 'string' || rawUrl.length > 2048) {
@@ -181,6 +201,40 @@ function registerDashboard(): void {
     ticketExpiryCheck: process.env['MOSBOT_PROBE_TICKET_EXPIRY'] === '1',
   });
   const chat = createChatManager({ auth, fetchImpl });
+  const watcher = createPendingWatcher({
+    auth,
+    fetchImpl,
+    notify: (pending) => {
+      const window = mainWindow;
+      const focused =
+        window !== null && !window.isDestroyed() && window.isVisible() && window.isFocused();
+      if (focused || !Notification.isSupported()) {
+        return;
+      }
+      const zh = app.getLocale().toLowerCase().startsWith('zh');
+      const notification = new Notification({
+        title: pending.displayName,
+        body: zh
+          ? pending.method === 'approval'
+            ? '需要你确认'
+            : '有一个问题需要你回答'
+          : pending.method === 'approval'
+            ? 'Needs your confirmation'
+            : 'A question is waiting',
+      });
+      notification.on('click', () => {
+        ensureWindow();
+        mainWindow?.webContents.send(DASHBOARD_CHANNELS.pendingEvent, {
+          type: 'open',
+          profile: pending.profile,
+        });
+      });
+      notification.show();
+    },
+    onEvent: (event) => {
+      mainWindow?.webContents.send(DASHBOARD_CHANNELS.pendingEvent, event);
+    },
+  });
   const trusted = createTrustedSenderCheck(() => mainWindow?.webContents ?? null);
   registerDashboardIpc({
     ipcMain,
@@ -188,6 +242,10 @@ function registerDashboard(): void {
     isTrustedEvent: trusted,
     onSignOut: () => {
       chat.close();
+      watcher.stop();
+    },
+    onSessionReady: () => {
+      watcher.start();
     },
   });
   registerChatIpc({
@@ -204,7 +262,9 @@ function registerDashboard(): void {
   app.on('before-quit', () => {
     auth.cancelLogin();
     chat.close();
+    watcher.stop();
   });
+  watcher.start();
 }
 
 void app.whenReady().then(() => {

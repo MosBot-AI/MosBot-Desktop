@@ -6,7 +6,7 @@
  * no real chat content.
  */
 import path from 'node:path';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, rmSync } from 'node:fs';
 import { _electron as electron } from 'playwright';
 
 const OUT_DIR = path.resolve('docs/evidence/screens/m0a');
@@ -21,6 +21,8 @@ const APP = path.resolve(
 
 async function main() {
   mkdirSync(OUT_DIR, { recursive: true });
+  // Local state persists between runs; capture from a clean profile.
+  rmSync(path.resolve('.tmp/userdata-shots'), { recursive: true, force: true });
   const env = {};
   for (const [key, value] of Object.entries(process.env)) {
     if (key !== 'ELECTRON_RUN_AS_NODE' && value !== undefined) env[key] = value;

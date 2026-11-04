@@ -79,7 +79,13 @@ until the release repository exists.
 - Reconnect replay: the chat manager tracks the gateway replay epoch and event
   sequence numbers, replays `session.events.since` after resuming, de-duplicates
   by sequence, re-delivers open approval/clarify requests, and refetches history
-  when the replay ring or epoch has moved on. Fixture windows keep the offline demo.
+  when the replay ring or epoch has moved on.
+- Background approvals: a separate gateway watcher polls the live session list,
+  attaches read-only to waiting canonical Bot Chats, surfaces their pending
+  approval/clarify requests as an attention count, and raises one system
+  notification per request when the window is not focused. Clicking the
+  notification restores the window and opens that Bot. Fixture windows keep the
+  offline demo.
 - Gateway WebSocket client (`ws`): one-time ticket handshake, `gateway.ready` first
   frame, JSON-RPC request/response with zod validation, typed server events, and
   ticket replay/expiry rejection checks. Verified against the test deployment:

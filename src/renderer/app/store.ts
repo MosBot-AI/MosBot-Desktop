@@ -134,6 +134,18 @@ export interface AppState {
   readonly live: LiveChatState;
   readonly localState: LocalState | null;
   readonly savedSelectedProfile: string | null;
+  readonly pending: {
+    readonly items: Readonly<
+      Record<
+        string,
+        {
+          readonly profile: string;
+          readonly method: 'approval' | 'clarify';
+          readonly title: string;
+        }
+      >
+    >;
+  };
 }
 
 export type AppAction =
@@ -207,7 +219,15 @@ export type AppAction =
   | { type: 'live-error'; message: string }
   | { type: 'live-history-stale'; reason: string }
   | { type: 'live-history-refreshed' }
-  | { type: 'hydrate-local'; state: LocalState | null };
+  | { type: 'hydrate-local'; state: LocalState | null }
+  | {
+      type: 'pending-add';
+      requestId: string;
+      profile: string;
+      method: 'approval' | 'clarify';
+      title: string;
+    }
+  | { type: 'pending-remove'; requestId: string };
 
 export interface Bootstrap {
   readonly resolvedTheme: ResolvedTheme;
@@ -401,6 +421,7 @@ export function createInitialState(seed: FixtureSeed, bootstrap: Bootstrap): App
     },
     localState: null,
     savedSelectedProfile: null,
+    pending: { items: {} },
   };
 }
 
@@ -1028,6 +1049,28 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
         savedSelectedProfile: savedProfile,
       };
     }
+    case 'pending-add':
+      return {
+        ...state,
+        pending: {
+          items: {
+            ...state.pending.items,
+            [action.requestId]: {
+              profile: action.profile,
+              method: action.method,
+              title: action.title,
+            },
+          },
+        },
+      };
+    case 'pending-remove': {
+      if (state.pending.items[action.requestId] === undefined) {
+        return state;
+      }
+      const items = { ...state.pending.items };
+      delete items[action.requestId];
+      return { ...state, pending: { items } };
+    }
     case 'set-footer-menu':
       return state.footerMenuOpen === action.open && !state.pinnedMenuOpen
         ? state
@@ -1443,6 +1486,24 @@ export function selectPendingBotId(state: AppState): string | null {
     if (unresolvedRequests(list) > 0) {
       return botId;
     }
+  }
+  return null;
+}
+
+/** Pending approvals/clarifies: remote discovery when connected, fixtures otherwise. */
+export function selectPendingCount(state: AppState): number {
+  return isRemoteRoster(state)
+    ? Object.keys(state.pending.items).length
+    : selectUnresolvedCount(state);
+}
+
+/** First profile with a pending request (for the attention chip). */
+export function selectPendingProfile(state: AppState): string | null {
+  if (!isRemoteRoster(state)) {
+    return selectPendingBotId(state);
+  }
+  for (const item of Object.values(state.pending.items)) {
+    return item.profile;
   }
   return null;
 }

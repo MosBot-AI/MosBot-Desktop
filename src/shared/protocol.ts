@@ -282,6 +282,18 @@ export type DashboardChatEvent =
   | { readonly type: 'request-cancel'; readonly requestId: string }
   | { readonly type: 'error'; readonly message: string };
 
+/** Events the main-process pending watcher pushes for Bots the window is not showing. */
+export type DashboardPendingEvent =
+  | {
+      readonly type: 'add';
+      readonly requestId: string;
+      readonly profile: string;
+      readonly method: 'approval' | 'clarify';
+      readonly title: string;
+    }
+  | { readonly type: 'remove'; readonly requestId: string }
+  | { readonly type: 'open'; readonly profile: string };
+
 export interface ChatOpenResult {
   readonly profile: string;
   readonly storedSessionId: string | null;

@@ -3,6 +3,7 @@ import type {
   LocalState,
   ConnectionSnapshot,
   DashboardChatEvent,
+  DashboardPendingEvent,
   DashboardSettings,
   DashboardStatus,
   PreflightResult,
@@ -78,6 +79,8 @@ export interface MosBotDashboardBridge {
   chatAnswer(requestId: string, result: Readonly<Record<string, unknown>>): Promise<Result<void>>;
   /** Subscribes to live turn events; returns an unsubscribe function. */
   onChatEvent(listener: (event: DashboardChatEvent) => void): () => void;
+  /** Subscribes to pending-request discovery events (Bots not currently open). */
+  onPendingEvent(listener: (event: DashboardPendingEvent) => void): () => void;
   /** Non-secret connection preferences (last address). */
   settings(): Promise<Result<DashboardSettings>>;
   saveAddress(address: string | null): Promise<Result<void>>;
@@ -113,6 +116,7 @@ export const DASHBOARD_CHANNELS = {
   chatStop: 'mosbot:dashboard:chatStop',
   chatAnswer: 'mosbot:dashboard:chatAnswer',
   chatEvent: 'mosbot:dashboard:chatEvent',
+  pendingEvent: 'mosbot:dashboard:pendingEvent',
   settings: 'mosbot:dashboard:settings',
   saveAddress: 'mosbot:dashboard:saveAddress',
 } as const;

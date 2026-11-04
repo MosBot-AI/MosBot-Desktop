@@ -406,6 +406,33 @@ export function createProbeService(deps: ProbeDeps): ProbeService {
           );
         }
 
+        const activeList = await client.call('session.active_list', {}, emptySchema);
+        if (activeList.ok) {
+          const activeRows = Array.isArray(asRecord(activeList.data)?.['sessions'])
+            ? (asRecord(activeList.data)?.['sessions'] as unknown[])
+            : [];
+          const waiting = activeRows.filter(
+            (entry) => asRecord(entry)?.['status'] === 'waiting',
+          ).length;
+          rows.push(
+            row(
+              'session_active_list',
+              '活跃会话 session.active_list',
+              'pass',
+              `sessions=${activeRows.length} · waiting=${waiting}`,
+            ),
+          );
+        } else {
+          rows.push(
+            row(
+              'session_active_list',
+              '活跃会话 session.active_list',
+              'fail',
+              activeList.error.message,
+            ),
+          );
+        }
+
         if (defaultProfile === null) {
           rows.push(
             row('bot_chat_query', '精确 Bot Chat 查询', 'unverified', '没有可用 profile 可供查询'),
