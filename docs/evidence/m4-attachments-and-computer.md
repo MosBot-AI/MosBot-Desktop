@@ -1,200 +1,217 @@
-# M4 · 附件与电脑（第一块）· 证据
+# M4 · Attachments and Computer (first slice) · Evidence
 
-- 卡片：M4（附件收发、电脑状态/预览/唤醒；产物索引与观看/接管窗口待下一段）
-- 状态：**附件上传/真实推理读取、资料库产物索引/预览/保存并打开、电脑状态/预览/唤醒、独立 RFB 观看窗口
-  与租约取得/归还均已接入**；观看窗口的真实画面验收待用户在场确认
-- 记录时间：2026-11-04
-- 目标服务：`192.168.2.171:9119`（v0.22.5 / `bf0203a794`）
+- Card: M4 (attachment send/receive, computer status/preview/wake; the artifact index and the watch/takeover window are in the next slice)
+- Status: **Attachment upload/real inference read, library artifact index/preview/save-and-open, computer status/preview/wake, the
+  standalone RFB viewer window and lease acquire/release are all wired in**; real-frame acceptance of the viewer window awaits
+  the user's presence for confirmation
+- Recorded: 2026-11-04
+- Target service: `192.168.2.171:9119` (v0.22.5 / `bf0203a794`)
 
-## 附件
+## Attachments
 
-- 输入条回形针在连接且已打开 Bot Chat 时可用：系统文件选择器（主进程）→ 读取（10 MB 上限）→
-  base64 data URL → WS `file.attach {session_id, name, data_url}` → 返回 `@file:` 引用；
-- 引用以 chip 形式显示在输入条上方，可移除；发送时把引用与正文一起 `prompt.submit`；
-- 失败（超限/读取失败/服务端拒绝）提示且不发送；取消选择静默。
-- 真实验证（专用 profile，自动清理）：上传 `mosbot-probe-attachment.txt` 得到引用 → 提示模型读取附件
-  → 回复中回显文件内的随机 token（`chat_attach_read` 通过）。
+- The paperclip in the composer is available when connected and a Bot Chat is open: system file picker (main process) → read
+  (10 MB limit) → base64 data URL → WS `file.attach {session_id, name, data_url}` → returns an `@file:` reference;
+- The reference is shown as a chip above the composer and can be removed; on send the reference and the body are submitted
+  together with `prompt.submit`;
+- A failure (over limit / read failure / server rejection) shows an error and does not send; cancelling the picker is silent.
+- Real verification (dedicated profile, auto-cleanup): upload `mosbot-probe-attachment.txt` to get a reference → prompt the
+  model to read the attachment → the reply echoes the random token inside the file (`chat_attach_read` passes).
 
-## 资料库
+## Library
 
-- 工作区解析：聊天 `session.resume` 返回的 `info.cwd` 随 `chatOpen` 一并缓存；资料库用它作为产物根目录
-  （未打开过聊天时回退到 canonical Bot Chat 的 session 记录）。
-- 索引：`GET /api/files?path=<workspace>` → 文件名、大小、mime、类型（image/text/pdf/other）、修改时间，
-  按修改时间倒序，上限 200 条。
-- 读取：`GET /api/files/read?path=` → data URL；文本解码后预览（上限 400 KB），图片直接显示；
-  PDF/其它类型提示保存后由系统应用打开。
-- 保存并打开：主进程把 data URL 写入 Downloads（同名自动加时间戳），再 `shell.openPath` 显式打开；
-  失败提示且不覆盖已有文件。
-- 真实验证（专用 profile，自动清理）：让 Bot 在工作区创建 `mosbot-probe-artifact.txt` → 索引命中
-  （kind=text、24 B）→ 读取内容含随机 token。
+- Workspace resolution: `info.cwd` returned by the chat `session.resume` is cached together with `chatOpen`; the library uses it
+  as the artifact root (falling back to the canonical Bot Chat's session record when no chat has been opened).
+- Index: `GET /api/files?path=<workspace>` → file name, size, mime, kind (image/text/pdf/other), modification time, sorted by
+  modification time descending, capped at 200 entries.
+- Read: `GET /api/files/read?path=` → data URL; text is decoded then previewed (400 KB limit), images are shown directly;
+  PDF/other kinds prompt to save and open with a system application.
+- Save and open: the main process writes the data URL into Downloads (auto-appending a timestamp on name collision), then
+  explicitly opens it with `shell.openPath`; a failure shows an error and never overwrites existing files.
+- Real verification (dedicated profile, auto-cleanup): have the Bot create `mosbot-probe-artifact.txt` in the workspace →
+  the index hits it (kind=text, 24 B) → the read content contains the random token.
 
-## 电脑
+## Computer
 
-- 详情栏「电脑」页在连接模式读取真实 `display.status`（每 5 s 轮询），显示运行/休眠、几何、阻塞原因；
-- 运行时读取 `display.thumbnail` 显示 16:10 预览；服务端 `suppressed`（他人持有租约）时隐藏画面并提示，
-  不显示旧帧；
-- 休眠时提供显式「唤醒」按钮（`display.start`），完成后 1.5 s 重读权威状态；阻塞时禁用并显示原因；
-- 独立观看窗口：主进程 `display.observe` 取得一次性 display ticket 与 server-minted viewer id，打开独立
-  BrowserWindow（noVNC RFB 直连 `/api/display/ws?display_ticket=`）；控制条显示「仅观看 / 你正在控制 /
-  他人控制」，`display.lease.acquire/release` 取得/归还控制权，lease 广播与操作结果同步；关闭窗口或注销时
-  自动归还租约并关闭连接。RFB 窗口初始只读，取得控制后才发送输入。
+- The inspector "Computer" tab reads the real `display.status` in connected mode (polled every 5 s), showing running/asleep,
+  geometry and the blocked reason;
+- When running, it reads `display.thumbnail` to show a 16:10 preview; when the server reports `suppressed` (another party holds
+  the lease), it hides the frame and shows a notice instead of a stale frame;
+- When asleep it offers an explicit "Wake" button (`display.start`), then re-reads the authoritative state 1.5 s later; when
+  blocked it is disabled with the reason shown;
+- Standalone viewer window: the main process calls `display.observe` to get a one-time display ticket and a server-minted viewer
+  id, and opens a standalone BrowserWindow (noVNC RFB directly to `/api/display/ws?display_ticket=`); the control bar shows
+  "View only / You are in control / Someone else is in control", `display.lease.acquire/release` acquires/returns control, and
+  lease broadcasts and operation results stay in sync; closing the window or logging out automatically returns the lease and
+  closes the connection. The RFB window is read-only initially and only sends input after control is acquired.
 
-## 例行任务概览
+## Recurring tasks overview
 
-- 详情栏「例行任务」在连接模式读取 `/api/cron/jobs?profile=`，显示任务名、调度与停用状态；空态与 fixture
-  一致。只读，不修改服务端任务。
+- The inspector "Recurring tasks" tab reads `/api/cron/jobs?profile=` in connected mode, showing the task name, schedule and
+  disabled state; the empty state matches the fixture. Read-only; it does not modify server tasks.
 
-## 验证
+## Verification
 
-| 检查                                | 结果                                                                                                                              |
-| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| 真实附件探针（专用 profile）        | ✅ 上传 staged、模型回显附件 token、profile 清理                                                                                  |
-| 真实 `display.status`               | ✅ supported/installed/running/lease 等字段可读                                                                                   |
-| 真实 `display.thumbnail`            | ✅ 读取成功；电脑休眠时 `data_url=null`、无帧、无 suppressed（不伪造画面）                                                        |
-| 真实电脑探针（唤醒/票据/租约）      | ✅ running=true · observe ticket+viewer_id · acquire holder=human · 持租约时预览抑制（`human_has_control`）· release holder=agent |
-| `pnpm test`                         | 133 通过                                                                                                                          |
-| `pnpm test:e2e`                     | 12 通过（fixture 路径不受影响）                                                                                                   |
-| typecheck / lint / format / package | 通过                                                                                                                              |
+| Check                                     | Result                                                                                                                                                      |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Real attachment probe (dedicated profile) | ✅ upload staged, model echoes the attachment token, profile cleaned up                                                                                     |
+| Real `display.status`                     | ✅ fields such as supported/installed/running/lease readable                                                                                                |
+| Real `display.thumbnail`                  | ✅ read succeeded; while the computer is asleep `data_url=null`, no frame, no suppressed (frame not faked)                                                  |
+| Real computer probe (wake/ticket/lease)   | ✅ running=true · observe ticket+viewer_id · acquire holder=human · preview suppressed while holding the lease (`human_has_control`) · release holder=agent |
+| `pnpm test`                               | 133 passed                                                                                                                                                  |
+| `pnpm test:e2e`                           | 12 passed (fixture path unaffected)                                                                                                                         |
+| typecheck / lint / format / package       | passed                                                                                                                                                      |
 
-## 资料库字段与错误态（2026-11-04 补充）
+## Library fields and error states (2026-11-04 addendum)
 
-部署源码 `~/.hermes/hermes-agent`（`bf0203a794`）的 `/api/files` 行为与本轮修正：
+Deployment source `~/.hermes/hermes-agent` (`bf0203a794`), `/api/files` behavior and this round's fixes:
 
-- 目录项字段为 `name / path / is_directory / size / mtime / mime_type`，其中 **`mtime` 是
-  epoch 秒**，不是 `modified_at` 毫秒；客户端此前只读 `modified_at`，导致所有文件按 0 排序。
-  现优先 `modified_at`，否则用 `mtime × 1000`，保留“按修改时间倒序”。
-- 悬空符号链接返回 `broken_link: true`、`size: null`。资料库现在显示「资源已删除」徽标并禁用
-  打开，不再展示为 0 B 可点击项。
-- 错误映射：`401→session_expired`、`403→unauthorized(httpStatus 403)`、`404→http_error`、
-  `413→http_error`；资料库按 已删除 / 无权限 / 过大 / 登录过期 / 未连接 给出专门文案，并提供
-  「重试」按钮（`src/renderer/features/inspector/artifactError.ts`）。
-- **部署 API 不提供产物到来源消息的关联字段**：`/api/files` 只有文件系统元数据。因此“来源消息”
-  目前只能用于 fixture 演示，真实资料库不显示来源；这是部署能力缺口，登记到 `acceptance.md`
-  第 6 项，不能用客户端猜测补造。
-- 验证：`tests/unit/artifacts-mapping.test.ts`（字段/排序/损坏链接/错误映射）；**真实服务复跑
-  通过（2026-11-04 14:37，专用 profile 自动清理）**：
-  `chat_artifact_index` 返回 `name=mosbot-probe-artifact.txt · kind=text · bytes=24 ·
-mtime=2026-11-04T06:37:52.972Z · broken=false`，`chat_artifact_read` 回显 token，
-  附件上传/推理读取同时复验通过；报告 `docs/evidence/tmp/dashboard-chat-2026-11-04T06-39-26-736Z.json`。
+- Directory entry fields are `name / path / is_directory / size / mtime / mime_type`, where **`mtime` is epoch seconds**, not
+  `modified_at` milliseconds; the client previously read only `modified_at`, so all files sorted as 0. It now prefers
+  `modified_at`, otherwise uses `mtime × 1000`, keeping "sorted by modification time descending".
+- A dangling symlink returns `broken_link: true`, `size: null`. The library now shows a "Resource deleted" badge and disables
+  opening, instead of showing it as a 0 B clickable item.
+- Error mapping: `401→session_expired`, `403→unauthorized(httpStatus 403)`, `404→http_error`, `413→http_error`; the library
+  provides dedicated copy for deleted / no permission / too large / login expired / not connected, and offers a "Retry" button
+  (`src/renderer/features/inspector/artifactError.ts`).
+- **The deployment API provides no field linking an artifact to its source message**: `/api/files` has only filesystem metadata.
+  So "source message" can currently only be used in the fixture demo and is not shown in the real library; this is a deployment
+  capability gap, registered as item 6 in `acceptance.md`, and must not be fabricated by client guesswork.
+- Verification: `tests/unit/artifacts-mapping.test.ts` (fields/sorting/broken links/error mapping); **real-service rerun
+  passed (2026-11-04 14:37, dedicated profile auto-cleaned)**:
+  `chat_artifact_index` returned `name=mosbot-probe-artifact.txt · kind=text · bytes=24 ·
+mtime=2026-11-04T06:37:52.972Z · broken=false`, `chat_artifact_read` echoed the token, and attachment upload/inference read
+  passed again in the same run; report `docs/evidence/tmp/dashboard-chat-2026-11-04T06-39-26-736Z.json`.
 
-## 观看窗口真实验收（2026-11-04 完成）
+## Real viewer-window acceptance (completed 2026-11-04)
 
-`scripts/gui-computer-walkthrough.mjs`（打包产物 + 真实 Dashboard + 专用 viewer，不采集远端画面像素）：
+`scripts/gui-computer-walkthrough.mjs` (packaged artifact + real Dashboard + dedicated viewer, no remote frame pixels captured):
 
-| 步骤                                    | 结果                                     |
-| --------------------------------------- | ---------------------------------------- |
-| 详情栏「电脑」读取真实 `display.status` | ✅ 电脑运行中                            |
-| 打开独立观看窗口                        | ✅ 新 BrowserWindow                      |
-| noVNC RFB 连接与画面                    | ✅ canvas **1440 × 900**（真实远端画面） |
-| 取得控制权（lease）                     | ✅ `你正在控制`，按钮切为「归还控制」    |
-| 归还控制                                | ✅ 回到 `仅观看 · 取得控制权`            |
-| 关闭窗口                                | ✅ 窗口销毁                              |
+| Step                                             | Result                                                           |
+| ------------------------------------------------ | ---------------------------------------------------------------- |
+| Inspector "Computer" reads real `display.status` | ✅ computer is running                                           |
+| Open the standalone viewer window                | ✅ new BrowserWindow                                             |
+| noVNC RFB connection and frame                   | ✅ canvas **1440 × 900** (real remote frame)                     |
+| Acquire control (lease)                          | ✅ "You are in control", the button switches to "Return control" |
+| Return control                                   | ✅ back to "View only · Take control"                            |
+| Close the window                                 | ✅ window destroyed                                              |
 
-本轮修复的两个真实缺陷（此前观看窗口从未真正可用）：
+Two real defects fixed this round (the viewer window had never actually worked before):
 
-1. noVNC 发送 `Sec-WebSocket-Protocol: binary`，而部署的 RFB bridge 不协商子协议 → 握手 1006。
-   改为 `wsProtocols: []` 后连通。
-2. viewer 窗口的 `computerAcquire/Release/Reconnect/Close` IPC 被主进程按“仅信任主窗口”拒绝，
-   返回 `The viewer is not ready`，控制权永远取不到。现在 viewer 只信任自己的顶层 frame。
+1. noVNC sends `Sec-WebSocket-Protocol: binary`, while the deployed RFB bridge does not negotiate the subprotocol → handshake 1006. Changing to `wsProtocols: []` made it connect.
+2. The viewer window's `computerAcquire/Release/Reconnect/Close` IPC calls were rejected by the main process under "trust the
+   main window only", returning `The viewer is not ready`, so control could never be acquired. Now the viewer only trusts its
+   own top-level frame.
 
-证据：`docs/evidence/tmp/computer-gui-2026-11-04T08-38-29-331Z.json`。
+Evidence: `docs/evidence/tmp/computer-gui-2026-11-04T08-38-29-331Z.json`.
 
-### 双 viewer 租约争用（2026-11-04，用户授权测试服务器）
+### Dual-viewer lease contention (2026-11-04, user-authorized test server)
 
-`scripts/gui-computer-dual.mjs`：两个独立打包实例（同一账号、各自 userData）打开同一 profile 的
-观看窗口，画面均为 **1440 × 900**：
+`scripts/gui-computer-dual.mjs`: two standalone packaged instances (same account, separate userData) open the viewer window for
+the same profile; both frames are **1440 × 900**:
 
-| 步骤                                     | 结果                                                                           |
-| ---------------------------------------- | ------------------------------------------------------------------------------ |
-| A 取得控制                               | ✅ `你正在控制`                                                                |
-| B 观察到他人控制                         | ✅ `其他人正在控制这台电脑。`（控制按钮禁用）                                  |
-| B 强行 acquire（绕过禁用按钮直接调 IPC） | ✅ 成功：**后来者覆盖租约**，A 被踢下线                                        |
-| A 被踢后恢复                             | ✅ RFB close(4000) 触发重新 `display.observe` + 重建，A 回到只读并看到他人控制 |
-| B 归还后                                 | ✅ A 回到 `仅观看`                                                             |
+| Step                                                                   | Result                                                                                                                   |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| A acquires control                                                     | ✅ "You are in control"                                                                                                  |
+| B observes someone else in control                                     | ✅ "Someone else is controlling this computer." (control button disabled)                                                |
+| B force-acquires (calling IPC directly, bypassing the disabled button) | ✅ succeeded: **the later client takes over the lease**, A is kicked                                                     |
+| A recovers after being kicked                                          | ✅ RFB close(4000) triggers a fresh `display.observe` + rebuild; A returns to read-only and sees someone else in control |
+| After B returns control                                                | ✅ A returns to "View only"                                                                                              |
 
-**结论：部署（v0.22.5 / `bf0203a794`）仍允许后来者抢占租约，M0c 的“非抢占原子认领”缺口在指定
-服务上确认存在**，M4 不能以当前部署关闭。客户端已做到：被抢占后自动重新观察并回到只读、不向
-他人租约发送输入。报告：`docs/evidence/tmp/computer-dual-2026-11-04T08-41-37-535Z.json`。
+**Conclusion: the deployment (v0.22.5 / `bf0203a794`) still allows a later client to seize the lease; M0c's "non-preemptive
+atomic claim" gap is confirmed on the designated service**, so M4 cannot be closed against the current deployment. The client
+side already does: after being preempted, automatically re-observe and return to read-only, never sending input into someone
+else's lease. Report: `docs/evidence/tmp/computer-dual-2026-11-04T08-41-37-535Z.json`.
 
-## 网络断开处理（2026-11-04 补充）
+## Network disconnect handling (2026-11-04 addendum)
 
-- 主窗口新增全局断网提示；观看窗口显示「网络已断开，恢复后会自动重连画面。」并在 `online` 时
-  通过 `computer.reconnect` 重新 `display.observe` 取得 ticket、重建 RFB。
-- 之前一次观看失败是用户切换网络导致，并非客户端缺陷；上面已用稳定网络完成真实画面验收。
+- The main window gained a global offline notice; the viewer window shows "Network disconnected; the frame will reconnect
+  automatically once the network recovers." and on `online` re-`display.observe` through `computer.reconnect` to get a ticket and
+  rebuild RFB.
+- An earlier viewing failure was caused by the user switching networks, not a client defect; the real-frame acceptance above was
+  completed on a stable network.
 
-## 未完成 / 下一段
+## Incomplete / next slice
 
-- 资料库来源消息关联与过期/无权限/已删除状态细化（当前按工作区文件索引，来源消息待补）。
-- 电脑独立窗口：`display.observe` → 一次性 display ticket → RFB 观看；`display.lease.acquire/release`
-  取得/归还控制权；他人控制、断线退回只读、关闭窗口归还租约、双客户端验收。
-- 详情栏例行任务概览与真实 `/api/cron/jobs` 数据（当前只读探针已验证接口）。
+- Library source-message linkage and refinement of expired/no-permission/deleted states (currently indexing workspace files;
+  source messages pending).
+- Computer standalone window: `display.observe` → one-time display ticket → RFB viewing; `display.lease.acquire/release` to
+  acquire/return control; someone else in control, offline fallback to read-only, closing the window returns the lease,
+  dual-client acceptance.
+- Inspector recurring-task overview with real `/api/cron/jobs` data (currently a read-only probe has verified the endpoint).
 
-## 2026-11-04 重启重验租约（强杀场景）
+## 2026-11-04 Lease re-verification after restart (force-kill scenario)
 
-`scripts/gui-stale-lease.mjs`：观看窗口取得控制后 **SIGKILL** 整个应用（不会执行释放），重启并重新
-打开同一 Bot 的观看窗口。
+`scripts/gui-stale-lease.mjs`: after the viewer window acquires control, **SIGKILL** the whole app (so no release runs), then
+restart and reopen the viewer window for the same Bot.
 
-| 检查                           | 结果                      |
-| ------------------------------ | ------------------------- |
-| 崩溃前 viewer 持有控制         | ✅ `你正在控制`           |
-| 重启后重新读取租约（非控制态） | ✅ `仅观看`               |
-| 取得控制权按钮可用             | ✅ disabled=false         |
-| 重新取得控制                   | ✅ `你正在控制`，随后释放 |
+| Check                                        | Result                                 |
+| -------------------------------------------- | -------------------------------------- |
+| viewer held control before the crash         | ✅ "You are in control"                |
+| lease re-read after restart (not in control) | ✅ "View only"                         |
+| Take control button usable                   | ✅ disabled=false                      |
+| re-acquire control                           | ✅ "You are in control", then released |
 
-结论：该部署在 viewer 进程被强杀后不会留下卡死的“陈旧人类租约”，重启后回到只读并可重新取得控制。
-另外本轮补了一处客户端行为：观看窗口打开时直接渲染 `display.observe` 返回的 **lease 快照**，
-若确实有另一个人类持有租约，打开即显示「其他人正在控制」，而不是先误报“仅观看”。
+Conclusion: on this deployment, force-killing the viewer process does not leave a stuck "stale human lease"; after restart it
+returns to read-only and control can be acquired again. Also this round added a client behavior: when the viewer window opens it
+directly renders the **lease snapshot** returned by `display.observe`; if another human does hold the lease, it shows "Someone
+else is in control" right away instead of falsely reporting "View only" first.
 
-报告：`docs/evidence/tmp/stale-lease-2026-11-04T10-45-36-283Z.json`。
+Report: `docs/evidence/tmp/stale-lease-2026-11-04T10-45-36-283Z.json`.
 
-仍未验证：真实断网后的画面重连、双 viewer 非抢占（M0c 服务端依赖）。
+Still unverified: real frame reconnect after a network disconnect; dual-viewer non-preemption (M0c server dependency).
 
-## 2026-11-04 观看窗口断线重连（模拟 socket 断开 + offline/online 事件）
+## 2026-11-04 Viewer disconnect/reconnect (simulated socket drop + offline/online events)
 
-`scripts/gui-viewer-reconnect.mjs`（`MOSBOT_DIAG=1` 时暴露测试专用 `dropSocket()`，不触碰真实网络）：
+`scripts/gui-viewer-reconnect.mjs` (`MOSBOT_DIAG=1` exposes a test-only `dropSocket()`, no real network touched):
 
-| 检查                                        | 结果                      |
-| ------------------------------------------- | ------------------------- |
-| 观看窗口连接并有真实 canvas                 | ✅                        |
-| 强制断开 RFB socket 后自动重新 observe/重建 | ✅ 画面恢复、状态回到只读 |
-| `offline` 事件显示「网络已断开…」           | ✅                        |
-| `online` 事件自动重连                       | ✅ 画面恢复               |
+| Check                                                | Result                                     |
+| ---------------------------------------------------- | ------------------------------------------ |
+| viewer window connected with a real canvas           | ✅                                         |
+| RFB socket forcibly dropped, auto re-observe/rebuild | ✅ frame restored, state back to read-only |
+| `offline` event shows "Network disconnected…"        | ✅                                         |
+| `online` event reconnects automatically              | ✅ frame restored                          |
 
-报告：`docs/evidence/tmp/viewer-reconnect-2026-11-04T10-50-35-732Z.json`。
+Report: `docs/evidence/tmp/viewer-reconnect-2026-11-04T10-50-35-732Z.json`.
 
-说明：这是**模拟**断线（测试 seam + DOM 事件）；真实 Wi-Fi/网卡断开后的画面重连仍未实测。
-本轮还修复了观看窗口打开时不读取 `display.observe` 租约快照的问题（现会立即显示“其他人正在控制”）。
+Note: this is a **simulated** disconnect (test seam + DOM events); reconnect of the frame after a real Wi-Fi/NIC disconnect has
+not been tested. This round also fixed the viewer window not reading the `display.observe` lease snapshot on open (it now shows
+"Someone else is in control" immediately).
 
-## 2026-11-04 资料库切换 Bot 的旧响应隔离（代码修复）
+## 2026-11-04 Stale-response isolation when switching Bots in the library (code fix)
 
-`LibraryTab` 的 artifacts 列表、预览读取与保存回调都捕获了 `botId`，但响应返回后没有校验它是否
-仍是当前 Bot：快速切换 Bot 时，旧 Bot 的列表/预览可能覆盖新 Bot 的内容（与工作台 board/profile
-同一类问题）。已增加 `currentBot` ref 守卫，旧响应直接丢弃；同时删除 `chat.ts` 一处重复赋值。
-该修复由类型检查/回归测试覆盖，未单独做延迟注入的 GUI 复现（真实资料库内容涉及用户数据）。
+`LibraryTab`'s artifacts list, preview read and save callbacks all captured `botId`, but after the response returned did not
+check whether it was still the current Bot: when switching Bots quickly, the old Bot's list/preview could overwrite the new
+Bot's content (the same class of problem as the workbench board/profile). A `currentBot` ref guard was added so stale responses
+are dropped directly; a duplicate assignment in `chat.ts` was also removed. The fix is covered by typecheck/regression tests;
+no separate delay-injection GUI reproduction was done (real library content involves user data).
 
-## 2026-11-04 电脑状态/缩略图按 profile 路由（修复）
+## 2026-11-04 Computer status/thumbnail routed by profile (fix)
 
-`display.status/thumbnail/start` 的 **runtime 是主机级**，但 **lease 与缩略图抑制按 profile**。
-资料库“电脑”页此前调用时不带 profile，网关只能按当前会话上下文取 lease：快速切换 Bot 时可能把
-另一个 Bot 的租约/抑制状态用错（缩略图可能在他人持有时仍显示）。
+`display.status/thumbnail/start`'s **runtime is host-level**, but the **lease and thumbnail suppression are per profile**. The
+library "Computer" tab previously called them without a profile, so the gateway could only take the lease from the current
+session context: when switching Bots quickly, another Bot's lease/suppression state could be used incorrectly (the thumbnail
+might still show while someone else holds it).
 
-修复：bridge/preload/IPC/service 全部支持可选 `profile`，`ComputerTab` 显式传 `profileId`；
-未命名时保持旧行为（探针/兼容调用）。单测 `tests/unit/display.test.ts` 验证三种调用都把
-`{profile}` 传给 RPC，未命名时传 `{}`。
+Fix: bridge/preload/IPC/service all support an optional `profile`, and `ComputerTab` explicitly passes `profileId`; when unnamed,
+the old behavior is kept (probes/compatibility calls). Unit test `tests/unit/display.test.ts` verifies that all three calls pass
+`{profile}` to the RPC, and pass `{}` when unnamed.
 
-说明：runtime 的 running/geometry 是主机级共享值，不能靠“未启动的 Bot”区分 profile；因此没有
-用该现象做真实服务断言，避免误判。
+Note: the runtime's running/geometry are host-level shared values and cannot distinguish profiles via "a Bot that has not
+started"; therefore this phenomenon was not used for real-service assertions, to avoid misjudgment.
 
-## 2026-11-04 检查器跨 Bot 状态复用（代码修复）
+## 2026-11-04 Inspector cross-Bot state reuse (code fix)
 
-`InspectorPanel` 的三个 tab 在切换 Bot 时不会重建：资料库的列表/预览、电脑页的 status/frame、
-详情页的 cron 行都会被下一个 Bot 短暂复用。更严重的是 `ComputerTab.loadRemote` 的 `useCallback`
-依赖为空，闭包里捕获的是**首次挂载时的 profileId**，切换 Bot 后仍可能查询旧 Bot。
+`InspectorPanel`'s three tabs are not rebuilt when switching Bots: the library's list/preview, the computer tab's status/frame,
+and the details tab's cron rows are all briefly reused by the next Bot. Worse, `ComputerTab.loadRemote`'s `useCallback` had an
+empty dependency list, so its closure captured **the profileId at first mount**, and could still query the old Bot after
+switching.
 
-修复：
+Fix:
 
-- `InspectorPanel` 用 `key={bot.id}` 让三个 tab 在 Bot 切换时重建；
-- `ComputerTab` 的 `loadRemote` 依赖 `profileId`，并在响应返回后校验仍是当前 Bot（丢弃旧响应）。
+- `InspectorPanel` uses `key={bot.id}` so the three tabs are rebuilt when the Bot switches;
+- `ComputerTab`'s `loadRemote` depends on `profileId`, and after the response returns validates that it is still the current Bot
+  (dropping stale responses).
 
-说明：`display.status` 的 runtime/lease 语义在部署上表现为主机级共享，因此没有用“两个 Bot 的
-不同 computer 状态”做真实 GUI 断言，避免误判；该修复由类型检查/单测与既有真实电脑 page 验证覆盖。
+Note: the runtime/lease semantics of `display.status` appear host-level shared on the deployment, so no real GUI assertion was
+made using "two Bots with different computer states", to avoid misjudgment; the fix is covered by typecheck/unit tests and the
+existing real computer page verification.

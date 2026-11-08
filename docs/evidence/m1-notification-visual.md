@@ -1,32 +1,22 @@
-# M1 · 系统通知视觉验证（权限提示已确认，审批横幅待复验）
+# M1 · System Notification Visual Verification (Permission Prompt Confirmed, Approval Banner Awaiting Re-verification)
 
-- 状态：**部分验证**。macOS 通知权限提示已真实出现并抓屏；审批通知横幅在本次触发中未捕获（签名版
-  app 被重启/窗口状态未恢复，见下）。
-- 记录时间：2026-11-04
-- 数据性质：真实 Dashboard + 已签名包（`out/MosBot-signed.app`，ad-hoc 完整签名）；截图已裁剪到
-  通知横幅区域，不含桌面其他内容。
+- Status: **Partially verified**. The macOS notification permission prompt did appear and was captured; the approval notification banner was not captured in this trigger (the signed app was restarted/window state not restored, see below).
+- Recorded: 2026-11-04
+- Data nature: real Dashboard + signed package (`out/MosBot-signed.app`, complete ad-hoc signature); screenshots cropped to the notification banner area, no other desktop content.
 
-## 已完成
+## Completed
 
-1. 用户授予屏幕录制权限后，`screencapture` 能捕获真实屏幕；此前为黑屏。
-2. 用户用 Finder 启动 `MosBot-signed.app` 并重新登录；进程在 `/Users/charleypeng/Library/
-Application Support/MosBot` 下运行。
-3. 用隐藏测试实例创建真实审批后，macOS 首次弹出「“MosBot”通知 / “通知”可能包括提醒、声音和
-   图标标记。」权限提示；点击后打开系统设置 → 通知 → MosBot，页面显示「允许通知」开启、
-   横幅样式选中。
-4. `defaults read com.apple.ncprefs` 出现 `com.mosbot.desktop` 条目。
+1. After the user granted screen-recording permission, `screencapture` can capture the real screen; previously black.
+2. The user launched `MosBot-signed.app` from Finder and signed in again; the process runs under `/Users/charleypeng/Library/Application Support/MosBot`.
+3. After creating a real approval with a hidden test instance, macOS showed for the first time the ""MosBot" Would Like to Send You Notifications / Notifications may include alerts, sounds, and icon badges." permission prompt; after clicking it, System Settings → Notifications → MosBot opened, showing "Allow Notifications" on and banner style selected.
+4. `defaults read com.apple.ncprefs` showed a `com.mosbot.desktop` entry.
 
-截图：`screens/m1/notification-permission.png`。
+Screenshot: `screens/m1/notification-permission.png`.
 
-## 未完成
+## Not Completed
 
-- **真实审批通知横幅的像素与真实鼠标点击尚未捕获**：
-  - 用户 Finder 启动的签名版实例：测试实例制造审批后，签名版主窗口失焦/最小化，主进程诊断记录
-    通知已请求（title=专用 Bot 名，body=「需要你确认」，shown=true），但连续 20 张抓屏（每 700ms）
-    都没有出现横幅。
-  - 改用签名二进制 + 用户 userData 副本在 Playwright 中启动：同样记录 `shown=true`，抓屏无横幅；
-    合成点击（Swift CGEvent）后窗口仍最小化（点击未命中横幅）。
-  - 可能原因：非 LaunchServices 启动的进程/notification 授权同步差异，或系统的通知展示样式未按
-    预期；需要用户在自己的实例上确认（Notification Center 是否有 MosBot 条目、通知样式是否为
-    「横幅」），再决定是否继续验证。
-- 已提交的截图只是 macOS 权限提示（`screens/m1/notification-permission.png`），**不是审批横幅**。
+- **The pixels of the real approval notification banner and a real mouse click have not been captured**:
+  - Signed instance launched by the user from Finder: after the test instance made an approval and the signed app's main window lost focus/was minimized, the main-process diagnostics recorded that a notification was requested (title=dedicated Bot name, body="Needs your confirmation", shown=true), but 20 consecutive screen captures (every 700 ms) showed no banner.
+  - Retried with the signed binary + a copy of the user userData launched in Playwright: it likewise recorded `shown=true`, with no banner in the captures; after a synthetic click (Swift CGEvent) the window was still minimized (the click did not hit the banner).
+  - Possible causes: differences in notification authorization sync for processes not launched via LaunchServices, or the system's notification display style not as expected; the user needs to confirm on their own instance (whether Notification Center has a MosBot entry, whether the notification style is "Banners"), then decide whether to continue verification.
+- The committed screenshot is only the macOS permission prompt (`screens/m1/notification-permission.png`), **not the approval banner**.

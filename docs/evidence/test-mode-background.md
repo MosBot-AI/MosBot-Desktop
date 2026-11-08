@@ -1,20 +1,23 @@
-# 界面测试后台模式（不打扰用户）
+# UI Test Background Mode (without disturbing the user)
 
-- 目的：在所有自动化界面测试中不抢焦点、不显示窗口、不占用 Dock，让用户可以正常使用电脑。
-- 变更：主进程支持 `MOSBOT_TEST_BACKGROUND=1`；E2E harness 与所有 `scripts/gui-*.mjs` 默认开启。
-- 需要人观看的检查才用 `MOSBOT_TEST_FOREGROUND=1`（例如确认 macOS 通知横幅、录屏截图）。
+- Purpose: make all automated UI tests not steal focus, not show windows, and not occupy the Dock, so the user can keep
+  using the computer normally.
+- Change: the main process supports `MOSBOT_TEST_BACKGROUND=1`; the E2E harness and all `scripts/gui-*.mjs` enable it by default.
+- Only checks that need a human to watch use `MOSBOT_TEST_FOREGROUND=1` (for example, confirming macOS notification banners
+  and screen-recording screenshots).
 
-## 实现
+## Implementation
 
-- 主窗口与电脑观看窗口：`show:false` 且永不 `show()`；`focusable:false`、`skipTaskbar:true`、
-  `hasShadow:false`；`backgroundThrottling:false` 保证隐藏时定时器/rAF 正常。
-- 启动时 `app.setActivationPolicy('accessory')` + `app.dock.hide()`：无 Dock 图标、不会激活应用。
-- `ensureWindow()` / `activate` 在后台模式下只重建窗口，不 show/focus。
-- 通知判定依赖“窗口不可见/无焦点”，隐藏窗口天然满足；通知请求/点击路径仍可测试。
+- Main window and computer viewer window: `show:false` and never `show()`; `focusable:false`, `skipTaskbar:true`,
+  `hasShadow:false`; `backgroundThrottling:false` keeps timers/rAF running normally while hidden.
+- On startup `app.setActivationPolicy('accessory')` + `app.dock.hide()`: no Dock icon and the app is not activated.
+- `ensureWindow()` / `activate` only recreate the window in background mode, without show/focus.
+- Notification decisions rely on "window not visible / not focused", which hidden windows satisfy naturally; the
+  notification request/click paths remain testable.
 
-## 验证
+## Verification
 
-运行环境探针（打包产物，`MOSBOT_TEST_BACKGROUND=1`）：
+Runtime environment probe (packaged artifact, `MOSBOT_TEST_BACKGROUND=1`):
 
 ```json
 {
@@ -24,21 +27,21 @@
 }
 ```
 
-隐藏模式下回归：
+Regression in hidden mode:
 
-| 检查                                                               | 结果     |
-| ------------------------------------------------------------------ | -------- |
-| E2E 全量（fixture + 打包产物）                                     | ✅ 21/21 |
-| 真实服务冷启动 + 草稿恢复（`gui-connected-draft`）                 | ✅       |
-| 真实审批关窗/通知请求/Dock 重开/退出重启（`gui-window-lifecycle`） | ✅ 11/11 |
+| Check                                                                                                   | Result   |
+| ------------------------------------------------------------------------------------------------------- | -------- |
+| Full E2E (fixture + packaged artifact)                                                                  | ✅ 21/21 |
+| Real-service cold start + draft restore (`gui-connected-draft`)                                         | ✅       |
+| Real approval window close / notification request / Dock reopen / quit restart (`gui-window-lifecycle`) | ✅ 11/11 |
 
-报告：`docs/evidence/tmp/connected-draft-2026-11-04T10-59-36-265Z.json`、
-`docs/evidence/tmp/window-lifecycle-2026-11-04T11-01-27-248Z.json`。
+Reports: `docs/evidence/tmp/connected-draft-2026-11-04T10-59-36-265Z.json`,
+`docs/evidence/tmp/window-lifecycle-2026-11-04T11-01-27-248Z.json`.
 
-## 仍需前台的场景
+## Scenarios that still need the foreground
 
-- 看 macOS 通知横幅像素、用真实鼠标点通知；
-- 录屏/截图验收（`screencapture` 也需要屏幕录制权限）；
-- 用户实际试用与视觉基线确认。
+- Viewing macOS notification banner pixels and clicking notifications with a real mouse;
+- Screen-recording/screenshot acceptance (`screencapture` also needs screen-recording permission);
+- Actual user trial and visual-baseline confirmation.
 
-这些场景会先询问用户，或用 `MOSBOT_TEST_FOREGROUND=1` 显式运行并说明。
+These scenarios will ask the user first, or explicitly run with `MOSBOT_TEST_FOREGROUND=1` with an explanation.

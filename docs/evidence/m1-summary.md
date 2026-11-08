@@ -1,44 +1,40 @@
-# M1 · 聊天纵切 · 验收汇总
+# M1 · Chat Vertical Slice · Acceptance Summary
 
-- 卡片：M1（登录、已有 Bot、发送、Markdown、历史分页、审批/澄清、停止、恢复、后台提醒、草稿持久化）
-- 状态：**代码实现完成并通过自动验证；两项真实条件待复验**（真实人工审批触发、真实断网回放）
-- 记录时间：2026-11-04
-- 目标服务：`192.168.2.171:9119`（v0.22.5 / `bf0203a794`）
+- Card: M1 (login, existing Bots, sending, Markdown, history pagination, approval/clarification, stop, recovery, background reminders, draft persistence)
+- Status: **Code implementation complete and passing automated verification; two real-world conditions await re-verification** (real manual approval trigger, real offline replay)
+- Recorded: 2026-11-04
+- Target service: `192.168.2.171:9119` (v0.22.5 / `bf0203a794`)
 
-## 对照验收项
+## Against Acceptance Items
 
-| 验收项                                  | 状态                                       | 证据                                                             |
-| --------------------------------------- | ------------------------------------------ | ---------------------------------------------------------------- |
-| 真实登录（系统浏览器 + PKCE）与静默恢复 | ✅                                         | `m1-first-connection.md`、`capabilities.md`                      |
-| 已有 Bot 名单与 Bot Chat 历史           | ✅                                         | `m1-roster-and-history.md`                                       |
-| 发送、流式 delta、Markdown、停止        | ✅                                         | `m1-chat-streaming.md`（真实探针：delta、complete、interrupted） |
-| 历史分页（加载更早）                    | ✅                                         | `m1-roster-and-history.md`（真实：older=16、nextOffset=100）     |
-| 审批/澄清卡与按 request id 回执         | ✅ 实现 + 单测                             | 真实请求未触发（部署自动放行 echo 类命令），待自然复验           |
-| 断线恢复与事件回放                      | ✅ 实现 + 注入式单测                       | 真实断网场景待构造                                               |
-| 后台未打开 Bot 的待处理发现 + 系统通知  | ✅ 实现 + 单测；GUI 真实出现「待确认 · 1」 | 系统通知横幅与点击仍待用户在场复验；跨端回执待办                 |
-| 草稿/选中项/右栏/偏好持久化             | ✅                                         | 重启 E2E `persistence.spec.ts`                                   |
-| 工作记录归组                            | ✅                                         | `m1-chat-streaming.md`                                           |
-| 双端同时观察/停止/审批                  | ⏳ 部分                                    | 标题竞争与 canonical 已在 M0b 验证；双端聊天观察待专门构造       |
+| Acceptance item                                                                   | Status                                                      | Evidence                                                                                                 |
+| --------------------------------------------------------------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Real login (system browser + PKCE) and silent restore                             | ✅                                                          | `m1-first-connection.md`, `capabilities.md`                                                              |
+| Existing Bot roster and Bot Chat history                                          | ✅                                                          | `m1-roster-and-history.md`                                                                               |
+| Sending, streaming delta, Markdown, stop                                          | ✅                                                          | `m1-chat-streaming.md` (real probe: delta, complete, interrupted)                                        |
+| History pagination (load earlier)                                                 | ✅                                                          | `m1-roster-and-history.md` (real: older=16, nextOffset=100)                                              |
+| Approval/clarification cards and replies by request id                            | ✅ implemented + unit tests                                 | real request not triggered (deployment auto-allows echo-like commands), awaiting natural re-verification |
+| Disconnect recovery and event replay                                              | ✅ implemented + injected unit tests                        | real offline scenario to be constructed                                                                  |
+| Background discovery of pending requests for unopened Bots + system notifications | ✅ implemented + unit tests; GUI really shows "Pending · 1" | system notification banner and click still need the user present; cross-client receipts pending          |
+| Draft/selection/right panel/preference persistence                                | ✅                                                          | restart E2E `persistence.spec.ts`                                                                        |
+| Work log grouping                                                                 | ✅                                                          | `m1-chat-streaming.md`                                                                                   |
+| Dual-end simultaneous observation/stop/approval                                   | ⏳ partial                                                  | title race and canonical verified in M0b; dual-end chat observation needs dedicated construction         |
 
-## 2026-11-04 真实服务复跑
+## 2026-11-04 Real-Service Re-run
 
-专用 profile 自动清理的 `chat` 探针重新通过：发送、首个 delta、终态、停止、附件上传与模型读取、
-产物索引（含真实 `mtime`）与读取均 pass；审批仍未自然触发（部署对 terminal 工具自动放行，
-`approval_mode=unknown`），列入未关闭项。报告：
-`docs/evidence/tmp/dashboard-chat-2026-11-04T06-39-26-736Z.json`。
+The auto-cleaned dedicated-profile `chat` probe passed again: sending, first delta, final state, stop, attachment upload and model reading, artifact indexing (with real `mtime`) and reading all pass; approval still not triggered naturally (the deployment auto-allows terminal tools, `approval_mode=unknown`), listed as an open item. Report: `docs/evidence/tmp/dashboard-chat-2026-11-04T06-39-26-736Z.json`.
 
-## 自动验证
+## Automated Verification
 
-- `pnpm test`：130 用例（协议、传输、PKCE、凭据、RPC、聊天、持久化、待处理 watcher、Markdown）
-- `pnpm test:e2e`：11 用例（M0a 切片 + 连接弹层 + 重启持久化）
-- `pnpm typecheck` / `pnpm lint` / `pnpm format:check` / `pnpm package`：通过
+- `pnpm test`: 130 cases (protocol, transport, PKCE, credentials, RPC, chat, persistence, pending watcher, Markdown)
+- `pnpm test:e2e`: 11 cases (M0a slice + connection sheet + restart persistence)
+- `pnpm typecheck` / `pnpm lint` / `pnpm format:check` / `pnpm package`: pass
 
-## 未关闭项
+## Open Items
 
-1. 真实人工审批：部署对 `echo` 类命令自动放行；需要一条会触发人工确认的命令或临时调整该 profile 的审批
-   策略（不改全局配置）。
-2. 真实断网回放：需要在本机断开网络后观察重连与 `session.events.since` 补发。
-3. 系统通知展示与点击：需要用户在场时触发一次审批并观察 macOS 通知权限/横幅。
-4. 双客户端同时打开同一运行中 Bot Chat 的观察、停止与审批行为（M0b 第 3/5 步的剩余部分）。
+1. Real manual approval: the deployment auto-allows `echo`-like commands; need a command that triggers manual confirmation or temporarily adjust that profile's approval policy (without changing global config).
+2. Real offline replay: need to disconnect the local network and observe reconnection and `session.events.since` catch-up.
+3. System notification display and click: need the user present to trigger an approval once and observe macOS notification permission/banner.
+4. Dual-client observation, stop, and approval behavior when both open the same running Bot Chat (remaining part of M0b steps 3/5).
 
-以上不阻塞 M2 开工；M2 的创建与整理能力与 M1 并行推进，最后在 M5 前统一复验。
+The above does not block starting M2; M2's create and organize capabilities proceed in parallel with M1 and are verified together before M5.

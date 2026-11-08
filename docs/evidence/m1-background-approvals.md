@@ -1,95 +1,76 @@
-# M1 · 后台审批发现与通知 · 证据
+# M1 · Background Approval Discovery and Notifications · Evidence
 
-- 卡片：M1（未打开 Bot 的待处理请求、系统通知）
-- 状态：**后台发现、应用内提醒与系统通知已实现并通过单测；真实审批触发与系统通知展示待自然条件复验**
-- 记录时间：2026-11-04
-- 数据来源：真实 Dashboard `192.168.2.171:9119`（v0.22.5 / `bf0203a794`），只读订阅，不写入
+- Card: M1 (pending requests for unopened Bots, system notifications)
+- Status: **Background discovery, in-app reminders, and system notifications implemented and covered by unit tests; real approval triggering and system notification display await natural-condition re-verification**
+- Recorded: 2026-11-04
+- Data source: real Dashboard `192.168.2.171:9119` (v0.22.5 / `bf0203a794`), read-only subscription, no writes
 
-## 实现
+## Implementation
 
-- 主进程 `PendingWatcher`（独立 Gateway 连接，不影响当前聊天）：
-  - 每 5 s 轮询 `profiles.list`（拿 canonical Bot Chat 的 stored id → profile 映射）与
-    `session.active_list`；
-  - 对状态为 `waiting` 且属于 canonical Bot Chat 的会话，用 `session.activate {omit_messages:true}`
-    只读附加，读取 `open_requests`，把新请求转成 `add` 事件；已附加会话的后续请求直接到达；
-  - `request.cancel` 或轮询发现不再 waiting 时发 `remove`；注销/退出时停止并清空；
-  - 同一 request id 只通知一次。
-- 系统通知（macOS `Notification`）：仅当主窗口不可见/未聚焦时发送，标题为 Bot 显示名，正文按审批/
-  澄清区分中英；点击后恢复/重建主窗口并把 `open {profile}` 发给渲染层，自动选中该 Bot，聊天连接
-  resume 后把请求以内联卡片重新投递。系统拒绝通知时应用内提醒仍保留。
-- 渲染层：左栏「待确认 · N」在真实模式下使用后台发现计数，点击直达第一个待处理 Bot；
-  切换/打开 Bot 后卡片由聊天连接投递，回答走同一 request id。
+- Main-process `PendingWatcher` (separate Gateway connection, does not affect the current chat):
+  - polls `profiles.list` (to get the stored id → profile mapping of the canonical Bot Chat) and `session.active_list` every 5 s;
+  - for sessions whose state is `waiting` and that belong to the canonical Bot Chat, attaches read-only with `session.activate {omit_messages:true}`, reads `open_requests`, and converts new requests into `add` events; subsequent requests for already-attached sessions arrive directly;
+  - emits `remove` on `request.cancel` or when polling finds it is no longer waiting; stops and clears on sign-out/quit;
+  - notifies once per request id.
+- System notification (macOS `Notification`): sent only when the main window is invisible or unfocused; the title is the Bot display name, the body distinguishes approval/clarification in zh/en; clicking restores or rebuilds the main window, sends `open {profile}` to the renderer, automatically selects that Bot, and after the chat connection resumes re-delivers the request as an inline card. If notifications are denied by the system, the in-app reminder remains.
+- Renderer: the left-column "Pending · N" uses the background discovery count in real mode, and clicking jumps directly to the first pending Bot; after switching/opening a Bot the card is delivered by the chat connection, and answering uses the same request id.
 
-## 验证
+## Verification
 
-| 检查                                                 | 结果                                                                                  |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `pnpm typecheck` / `pnpm lint` / `pnpm format:check` | 通过                                                                                  |
-| `pnpm test`                                          | **130 个用例通过**（新增 PendingWatcher 2 个、待处理计数/选择器测试）                 |
-| `pnpm test:e2e`                                      | **11 个用例通过**（fixture 模式与持久化重启测试不受影响）                             |
-| 真实 `session.active_list`                           | ✅ 通过：7 个活跃会话、`waiting=0`（当前无待处理）                                    |
-| 真实通知展示 / 审批触发                              | ⏳ 未验证：部署对 `echo` 类命令自动放行，未产生人工审批；系统通知需要用户在场观察一次 |
+| Check                                                | Result                                                                                                                                                               |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm typecheck` / `pnpm lint` / `pnpm format:check` | Pass                                                                                                                                                                 |
+| `pnpm test`                                          | **130 cases pass** (2 new PendingWatcher, pending count/selector tests)                                                                                              |
+| `pnpm test:e2e`                                      | **11 cases pass** (fixture mode and persistence restart tests unaffected)                                                                                            |
+| Real `session.active_list`                           | ✅ Pass: 7 active sessions, `waiting=0` (none pending currently)                                                                                                     |
+| Real notification display / approval trigger         | ⏳ Not verified: the deployment auto-allows `echo`-like commands and no manual approval was produced; the system notification needs the user present to observe once |
 
-## 已知限制
+## Known Limitations
 
-- 只监视 canonical「Bot Chat」会话；普通会话或其它客户端的审批不在本轮范围。
-- 轮询 5 s，跨客户端处理后的清除最迟一个周期；`request.cancel` 到达时立即清除。
-- 通知权限被拒绝、勿扰模式等只影响系统横幅，应用内计数与卡片不受影响。
-- 未打开 Bot 的请求在打开后才显示完整卡片；应用内不展开未选中 Bot 的详情。
+- Only monitors the canonical "Bot Chat" sessions; approvals from normal sessions or other clients are out of scope this round.
+- Polling every 5 s; clearing after another client handles it takes at most one period; `request.cancel` clears immediately.
+- Notification permission denied, Do Not Disturb, etc. only affect the system banner; the in-app count and cards are unaffected.
+- Requests for unopened Bots show the full card only after opening; the in-app UI does not expand details of unselected Bots.
 
-## 2026-11-04 真实审批复验（按用户授权，专用 profile 自动清理）
+## 2026-11-04 Real Approval Re-verification (per user authorization, dedicated profile auto-cleaned)
 
-- **配置（只读）**：`GET /api/config` 显示 `approvals.mode=manual`、`timeout=300`；
-  未修改任何配置。
-- **为何之前的 echo 不触发审批**：`manual` 模式只对危险命令模式询问；`echo` / 普通
-  `rm file` 不在危险模式表中，因此不会弹审批。用 `chmod 777 <专用探针文件>` 命中危险模式。
-- **chat 探针结果（专用 profile，自动清理）**：
-  - `审批配置（只读）` ✅ `approvals.mode=manual · timeout=300`
-  - `审批请求（chmod 777 探针文件）` ✅ `request raised · choices=4`
-  - `审批回执（拒绝）` ✅ 按 request id 回 `deny`
-  - `拒绝后命令未执行（探针文件仍在）` ✅ 回读工作区仍存在该文件
-  - `允许分支`：再次触发请求 → 回 `once` → 回合完成 ✅
-  - 报告：`docs/evidence/tmp/dashboard-chat-2026-11-04T07-32-11-088Z.json`
-- **GUI 复验（打包产物 + 专用 profile + 桥接登录，不输入密码）**：
-  - 通过界面创建 Bot → 输入条发送危险命令 → **内联审批卡出现** ✅
-  - 切到别的 Bot 后，后台 watcher 出现「待确认 · 1」并可直接看到 ✅
-  - 点击待确认跳回时暴露并修复两个真实缺陷：
-    1. 聊天管理器已连接同一会话时 `chat.open` 走缓存、不再重发 connection/session（renderer
-       重载/窗口重开后一直显示“连接已断开”）；
-    2. 跳回时远端 chat 缓存里的 `storedSessionId` 仍是 null（会话创建后未回写），导致打开新建
-       空会话而非审批所在会话。
-  - 另修复输入条在“已连接但会话未就绪”时可发送导致的 `session is not ready` 竞态。
-  - **修复后完整 GUI 链路全绿**（`scripts/gui-approval-walkthrough.mjs`）：新建专用 Bot →
-    创建探针文件 → `chmod 666` 触发**内联审批卡** → 切走 → 后台 **「待确认 · 1」** → 点击跳回 →
-    **审批卡在 canonical 会话中重投** → 点「拒绝」→ **「已拒绝」回执** → 角标清除。
-    截图：`screens/m5/approval-inline-real.png`、`screens/m5/approval-reopened-real.png`；
-    报告：`docs/evidence/tmp/approval-gui-2026-11-04T08-11-04-079Z.json`。
-  - 本轮因 GUI 复验修复的真实缺陷：事件游标跨会话未重置导致 false history-stale 清空请求；
-    审批回执被 reducer 删除请求导致卡片直接消失；输入条未校验 live 会话属于当前 Bot（可能把
-    消息发到上一个 Bot）；已连接会话重开不重发事件；canonical 会话 id 未回写缓存。
-  - 系统通知横幅展示/点击、双客户端跨端回执仍待办。
+- **Config (read-only)**: `GET /api/config` shows `approvals.mode=manual`, `timeout=300`; no config was modified.
+- **Why the earlier echo did not trigger approval**: `manual` mode only asks about dangerous command patterns; `echo` / ordinary `rm file` are not in the dangerous-pattern table, so no approval is prompted. Using `chmod 777 <dedicated probe file>` hits the dangerous pattern.
+- **Chat probe results (dedicated profile, auto-cleaned)**:
+  - `Approval config (read-only)` ✅ `approvals.mode=manual · timeout=300`
+  - `Approval request (chmod 777 probe file)` ✅ `request raised · choices=4`
+  - `Approval receipt (deny)` ✅ replies `deny` by request id
+  - `Command not executed after deny (probe file still there)` ✅ the file still exists when reading back the workspace
+  - `Allow branch`: trigger the request again → reply `once` → turn completes ✅
+  - Report: `docs/evidence/tmp/dashboard-chat-2026-11-04T07-32-11-088Z.json`
+- **GUI re-verification (packaged artifact + dedicated profile + bridge login, no password entry)**:
+  - Created a Bot through the UI → sent a dangerous command from the composer → **inline approval card appears** ✅
+  - After switching to another Bot, the background watcher shows "Pending · 1" and it can be seen directly ✅
+  - Clicking Pending to jump back exposed and fixed two real defects:
+    1. When the chat manager was already connected to the same session, `chat.open` went through the cache and did not resend connection/session (after a renderer reload/window reopen it kept showing "Connection lost");
+    2. on jump-back the `storedSessionId` in the remote chat cache was still null (not written back after session creation), causing it to open a newly created empty session instead of the session where the approval was located.
+  - Also fixed a `session is not ready` race where the composer could send when "connected but session not ready".
+  - **Full GUI chain green after the fixes** (`scripts/gui-approval-walkthrough.mjs`): create dedicated Bot → create probe file → `chmod 666` triggers **inline approval card** → switch away → background **"Pending · 1"** → click to jump back → **approval card re-delivered in the canonical session** → click "Deny" → **"Denied" receipt** → badge cleared.
+    Screenshots: `screens/m5/approval-inline-real.png`, `screens/m5/approval-reopened-real.png`; report: `docs/evidence/tmp/approval-gui-2026-11-04T08-11-04-079Z.json`.
+  - Real defects fixed during this GUI re-verification: event cursor not reset across sessions caused false history-stale and cleared requests; the reducer deleted the request on approval receipt so the card vanished; the composer did not verify that the live session belonged to the current Bot (could send messages to the previous Bot); reopening an already-connected session did not resend events; the canonical session id was not written back to the cache.
+  - System notification banner display/click and dual-client cross-client receipts are still pending.
 
-## 2026-11-04 系统通知路径验证（程序化）
+## 2026-11-04 System Notification Path Verification (programmatic)
 
-`scripts/gui-notification-walkthrough.mjs`（打包产物 + 真实服务 + 专用 Bot，`MOSBOT_DIAG=1`）：
+`scripts/gui-notification-walkthrough.mjs` (packaged artifact + real service + dedicated Bot, `MOSBOT_DIAG=1`):
 
-| 步骤                                                                    | 结果                                                |
-| ----------------------------------------------------------------------- | --------------------------------------------------- |
-| 专用 Bot 内触发真实审批（保持聊天连接，避免无客户端时被服务端自动拒绝） | ✅ 审批 pending                                     |
-| 最小化窗口（失焦）                                                      | ✅                                                  |
-| 主进程请求系统通知                                                      | ✅ title=Bot 名，body=「需要你确认」，approval=true |
-| 点击通知的处理路径（主进程 diag 触发 click handler）                    | ✅ 窗口恢复为可见                                   |
-| 点击后打开等待中的 Bot 并重投审批卡                                     | ✅ 卡片可见                                         |
-| 在该路径下拒绝并显示回执                                                | ✅「已拒绝」                                        |
+| Step                                                                                                                                    | Result                                                           |
+| --------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Trigger a real approval inside the dedicated Bot (keep the chat connection so the server does not auto-deny when no client is attached) | ✅ approval pending                                              |
+| Minimize the window (lose focus)                                                                                                        | ✅                                                               |
+| Main process requests a system notification                                                                                             | ✅ title=Bot name, body="Needs your confirmation", approval=true |
+| Click handling path (main-process diag triggers the click handler)                                                                      | ✅ window restored to visible                                    |
+| After the click, open the waiting Bot and re-deliver the approval card                                                                  | ✅ card visible                                                  |
+| Deny on this path and show the receipt                                                                                                  | ✅ "Denied"                                                      |
 
-报告：`docs/evidence/tmp/notification-gui-2026-11-04T09-45-55-682Z.json`。
+Report: `docs/evidence/tmp/notification-gui-2026-11-04T09-45-55-682Z.json`.
 
-### 限制与行为说明
+### Limitations and Behavior Notes
 
-- **macOS 通知横幅的实际像素与真实鼠标点击未验证**：本 shell 没有屏幕录制权限（`screencapture`
-  结果为黑屏），通知中心条目也不能从这里点击。因此本条只能算“程序化验证通知请求与点击处理”，
-  仍需用户在现场确认横幅展示与真实点击。
-- 关键行为：审批请求只在**仍有客户端附着**该会话时保持 pending。把窗口切到别的 Bot 会让旧聊天
-  连接断开，服务端在没有客户端可问时会自动拒绝该请求（agent 继续执行），因此“未打开 Bot 的
-  审批”必须由另一个仍在观察该会话的客户端产生（例如手机端或另一台电脑）；单客户端靠“切走”
-  无法制造 unopened 审批。这也解释了先前 GUI 测试的时序差异。
+- **The actual pixels of the macOS notification banner and a real mouse click are not verified**: this shell has no screen-recording permission (`screencapture` returns a black image), and Notification Center items cannot be clicked from here either. So this item can only count as "programmatic verification of the notification request and click handling"; the user still needs to confirm the banner display and a real click on site.
+- Key behavior: an approval request stays pending only while **a client is still attached** to that session. Switching the window to another Bot disconnects the old chat connection, and when no client is available to ask, the server automatically denies the request (the agent continues). Therefore "approvals for unopened Bots" must be produced by another client still observing that session (e.g. a phone or another computer); a single client cannot create an unopened approval by "switching away". This also explains the earlier GUI test timing differences.

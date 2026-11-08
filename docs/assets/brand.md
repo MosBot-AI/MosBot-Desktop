@@ -1,41 +1,41 @@
-# 品牌资产来源与使用
+# Brand Asset Provenance and Usage
 
-本仓库的 MosBot 品牌资产取自移动端项目 `~/dev/MosBot`，固定提交 **`3c118c4`**。资产按原文件复制，未做重采样；界面通过 CSS `mask` 着色，因此同一份文件同时服务浅色与深色主题。
+The MosBot brand assets in this repository come from the mobile project `~/dev/MosBot`, pinned at commit **`3c118c4`**. Assets are copied verbatim, without resampling; the UI colors them through CSS `mask`, so the same files serve both the light and dark themes.
 
-## 同步方式
+## Sync Method
 
 ```bash
 pnpm assets:sync   # node scripts/sync-brand-assets.mjs
 ```
 
-脚本会校验 `~/dev/MosBot` 当前 HEAD 必须是上面的固定提交，复制文件到 `src/renderer/assets/brand/`，写出 `provenance.json`（文件、来源路径、SHA-256），并生成 `artwork.ts`——把词标与空对话图形的路径数据转成可内联的 SVG 常量。升级来源提交时须同时审阅代码、artwork 与 provenance 差异。
+The script verifies that the current HEAD of `~/dev/MosBot` is the pinned commit above, copies the files to `src/renderer/assets/brand/`, writes `provenance.json` (file, source path, SHA-256), and generates `artwork.ts`, which turns the path data of the wordmark and empty-chat artwork into inlinable SVG constants. When upgrading the source commit, review the code, artwork, and provenance diffs together.
 
-## 资产清单
+## Asset Inventory
 
-| 文件                          | 来源（MosBot@3c118c4）                                            | 许可                    | 用途                                                        |
-| ----------------------------- | ----------------------------------------------------------------- | ----------------------- | ----------------------------------------------------------- |
-| `app-icon.png`                | `AppScope/resources/base/media/app_icon.png`（1024²）             | MIT（`MosBot-LICENSE`） | 应用/Dock/安装包图标；M5 生成 `.icns` 多分辨率              |
-| `empty-chat.svg`              | `entry/src/main/resources/base/media/empty_chat_bubbles.svg`      | MIT（`MosBot-LICENSE`） | 空对话插画；路径由 `artwork.ts` 内联，描边用 `currentColor` |
-| `wordmark-letters.svg`        | `entry/src/main/resources/base/media/mosbot_wordmark_letters.svg` | MIT（`MosBot-LICENSE`） | 左下角词标字形；路径内联，填充 `currentColor`               |
-| `wordmark-eyes.svg`           | `entry/src/main/resources/base/media/mosbot_wordmark_eyes.svg`    | MIT（`MosBot-LICENSE`） | 词标眼睛；路径内联，填充 `--accent-brand`                   |
-| `artwork.ts`                  | 由上述三个 SVG 生成                                               | 同上                    | 内联 SVG 路径常量（勿手改）                                 |
-| `hermes-desktop-bots-LICENSE` | `licenses/hermes-desktop-bots-LICENSE`                            | MIT（Nous Research）    | BotFace 形状/姿态移植的许可                                 |
-| `MosBot-LICENSE`              | `LICENSE`                                                         | MIT                     | 品牌图形许可                                                |
+| File                          | Source (MosBot@3c118c4)                                           | License                | Purpose                                                                            |
+| ----------------------------- | ----------------------------------------------------------------- | ---------------------- | ---------------------------------------------------------------------------------- |
+| `app-icon.png`                | `AppScope/resources/base/media/app_icon.png` (1024²)              | MIT (`MosBot-LICENSE`) | App/Dock/installer icon; M5 generates the multi-resolution `.icns`                 |
+| `empty-chat.svg`              | `entry/src/main/resources/base/media/empty_chat_bubbles.svg`      | MIT (`MosBot-LICENSE`) | Empty-chat illustration; paths inlined by `artwork.ts`, strokes use `currentColor` |
+| `wordmark-letters.svg`        | `entry/src/main/resources/base/media/mosbot_wordmark_letters.svg` | MIT (`MosBot-LICENSE`) | Wordmark glyphs in the bottom-left corner; paths inlined, fill `currentColor`      |
+| `wordmark-eyes.svg`           | `entry/src/main/resources/base/media/mosbot_wordmark_eyes.svg`    | MIT (`MosBot-LICENSE`) | Wordmark eyes; paths inlined, fill `--accent-brand`                                |
+| `artwork.ts`                  | Generated from the three SVGs above                               | Same as above          | Inline SVG path constants (do not edit by hand)                                    |
+| `hermes-desktop-bots-LICENSE` | `licenses/hermes-desktop-bots-LICENSE`                            | MIT (Nous Research)    | License for the ported BotFace shapes/poses                                        |
+| `MosBot-LICENSE`              | `LICENSE`                                                         | MIT                    | Brand artwork license                                                              |
 
-## BotFace 移植
+## BotFace Port
 
-聊天、置顶、名牌、详情和创建预览里的 Bot 脸不是位图，而是从移动端移植的程序化 SVG：
+The Bot faces in chat, the pinned grid, the nameplate, details, and the creation preview are not bitmaps but procedural SVG ported from mobile:
 
-- 形状与配色：`entry/src/main/ets/state/bot/BotFaceShapes.ets`
-- 眼睛与动作：`entry/src/main/ets/state/bot/BotFacePose.ets`
-- 组件结构：`entry/src/main/ets/components/bot/BotFace.ets`
-- 外观默认值/种子规则：`entry/src/main/ets/state/bot/BotRoster.ets`
+- Shapes and colors: `entry/src/main/ets/state/bot/BotFaceShapes.ets`
+- Eyes and motion: `entry/src/main/ets/state/bot/BotFacePose.ets`
+- Component structure: `entry/src/main/ets/components/bot/BotFace.ets`
+- Appearance defaults/seed rules: `entry/src/main/ets/state/bot/BotRoster.ets`
 
-实现位于 `src/renderer/features/bots/face/`，统一通过 `BotAvatar` / `BotLookFace` 使用；移植细节与测试见该目录与 `tests/unit/face.test.ts`。渲染保持 40×40 viewBox，形状与动作语义与移动端一致。
+The implementation lives in `src/renderer/features/bots/face/` and is used uniformly through `BotAvatar` / `BotLookFace`; porting details and tests are in that directory and `tests/unit/face.test.ts`. Rendering keeps a 40×40 viewBox, and shape and motion semantics match mobile.
 
-## 约束
+## Constraints
 
-- 不把品牌词标重复铺进聊天导航；聊天只出现小头像与名牌。
-- 亮色 Bot（例如 MosBot 默认的 `#AFE17B`）上的文字使用深色 ink，见 `src/shared/color.ts` 的 `readableInk`。
-- 资产只从这里取用并登记；不从其他项目或截图里抠图。
-- 词标与空对话图形不使用 CSS `mask` + `?url`：打包后的 `file://` 页面会丢弃 data-URI mask（M0a 真实窗口验收时发现），因此由脚本生成内联 SVG 路径（`artwork.ts`）。小图标仍可用内联 SVG 组件。
+- Do not repeat the brand wordmark throughout the chat navigation; chat shows only small avatars and the nameplate.
+- Text on light Bot colors (for example MosBot's default `#AFE17B`) uses dark ink, see `readableInk` in `src/shared/color.ts`.
+- Assets are sourced and registered only here; do not lift artwork from other projects or screenshots.
+- The wordmark and empty-chat artwork do not use CSS `mask` + `?url`: packaged `file://` pages drop data-URI masks (found during M0a real-window verification), so the script generates inline SVG paths (`artwork.ts`). Small icons may still use inline SVG components.

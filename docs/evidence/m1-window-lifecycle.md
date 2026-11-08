@@ -1,41 +1,38 @@
-# M1 · 主窗口关闭 / Dock 重开 / 退出重启 · 审批生命周期证据
+# M1 · Main Window Close / Dock Reopen / Quit and Restart · Approval Lifecycle Evidence
 
-- 卡片：M1 / 发布候选验收「后台、关闭主窗口、从 Dock 重开、退出后重启均有结果」
-- 状态：**真实服务 GUI 全链路通过**（打包产物 + 专用 Bot，自动清理）
-- 记录时间：2026-11-04
-- 数据性质：真实 Dashboard `192.168.2.171:9119`；通知横幅像素未采集（无屏幕录制权限）
+- Card: M1 / release-candidate acceptance "background, closing the main window, reopening from the Dock, and restarting after quit all have results"
+- Status: **Real-service GUI full chain passes** (packaged artifact + dedicated Bot, auto-cleaned)
+- Recorded: 2026-11-04
+- Data nature: real Dashboard `192.168.2.171:9119`; notification banner pixels not collected (no screen-recording permission)
 
-## 方法
+## Method
 
-`scripts/gui-window-lifecycle.mjs`（`MOSBOT_DIAG=1`，仅测试诊断）：
+`scripts/gui-window-lifecycle.mjs` (`MOSBOT_DIAG=1`, test diagnostics only):
 
-1. 专用 Bot 内触发真实审批，确认内联卡 pending；
-2. 关闭主窗口（macOS 保留应用进程）；
-3. 等待 pending watcher 请求系统通知（诊断钩子记录）；
-4. 通过主进程 `app.emit('activate')` 模拟 Dock 重开，验证审批卡重投并可拒绝；
-5. 再触发一次审批后 **完整退出应用**，重新启动同一 userData，验证会话恢复、审批仍 pending 且可拒绝。
+1. Trigger a real approval inside the dedicated Bot and confirm the inline card is pending;
+2. Close the main window (macOS keeps the app process);
+3. Wait for the pending watcher to request a system notification (recorded by the diagnostics hook);
+4. Simulate Dock reopen via the main process `app.emit('activate')` and verify the approval card is re-delivered and can be denied;
+5. Trigger another approval and then **fully quit the app**, relaunch the same userData, and verify the session is restored, the approval is still pending and can be denied.
 
-## 结果
+## Results
 
-| 阶段      | 检查                                | 结果                               |
-| --------- | ----------------------------------- | ---------------------------------- |
-| 关闭窗口  | 审批 pending 时关闭主窗口           | ✅ 进程仍在运行、窗口数为 0        |
-| 关闭窗口  | 主进程请求系统通知（无窗口 → 失焦） | ✅ `需要你确认`                    |
-| Dock 重开 | `activate` 重建主窗口               | ✅                                 |
-| Dock 重开 | 审批卡重投                          | ✅                                 |
-| Dock 重开 | 拒绝回执                            | ✅「已拒绝」                       |
-| 退出重启  | 完整退出后重新启动                  | ✅ 会话恢复（Bot Chat 名称牌正确） |
-| 退出重启  | **审批在重启后仍 pending 并重投**   | ✅（网关保留请求，resume 重投）    |
-| 退出重启  | 重启后拒绝回执                      | ✅「已拒绝」                       |
+| Phase        | Check                                                               | Result                                             |
+| ------------ | ------------------------------------------------------------------- | -------------------------------------------------- |
+| Close window | Close the main window while an approval is pending                  | ✅ process still running, window count 0           |
+| Close window | Main process requests a system notification (no window → unfocused) | ✅ `Needs your confirmation`                       |
+| Dock reopen  | `activate` rebuilds the main window                                 | ✅                                                 |
+| Dock reopen  | Approval card re-delivered                                          | ✅                                                 |
+| Dock reopen  | Deny receipt                                                        | ✅ "Denied"                                        |
+| Quit/restart | Full quit then relaunch                                             | ✅ session restored (Bot Chat nameplate correct)   |
+| Quit/restart | **Approval still pending after restart and re-delivered**           | ✅ (gateway keeps the request; resume re-delivers) |
+| Quit/restart | Deny receipt after restart                                          | ✅ "Denied"                                        |
 
-报告：`docs/evidence/tmp/window-lifecycle-2026-11-04T10-00-29-380Z.json`。
+Report: `docs/evidence/tmp/window-lifecycle-2026-11-04T10-00-29-380Z.json`.
 
-## 结论与限制
+## Conclusion and Limitations
 
-- 关闭主窗口不会丢审批：主进程连接保持，watcher 在无窗口时请求通知；Dock 重开会重建窗口并
-  重投卡片。
-- 完整退出后重启：网关保留未回答的审批，重新 resume 时作为 `open_requests` 重投；客户端已在
-  同一会话上显示并处理。
-- **通知横幅像素与真实鼠标点击仍未验证**（本机 shell 无屏幕录制权限）；通知请求与点击处理
-  路径见 `m1-background-approvals.md`。
-- “未打开 Bot 的审批”仍需要另一个客户端保持附着（见 `m1-background-approvals.md` 的行为说明）。
+- Closing the main window does not lose approvals: the main-process connection stays, the watcher requests a notification when there is no window; Dock reopen rebuilds the window and re-delivers the card.
+- Full quit then restart: the gateway keeps unanswered approvals and re-delivers them as `open_requests` on resume; the client displays and handles them on the same session.
+- **Notification banner pixels and a real mouse click are still not verified** (this machine's shell has no screen-recording permission); see `m1-background-approvals.md` for the notification request and click handling path.
+- "Approvals for unopened Bots" still requires another client to keep attached (see the behavior notes in `m1-background-approvals.md`).

@@ -14,7 +14,8 @@
 - 方案：`docs/plans/README.md` 范围基线、`01-bot-experience.md` 界面规格、`02-dashboard-integration.md` 协议与流式架构、`03-agent-handoff.md` 任务卡与执行顺序。这四份是范围与验收的唯一依据。
 - 技术基线：Electron Forge + Vite + React 19 + TypeScript strict + pnpm；分层与目录按 `docs/plans/README.md`（main / preload / service / shared / renderer / tests）。
 - 真实服务：唯一测试目标 `192.168.2.171:9119`，OAuth 登录。不用 mock server，不自建替代 Dashboard。
-- 文档：计划、测试、证据用中文；`README.md` 与 `README_zh.md` 英文/中文成对；changelog 中英成对。与用户沟通用中文。
+- 文档：`docs/` 下计划、测试、证据全部中英双语，**英文为主文件**（原路径）、中文用 `_zh` 后缀成对；`README.md` 与 `README_zh.md` 英文/中文成对；changelog 中英成对。与用户沟通用中文。
+- GitHub：计划 issues、Project 字段/里程碑/标签/项目说明、issue 评论与提交信息用英文；issue 状态与验收结论以 `docs/evidence/` 为准。
 - 不确定先查代码和文档，不猜；查不到再问用户，问题要具体并给出选项。
 
 ## 2. 交付质量
@@ -85,6 +86,7 @@
 
 - 每完成一个阶段并验证通过就提交，不攒大批改动；一次提交只做一件可解释、可回滚的逻辑变更。
 - 英文 Conventional Commits：`type(scope): summary`，小写祈使句，句末不加句号。只 stage 相关文件，提交前看 staged diff。
+- GitHub issue/PR 标题与正文、评论、Project 字段与说明一律英文；文档双语成对（英文主文件 + `_zh`），不要只写中文或只写英文。
 - 每次提交前同步更新 `CHANGELOG.md` 与 `CHANGELOG.zh-CN.md` 并一起提交；遵循 Keep a Changelog 1.1.0 与 SemVer 2.0.0；版本段落带日期和 comparison link；区分源码改动与已构建/安装/发布。
 - 提交者只有 Lead，teammate 不提交；未经明确要求不 push。
 - 不提交：凭据/token、真实会话正文、远端画面、日志、缓存、fixture 大文件、录屏原始文件。

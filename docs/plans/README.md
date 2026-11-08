@@ -1,68 +1,68 @@
-# MosBot Desktop 从零实施计划
+# MosBot Desktop Implementation Plan from Scratch
 
-2026-11-03 · 重做交付基线 · macOS 优先
+2026-11-03 · Revised delivery baseline · macOS first
 
-打开 MosBot 后，用户看到熟悉的 Bot，点头像接着聊。需要查看 Bot 正在做什么时，点聊天顶部的名牌，再去看资料或电脑。Profile、Session 和 Kanban 集中在独立的 Hermes 工作台，由用户主动进入。
+When users open MosBot, they see a familiar Bot and continue the conversation by tapping its avatar. To check what the Bot is doing, they tap the nameplate at the top of the chat, then look at the details or the computer. Profiles, Sessions, and Kanban live in a separate Hermes workbench that users enter deliberately.
 
-## Agent 从这里开始
+## Agents Start Here
 
-1. 读本页确定交付边界，然后按 [Agent 执行手册](03-agent-handoff.md) 的任务卡开工。手册包含可直接使用的启动指令、每阶段产物及能力阻塞的处理方式。
-2. 对照 [录屏与界面规格](01-bot-experience.md) 打开 `../scratch/录屏2026-11-03 19.25.26.mov`，先做可运行的界面切片。用脱敏的确定性样例复现录屏中的界面状态。
-3. 用 [Dashboard 接入与流式架构](02-dashboard-integration.md) 建协议样例与真实联调，先跑通「连接 → 选 Bot → 发消息 → 断线恢复 → 停止」。
-4. 每张任务卡完成时提交可复现证据。验收分为截图、自动测试、真实 Dashboard 联调及打包后运行四类，分别记录环境和结果。
+1. Read this page to establish the delivery boundaries, then start from the task cards in the [Agent execution handbook](03-agent-handoff.md). The handbook contains ready-to-use kickoff instructions, the deliverables of each phase, and how to handle capability blockers.
+2. Using the [screen recording and UI specification](01-bot-experience.md), open `../scratch/录屏2026-11-03 19.25.26.mov` and build a runnable UI slice first. Reproduce the UI states from the recording with redacted, deterministic samples.
+3. Use [Dashboard integration and streaming architecture](02-dashboard-integration.md) to build protocol samples and real integration, getting "connect → select Bot → send message → reconnect and recover → stop" working end to end first.
+4. Submit reproducible evidence as each task card completes. Acceptance falls into four categories — screenshots, automated tests, real Dashboard integration, and post-packaging runs — each recorded with its environment and results.
 
-新目录为 `~/dev/MosBot_Desktop`。从零重做，不沿用旧 Desktop 的界面和实施完成状态。界面仅以 GrokBot 录屏为参考，品牌资源以 `~/dev/MosBot` 为来源，接口以 `~/dev/hermes-agent` 及目标部署为准。UI fixture 和真实客户端通过同一类型接口切换。安装包只接入真实 Dashboard。
+The new directory is `~/dev/MosBot_Desktop`. Rebuild from scratch; do not carry over the old Desktop's UI or implementation-completion status. The UI references only the GrokBot recording, brand resources come from `~/dev/MosBot`, and the API follows `~/dev/hermes-agent` and the target deployment. UI fixtures and the real client switch through the same typed interface. Only the real Dashboard is wired into the installer.
 
-## 交付分层
+## Delivery Layers
 
-| 交付 | 范围 | 完成定义 |
+| Delivery | Scope | Definition of done |
 | --- | --- | --- |
-| 可点的设计切片 | 双栏、常用头像、折叠分区、消息气泡、输入条、搜索、创建 Bot 和按需右栏 | 提供真实窗口、对照截图和操作录屏，由用户实际操作确认布局、密度和手感后冻结界面基线 |
-| 首个可用版 | Dashboard 登录、新 Bot 配置到首条回复、持久聊天与恢复、审批提醒、Bot 整理、附件与产物、电脑观看与非抢占接管、Hermes 工作台、设置及安装升级 | M1–M5 全部通过，指定真实服务上的必交能力无未解决阻塞；用户无需开发工具即可完成日常任务 |
-| 能力扩展 | 群聊、语音转文字、按需扩大管理范围 | 群聊与语音沿用录屏中的位置，按协议探测独立上线。分区是列表整理，群聊是独立会话，两者有各自身份 |
+| Clickable design slice | Two-column layout, common avatars, collapsible sections, message bubbles, composer, search, Bot creation, and the on-demand right column | Provide real windows, comparison screenshots, and interaction recordings; freeze the UI baseline after the user confirms layout, density, and feel through hands-on use |
+| First usable release | Dashboard login, new Bot configuration through first reply, persistent chat and recovery, approval alerts, Bot organization, attachments and artifacts, computer viewing and non-preemptive takeover, Hermes workbench, settings, and install/upgrade | All of M1–M5 pass with no unresolved blockers on required capabilities of the designated real service; users can complete daily tasks without developer tools |
+| Capability expansion | Group chat, speech-to-text, expanded management scope on demand | Group chat and voice reuse the positions from the recording and ship independently after protocol probing. Sections are list organization; group chat is a separate conversation; each has its own identity |
 
-首发为 macOS、单 Dashboard，支持浅色/深色及简体中文/英文；数据模型保留连接和 profile 身份。M0b 固定最低 macOS、CPU 架构、后端最低版本及必要插件，M5 逐项实测后才对外声明支持。群聊、语音、多 Dashboard、第三方应用连接和计费为 M6 及后续范围，不阻断首版。
+The first release is macOS, single Dashboard, with light/dark support and Simplified Chinese/English; the data model preserves connection and profile identity. M0b fixes the minimum macOS, CPU architecture, minimum backend version, and required plugins; M5 declares support publicly only after item-by-item real testing. Group chat, voice, multiple Dashboards, third-party app connections, and billing are M6 and later scope, and do not block the first version.
 
-## 完成定义
+## Definition of Done
 
-首版须让新用户在签名安装包中独立完成「连接登录 → 创建 Bot → 配置模型授权 → 真实回复 → 处理审批 → 保存产物 → 重启继续使用」，并完成工作台操作和电脑唤醒、观看、接管、归还。允许引导到同一 Dashboard 的浏览器配置页，返回应用后必须核验配置并继续原任务。
+The first version must let a new user, in the signed installer, independently complete "connect and log in → create Bot → configure model authorization → real reply → handle approvals → save artifacts → restart and continue using", plus workbench operations and computer wake, viewing, takeover, and return. Guiding the user to the same Dashboard's browser configuration page is allowed; after returning to the app, the configuration must be verified and the original task continued.
 
-M0a 是界面验收，M1–M4 是功能验收，M5 是安装、升级和日用验收，不能互相代替。必交能力缺失时登记解决任务并保留阻塞；隐藏入口、只读降级和记录失败均不算完成。其他不支持的部署可以明确降级，首版参考环境仍须跑通全部必交项。只有用户明确调整范围才能移出首版。
+M0a is UI acceptance, M1–M4 are functional acceptance, and M5 is install, upgrade, and daily-use acceptance; they cannot substitute for one another. When a required capability is missing, register a resolution task and keep the blocker; hidden entry points, read-only degradation, and recorded failures do not count as done. Other unsupported deployments may degrade explicitly, but the first-version reference environment must still pass every required item. Only an explicit scope change by the user can remove something from the first version.
 
-## 技术基线
+## Technical Baseline
 
-Electron Forge + Vite + React 19 + TypeScript 严格模式 + pnpm 锁文件。界面使用 CSS Modules、CSS 自定义属性和小型可访问基础组件，核心区域组件自行实现。React Router 管独立页面，TanStack Query 管有界 REST 查询，TanStack Virtual 管可变高度的长消息列表。流式数据由细粒度订阅的外部 store 投影，renderer 使用 `useSyncExternalStore` 读取当前会话及相应消息。
+Electron Forge + Vite + React 19 + TypeScript strict mode + pnpm lockfile. The UI uses CSS Modules, CSS custom properties, and small accessible base components, with core area components implemented in-house. React Router handles standalone pages, TanStack Query handles bounded REST queries, and TanStack Virtual handles variable-height long message lists. Streaming data is projected by an external store with fine-grained subscriptions; the renderer reads the current session and its messages through `useSyncExternalStore`.
 
-Main 管窗口、认证和系统权限。聊天和插件流走独立 Electron Utility Process，使用常驻 WebSocket、运行时校验和按帧合并的 MessagePort。HTTP 采用 Electron Chromium 网络栈，显式测试代理、证书和 URL 前缀。先对 TypeScript 版本做端到端压测，达到性能门槛后继续完成全部发布验收。Rust 或 Worker 的引入以热点数据为依据，详见接入规格。选择 Electron、Node 和打包插件的确切版本时，核对当期安全支持和签名兼容性，再用锁文件固定。 [React](https://react.dev/) · [Vite](https://vite.dev/guide/) · [Electron Forge](https://www.electronforge.io/) · [Electron Utility Process](https://www.electronjs.org/docs/latest/api/utility-process)
+Main manages windows, authentication, and system permissions. Chat and plugin streams run in a separate Electron Utility Process, using a persistent WebSocket, runtime validation, and a frame-batched MessagePort. HTTP uses Electron's Chromium network stack, with explicit tests for proxy, certificates, and URL prefixes. Run end-to-end stress tests against the TypeScript version first, and proceed to full release acceptance only after the performance thresholds are met. Introducing Rust or Workers is based on measured hot spots; see the integration specification. When choosing exact versions of Electron, Node, and packaging plugins, check the current security support and signing compatibility, then pin them in the lockfile. [React](https://react.dev/) · [Vite](https://vite.dev/guide/) · [Electron Forge](https://www.electronforge.io/) · [Electron Utility Process](https://www.electronjs.org/docs/latest/api/utility-process)
 
-建议目录按责任划分为 `src/main`、`src/preload`、`src/service`、`src/shared`、`src/renderer/features/{bots,chat,inspector,hermes,settings}` 和 `tests/{contract,e2e,perf}`。主应用由本地打包页面提供；登录、模型授权配置和用户明确打开的外链使用系统浏览器。
+Suggested directories by responsibility are `src/main`, `src/preload`, `src/service`, `src/shared`, `src/renderer/features/{bots,chat,inspector,hermes,settings}`, and `tests/{contract,e2e,perf}`. The main app is served from locally packaged pages; login, model authorization configuration, and external links the user explicitly opens use the system browser.
 
-## 实施任务与依赖
+## Implementation Tasks and Dependencies
 
-| 卡片 | 可交付结果 | 依赖和合并条件 |
+| Card | Deliverable | Dependencies and merge conditions |
 | --- | --- | --- |
-| M0a · 设计切片 | Electron 窗口、MosBot 资产、双栏/右栏、搜索、创建与异常状态 | 主 Agent 统一构建配置；用户实际操作验收通过后开展依赖视觉基线的完整页面实现，协议和存储工作可继续 |
-| M0b · Dashboard 探针 | 在 `192.168.2.171:9119` 验证 OAuth、会话、模型配置、文件、待处理请求、Kanban 和电脑，固定能力与支持矩阵 | 与 M0a 并行；仅对本次专用测试对象写入；冻结 scope、事件和 IPC 类型，所有缺失必交能力进入 M0c |
-| M0c · 后端依赖闭环 | 为缺失的必交能力提供适配/后端补丁、兼容版本和部署回退说明，并在指定服务复验 | 主 Agent 负责收口，协议负责人定位、实现负责人修复、测试负责人复验；未部署或未复验保持阻塞 |
-| M1 · 聊天纵切 | 登录、已有 Bot、首次发送、Markdown、历史分页、审批/澄清、停止、恢复、后台提醒、草稿持久化 | M0b 对应能力通过；新建首发还依赖 M2 的配置就绪及标题认领验证；真实服务与确定性回归分别记录 |
-| M2 · 创建与整理 | 新建、模型授权引导与就绪检测、外观、改名、分区、置顶、搜索、部分成功及冲突恢复 | M0a + 对应 M0b/M0c；与 M1 联验新 Bot 首次推理及重启续聊。Bot 注册与 canonical 认领由同一负责人实现；M2 拥有配置就绪逻辑，M3 复用 |
-| M3 · Hermes 工作台 | 独立路由实现 Profiles 概览/详情及有权限的默认模型配置、Sessions 分页/搜索/历史、Kanban board 切换/详情/新建任务/修改状态、WS 失效刷新 | M0a + 对应 M0b/M0c，配置页复用 M2 逻辑；返回原聊天恢复草稿、滚动和选中项 |
-| M4 · 资料与电脑 | 详情与例行任务概览、附件收发、产物预览/保存/打开、电脑唤醒/观看/非抢占接管/归还 | M1 + 对应 M0b/M0c；资料不能只列名称，电脑不能以只读观看结项；双客户端验收串行 |
-| M5 · 发布与日用验收 | 性能、GUI/可访问性/双语回归、签名公证、干净安装、覆盖升级与数据恢复、连续 7 天日用 | M1–M4 均完成且必交阻塞为零；提供安装包、校验值、用户指南、证据索引和已知限制，由用户最终验收 |
-| M6 · 能力扩展 | 群头像与群聊接入、录音转写；有能力时启用真实入口 | 在目标 Dashboard 证明对应能力；分别交付，不以 M6 阻断前述聊天闭环 |
+| M0a · Design slice | Electron window, MosBot assets, two-column/right column layout, search, creation, and error states | Main Agent owns the shared build config; full-page implementation that depends on the visual baseline starts after the user accepts hands-on operation, while protocol and storage work may continue |
+| M0b · Dashboard probe | On `192.168.2.171:9119`, verify OAuth, sessions, model configuration, files, pending requests, Kanban, and the computer; pin capabilities and the support matrix | Runs in parallel with M0a; write only to test objects dedicated to this round; freeze scope, event, and IPC types; all missing required capabilities move to M0c |
+| M0c · Backend dependency closure | Provide adapters or backend patches for missing required capabilities, compatible versions, and deployment rollback notes, then re-verify on the designated service | Main Agent closes it out; the protocol owner locates issues, the implementation owner fixes them, the test owner re-verifies; stays blocked until deployed and re-verified |
+| M1 · Chat vertical slice | Login, existing Bots, first send, Markdown, history pagination, approval/clarification, stop, recovery, background alerts, draft persistence | The corresponding M0b capabilities pass; first send for a newly created Bot also depends on M2's configuration readiness and title-claim verification; real-service and deterministic regression runs are recorded separately |
+| M2 · Creation and organization | Creation, model authorization guidance and readiness detection, appearance, renaming, sections, pinning, search, partial success and conflict recovery | M0a + corresponding M0b/M0c; jointly verify with M1 the new Bot's first inference and restart-continued chat. Bot registration and canonical claim are implemented by the same owner; M2 owns configuration-readiness logic, reused by M3 |
+| M3 · Hermes workbench | Standalone routes for the Profiles overview/details and permitted default model configuration, Sessions pagination/search/history, Kanban board switching/details/task creation/status changes, WS invalidation refresh | M0a + corresponding M0b/M0c; the configuration page reuses M2 logic; returning to the original chat restores draft, scroll, and selection |
+| M4 · Details and computer | Details and recurring-task overview, attachment send/receive, artifact preview/save/open, computer wake/view/non-preemptive takeover/return | M1 + corresponding M0b/M0c; the details panel must not stop at listing names, and the computer cannot close as read-only viewing; dual-client acceptance is serial |
+| M5 · Release and daily-use acceptance | Performance, GUI/accessibility/bilingual regression, signing and notarization, clean install, in-place upgrade and data recovery, 7 consecutive days of daily use | M1–M4 all complete with zero required blockers; provide the installer, checksums, user guide, evidence index, and known limitations for final user acceptance |
+| M6 · Capability expansion | Group avatars and group-chat integration, recording transcription; enable real entry points when the capability exists | Prove the corresponding capability on the target Dashboard; deliver separately; M6 does not block the preceding chat loop |
 
-每张卡只有一个写入负责人，主 Agent 统一共享类型、真实登录、测试写入和发布。确定性 fixture 仅用于界面、纯函数回归及本地性能回放，不启动 mock server，不替代真实联调。证据记录命令、版本、状态、耗时、窗口尺寸及录屏时间点；不收录凭据、真实会话正文和远端屏幕内容。
+Each card has exactly one write owner; the Main Agent centralizes shared types, real login, test writes, and releases. Deterministic fixtures are used only for UI, pure-function regression, and local performance replay; no mock server is started, and they do not replace real integration. Evidence records commands, versions, status, duration, window size, and recording timestamps; it does not include credentials, real conversation bodies, or remote screen content.
 
-## 发布候选验收
+## Release Candidate Acceptance
 
-- [ ] 全新用户通过系统浏览器 OAuth 登录；新建 Bot 后完成模型授权、收到真实回复，取消/失败可继续原配置流程，不靠手改配置文件。
-- [ ] 冷启动连接后停在 Bots 或恢复最近可用的 Bot。点置顶、分区成员、搜索结果进入同一条对话；重启后恢复选择和草稿。
-- [ ] 录屏关键状态复刻到位。普通双栏、展开右栏、侧栏缩窄、置顶与折叠分区、搜索空态和结果、创建 Bot、电脑预览与独立窗口均有截图。检查中文长名、长文、分屏和放大。
-- [ ] 真实 Dashboard 上跨客户端读取同一 Bot Chat。发送、工具事件、提问卡、停止、断线回放、后台长回复恢复均有独立结果；两端并发不会静默覆盖资料或发送两次。
-- [ ] 未打开或折叠分区中的 Bot 等待审批时可发现并直达；后台、关闭主窗口、从 Dock 重开、退出后重启均有结果，通知被拒绝不影响应用内提醒。
-- [ ] 上传附件后真实推理可读取；Bot 产物可预览或保存并打开，分页、过期授权、无权限和已删除资源处理正确。
-- [ ] 工作台三个页面均实际发请求。Kanban 新建及改状态有回读，另一客户端修改可刷新，插件禁用有明确反馈。切换账号、profile、board 时旧响应不会写进新页面。
-- [ ] 指定真实服务中唤醒电脑，预览后打开观看窗口，取得及归还控制权。断线退回只读，后台和重启重新验证租约。对有其他操作者的状态进行测试。
-- [ ] 达到接入规格的性能门槛；键盘、中文 IME、缩放、降动态和焦点顺序有运行验证。包经过签名、公证及干净系统安装验证，记录支持的 OS 和架构组合。
-- [ ] 从本次重做的前一测试版覆盖升级后，连接、草稿、分区、已读位置和偏好保留；迁移失败不清空数据，强退后待确认发送不会自动重发。
-- [ ] 用户确认界面与完整流程；连续 7 天日用记录完成，无未解决的阻断问题、数据丢失、重复发送或越权操作；所有必交项均有真实证据。
+- [ ] A brand-new user logs in through system-browser OAuth; after creating a Bot, completes model authorization and receives a real reply; cancel/failure lets the original configuration flow continue, without hand-editing configuration files.
+- [ ] After a cold start, the app connects and stops at Bots or restores the most recently usable Bot. Tapping a pinned item, a section member, or a search result enters the same conversation; a restart restores the selection and draft.
+- [ ] Key states from the recording are reproduced. Screenshots exist for the normal two-column view, expanded right column, narrowed sidebar, pinned and collapsed sections, search empty state and results, Bot creation, computer preview, and the standalone window. Long Chinese names, long text, split screen, and zoom are checked.
+- [ ] The same Bot Chat is read from another client against the real Dashboard. Sending, tool events, question cards, stop, reconnect replay, and background long-reply recovery each have separate results; concurrent use from both ends never silently overwrites profile data or sends twice.
+- [ ] A Bot awaiting approval in an unopened or collapsed section can be discovered and reached directly; background, closed main window, reopened from the Dock, and restarted after quit all have results; a denied notification does not affect in-app alerts.
+- [ ] After uploading an attachment, real inference can read it; Bot artifacts can be previewed or saved and opened; pagination, expired authorization, no permission, and deleted resources are handled correctly.
+- [ ] All three workbench pages actually issue requests. Kanban creation and status changes are read back; changes from another client can refresh; a disabled plugin gives clear feedback. When switching accounts, profiles, or boards, stale responses never write into the new page.
+- [ ] Wake the computer on the designated real service, open the viewing window after the preview, and acquire and return control. A disconnect falls back to read-only; leases are re-verified in the background and after a restart. Test states where another operator is present.
+- [ ] Meet the performance thresholds in the integration specification; keyboard, Chinese IME, zoom, reduced motion, and focus order are verified at runtime. The package has passed signing, notarization, and clean-system install verification, with supported OS and architecture combinations recorded.
+- [ ] After an in-place upgrade from the previous beta of this rebuild, connections, drafts, sections, read positions, and preferences are retained; a failed migration does not wipe data; a pending unconfirmed send after a force quit is not automatically resent.
+- [ ] The user confirms the UI and the complete flow; 7 consecutive days of daily-use records are complete, with no unresolved blockers, data loss, duplicate sends, or unauthorized operations; every required item has real evidence.

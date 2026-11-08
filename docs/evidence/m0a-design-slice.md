@@ -1,87 +1,87 @@
-# M0a · 可点的设计切片 · 证据
+# M0a · Clickable Design Slice · Evidence
 
-- 卡片：M0a（见 `docs/plans/03-agent-handoff.md`）
-- 状态：**界面切片可运行，等待用户实际操作验收后冻结视觉基线**；M0a 尚未关闭
-- 记录时间：2026-11-03
-- 数据来源：**fixture**（确定性、脱敏设计样例），不含真实 Dashboard 数据
+- Card: M0a (see `docs/plans/03-agent-handoff.md`)
+- Status: **UI slice is runnable; awaiting the user's hands-on acceptance before the visual baseline is frozen**; M0a is not yet closed
+- Recorded: 2026-11-03
+- Data source: **fixture** (deterministic, redacted design samples); contains no real Dashboard data
 
-## 环境
+## Environment
 
-| 项                | 值                                                                                                    |
-| ----------------- | ----------------------------------------------------------------------------------------------------- |
-| 机器              | Apple Silicon（arm64），macOS 15.8.2                                                                  |
-| Node              | 26.13.0（Homebrew；本会话内 DSH 自带 Node 24 无法加载 rolldown 原生绑定，工具链统一用 Homebrew Node） |
-| pnpm              | 11.28.5（`packageManager` 固定，`node-linker=hoisted` 供 Electron Forge 打包）                        |
-| Electron          | 45.2.1                                                                                                |
-| React / Vite / TS | 19.3.1 / 8.3.5 / 5.9.3（strict）                                                                      |
-| 构建产物          | `out/MosBot-darwin-arm64/MosBot.app`（**未签名目录构建**，仅本地验收；不是发布安装包）                |
+| Item              | Value                                                                                                                                            |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Machine           | Apple Silicon (arm64), macOS 15.8.2                                                                                                              |
+| Node              | 26.13.0 (Homebrew; the DSH-bundled Node 24 in this session cannot load rolldown native bindings, so the toolchain uses Homebrew Node throughout) |
+| pnpm              | 11.28.5 (`packageManager` pinned; `node-linker=hoisted` for Electron Forge packaging)                                                            |
+| Electron          | 45.2.1                                                                                                                                           |
+| React / Vite / TS | 19.3.1 / 8.3.5 / 5.9.3 (strict)                                                                                                                  |
+| Build artifact    | `out/MosBot-darwin-arm64/MosBot.app` (**unsigned directory build**, local acceptance only; not a release installer)                              |
 
-## 命令与结果
+## Commands and Results
 
-| 命令               | 结果                     | 说明                                                                |
-| ------------------ | ------------------------ | ------------------------------------------------------------------- |
-| `pnpm typecheck`   | 通过（0 error）          | renderer 与 main/preload 两套 tsconfig                              |
-| `pnpm test`        | 通过：4 个文件 / 64 用例 | 颜色、i18n、store/reducer、fixture 覆盖、BotFace 几何               |
-| `pnpm lint`        | 通过（0 problem）        | ESLint 9 + typescript-eslint                                        |
-| `pnpm test:e2e`    | 通过：9 用例             | 先 `electron-forge package`，再用 Playwright 启动真实 Electron 窗口 |
-| `pnpm package`     | 通过                     | 产物 `out/MosBot-darwin-arm64/MosBot.app`                           |
-| `pnpm screenshot`  | 通过：10 张              | 写入 `docs/evidence/screens/m0a/`                                   |
-| `pnpm assets:sync` | 通过                     | 从 `MosBot@3c118c4` 同步品牌资产并生成 `artwork.ts`                 |
+| Command            | Result                   | Notes                                                                                    |
+| ------------------ | ------------------------ | ---------------------------------------------------------------------------------------- |
+| `pnpm typecheck`   | Pass (0 error)           | Two tsconfig sets: renderer and main/preload                                             |
+| `pnpm test`        | Pass: 4 files / 64 cases | Colors, i18n, store/reducer, fixture coverage, BotFace geometry                          |
+| `pnpm lint`        | Pass (0 problem)         | ESLint 9 + typescript-eslint                                                             |
+| `pnpm test:e2e`    | Pass: 9 cases            | Runs `electron-forge package` first, then launches a real Electron window via Playwright |
+| `pnpm package`     | Pass                     | Artifact `out/MosBot-darwin-arm64/MosBot.app`                                            |
+| `pnpm screenshot`  | Pass: 10 images          | Written to `docs/evidence/screens/m0a/`                                                  |
+| `pnpm assets:sync` | Pass                     | Syncs brand assets from `MosBot@3c118c4` and generates `artwork.ts`                      |
 
-E2E 覆盖：默认窗口与六格置顶、分区收折、从置顶选 Bot 并处理审批、Enter 发送 / 停止 / 已停止回执、`⌘K` 搜索过滤并跳转、创建 Bot（实时预览）并选中、打开详情 → 唤醒电脑 → 关闭后焦点回到名牌、深浅色与中英切换、720×500 覆盖式详情与空对话。
+E2E coverage: default window and six pinned slots, section collapse, selecting a Bot from the pins and handling an approval, Enter to send / stop / stopped receipt, `⌘K` search filtering and navigation, creating a Bot (live preview) and selecting it, opening details → waking the computer → focus returning to the nameplate after close, light/dark and zh/en switching, 720×500 overlay details and empty chat.
 
-## 截图索引（`docs/evidence/screens/m0a/`）
+## Screenshot Index (`docs/evidence/screens/m0a/`)
 
-| 文件                                | 状态                                                                   | 对照录屏                     |
-| ----------------------------------- | ---------------------------------------------------------------------- | ---------------------------- |
-| `01-light-default.png`              | 1000×760 双栏，288 px 左栏、六格置顶、长中文名、工作记录、审批卡       | 00:42                        |
-| `02-inspector-details.png`          | 展开右栏「详情」：头像、名称、状态、最近活动、简介、例行任务（含停用） | 01:04                        |
-| `03-inspector-computer-preview.png` | 电脑页：唤醒 → 16:10 只读预览 + 禁用「打开」及原因                     | 01:24                        |
-| `04-search.png`                     | 居中搜索浮层，输入即时过滤、结果含头像/名称/一行摘要                   | 02:03                        |
-| `05-create-bot.png`                 | 创建弹层：实时预览、名字计数、9 外形、12 色板、取消/创建               | 02:14                        |
-| `06-dark.png`                       | 深色主题同一布局                                                       | 01:26 深色电脑窗口的色系参考 |
-| `07-english.png`                    | 英文界面                                                               | 双语要求                     |
-| `08-narrow-overlay.png`             | 720×500：详情变为右侧覆盖层 + 遮罩，聊天保持可读                       | 01:04 覆盖式详情             |
-| `09-empty-chat.png`                 | 空对话：品牌插画 + 一句说明，键盘焦点在名牌                            | 空态要求                     |
-| `10-library.png`                    | 资料库空态（单个选中页签、一行空态文案）                               | 01:50–02:02                  |
+| File                                | State                                                                                                          | Reference recording                                |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `01-light-default.png`              | 1000×760 two-column, 288 px left column, six pinned slots, long Chinese name, work log, approval card          | 00:42                                              |
+| `02-inspector-details.png`          | Expanded right-panel "Details": avatar, name, status, recent activity, bio, routine tasks (including disabled) | 01:04                                              |
+| `03-inspector-computer-preview.png` | Computer page: wake → 16:10 read-only preview + disabled "Open" with reason                                    | 01:24                                              |
+| `04-search.png`                     | Centered search overlay, instant filtering on input, results with avatar/name/one-line summary                 | 02:03                                              |
+| `05-create-bot.png`                 | Create sheet: live preview, name counter, 9 shapes, 12-color palette, Cancel/Create                            | 02:14                                              |
+| `06-dark.png`                       | Same layout in dark theme                                                                                      | 01:26 color reference for the dark computer window |
+| `07-english.png`                    | English UI                                                                                                     | Bilingual requirement                              |
+| `08-narrow-overlay.png`             | 720×500: details become a right-side overlay + scrim, chat remains readable                                    | 01:04 overlay details                              |
+| `09-empty-chat.png`                 | Empty chat: brand illustration + one-line explanation, keyboard focus on the nameplate                         | Empty-state requirement                            |
+| `10-library.png`                    | Library empty state (single selected tab, one line of empty-state copy)                                        | 01:50–02:02                                        |
 
-截图仅含窗口内渲染内容；macOS 原生标题栏与红绿灯不在截图内（本会话无屏幕录制权限），需用户在真实窗口确认。
+Screenshots contain only content rendered inside the window; the native macOS title bar and traffic lights are not in the screenshots (this session has no screen-recording permission), so the user needs to confirm them in a real window.
 
-## 覆盖的界面状态（fixture）
+## Covered UI States (fixture)
 
-- 两个分区（产品、日常），日常默认收折并显示数量；「待确认 · 3」汇总审批与澄清。
-- 六个置顶位（两行三列）+「全部置顶」入口；超长中文名按列表/置顶/名牌分别截断。
-- 会话：用户气泡（Bot 色 + 深色 ink）、Bot 气泡、合并且可展开的工作记录、长回复（段落/列表/代码块）、待审批卡（处理后折为回执）、澄清卡、已停止、回到最新、草稿按 Bot 隔离。
-- 离线 Bot、连接离线（底栏「设计样例 · 未连接」）与待确认状态点。
-- 电脑：休眠 / 唤醒中 / 预览 / 仅观看 / 其他 viewer；无假画面。
-- 深浅色令牌、中英文案、降低动态（跟随系统）。
+- Two sections (Products, Daily); Daily is collapsed by default and shows a count; "Pending · 3" aggregates approvals and clarifications.
+- Six pinned slots (two rows of three) + an "All pinned" entry; extra-long Chinese names are truncated separately in the list / pins / nameplate.
+- Conversation: user bubble (Bot color + dark ink), Bot bubble, merged and expandable work log, long reply (paragraphs/lists/code blocks), pending approval card (folds into a receipt after handling), clarification card, stopped, back to latest, per-Bot draft isolation.
+- Offline Bot, connection offline (footer "Design sample · Not connected") and the pending-state dot.
+- Computer: sleeping / waking / preview / view-only / another viewer; no fake frames.
+- Light/dark tokens, zh/en copy, reduced motion (follows system).
 
-## 用户反馈（2026-11-03 补充录屏）
+## User Feedback (2026-11-03 supplementary recording)
 
-- 悬停头像需要有反馈：已实现悬停 260 ms 后出现预览浮层（头像、名称、最后摘要、状态、最近活动），同时脸部以 `listening` 姿态回应并轻微上浮；键盘聚焦也会显示浮层。见 `11-hover-preview.png`。
-- 说明：这一条来自用户对照参考应用录屏的反馈，参考对象是 GrokBot 的悬停预览效果，实现按 MosBot 资产重画。
+- Hovering an avatar needs feedback: implemented — a preview overlay appears after 260 ms of hover (avatar, name, last summary, status, recent activity), while the face responds in the `listening` pose and lifts slightly; keyboard focus also shows the overlay. See `11-hover-preview.png`.
+- Note: this item comes from the user's feedback against a reference app recording; the reference is GrokBot's hover-preview effect, redrawn with MosBot assets.
 
-## 已知限制与待调整项
+## Known Limitations and Pending Adjustments
 
-1. 回复与电脑唤醒由 fixture 节奏驱动（1.4 s / 1.2 s），**不是真实推理**；M1/M4 接真实事件后删除。
-2. 附件按钮禁用（M4）、资料库无预览/保存/打开（M4）、电脑「打开」禁用（M4），均显示原因而非假入口。
-3. 未验证：真实中文 IME 组合输入、VoiceOver 朗读顺序、真实 4K/缩放与分屏、原生窗口红绿灯位置。IME 仅实现 composition 保护，需用户实测。
-4. 本会话内启动 Electron 需要 `--no-sandbox --disable-gpu --user-data-dir=.tmp/...`（DSH 文件沙箱不允许 Chromium 写 `~/Library` 与初始化自身沙箱）；用户在自己终端运行 `pnpm dev` 不需要这些参数，E2E 脚本只在测试环境追加。
-5. 打包为未签名目录构建，M5 才做签名/公证/安装升级。
+1. Replies and computer wake are driven by fixture timing (1.4 s / 1.2 s), **not real inference**; remove once M1/M4 wire real events.
+2. Attachment button disabled (M4), library has no preview/save/open (M4), computer "Open" disabled (M4); all show a reason instead of a fake entry point.
+3. Not verified: real Chinese IME composition input, VoiceOver reading order, real 4K/scaling and split screen, native window traffic-light position. IME only implements composition protection and needs user testing.
+4. Launching Electron in this session requires `--no-sandbox --disable-gpu --user-data-dir=.tmp/...` (the DSH file sandbox does not allow Chromium to write `~/Library` or initialize its own sandbox); running `pnpm dev` in the user's own terminal does not need these flags, and the E2E scripts only append them in the test environment.
+5. Packaged as an unsigned directory build; signing/notarization/install-upgrade happen only in M5.
 
-## 待用户验收
+## Awaiting User Acceptance
 
-请在真实窗口运行（本机没有全局 pnpm；依赖已装好，`npm run` 会使用仓库内的 `node_modules/.bin`）：
+Please run in a real window (this machine has no global pnpm; dependencies are already installed and `npm run` uses the repo's `node_modules/.bin`):
 
 ```bash
-npm run dev        # 或 npx pnpm@11.28.5 dev
+npm run dev        # or npx pnpm@11.28.5 dev
 ```
 
-如需重新安装依赖：`npx pnpm@11.28.5 install`（`pnpm` 同时作为 devDependency 固定，Electron Forge 依赖它做打包检查）。
+To reinstall dependencies: `npx pnpm@11.28.5 install` (`pnpm` is also pinned as a devDependency; Electron Forge relies on it for packaging checks).
 
-对照 `docs/plans/01-bot-experience.md` 检查：左栏占比与密度、置顶三列、分区收折、长中文名截断、气泡宽度与行高、名牌点击、右栏拖拽手感、搜索与创建弹层、深浅色与中英切换。记录「布局 / 密度 / Bot 切换 / 右栏手感」的结论与待调整项；通过后冻结视觉基线并进入 M1 真实链路。
+Check against `docs/plans/01-bot-experience.md`: left-column proportion and density, three pinned columns, section collapse, long Chinese name truncation, bubble width and line height, nameplate click, right-panel drag feel, search and create sheets, light/dark and zh/en switching. Record conclusions and pending adjustments for "layout / density / Bot switching / right-panel feel"; after approval, freeze the visual baseline and move on to the M1 real link.
 
-## 未验证 / 阻塞
+## Not Verified / Blocked
 
-- M0b（`192.168.2.171:9119` 探针）需要用户在系统浏览器完成 OAuth 登录，尚未开始；本卡片不受影响。
-- 真实服务能力矩阵、协议样例与 IPC 契约在 M0b/M1 冻结，本卡片未包含。
+- M0b (the `192.168.2.171:9119` probe) requires the user to complete OAuth login in a system browser and has not started; this card is unaffected.
+- The real service capability matrix, protocol samples, and IPC contracts are frozen in M0b/M1 and are not included in this card.

@@ -1,108 +1,82 @@
-# Dashboard 能力矩阵（M0b）
+# Dashboard Capability Matrix (M0b)
 
-- 唯一验收目标：`192.168.2.171:9119`（系统浏览器登录，RFC 8252 PKCE + loopback）
-- 本地源码基线：`hermes-agent@c419cf7c86`；**部署实测：v0.22.5 / commit `bf0203a794` / release 2026.9.24**
-- 版本关系：部署 commit 是本地基线的祖先（落后 3133 个提交）。凡本客户端依赖的方法以**部署实测**为准，差异与最低兼容版本在 M0c 记录。
-- 记录时间：2026-11-03
-- 探针：`MOSBOT_DASHBOARD_URL=http://192.168.2.171:9119 npm run test:integration`（无凭据部分可用 `MOSBOT_PROBE_MODE=preflight` 单独重跑）
-- 说明：本文件只记录脱敏字段形状、状态与结论；令牌、票据、凭据、真实会话正文、账号身份值不进入证据。
-- 状态：**第 1、2、3 步与第 4 步读写已验证**（2026-11-04 用户在系统浏览器完成一次 basic 登录，凭据经 safeStorage 保存并可静默恢复；第 3 步 `newbot` 探针在专用 profile 上跑通新建 → canonical 标题认领 → 双端标题冲突 → 首条真实回复 → 停止 → 清理）；第 5、6 步为部分验证（见下文与 M4 证据）
+- Sole acceptance target: `192.168.2.171:9119` (system browser login, RFC 8252 PKCE + loopback)
+- Local source baseline: `hermes-agent@c419cf7c86`; **deployed actual: v0.22.5 / commit `bf0203a794` / release 2026.9.24**
+- Version relationship: the deployed commit is an ancestor of the local baseline (3133 commits behind). Methods this client relies on follow the **deployed actual**; differences and minimum compatible versions are recorded in M0c.
+- Recorded: 2026-11-03
+- Probe: `MOSBOT_DASHBOARD_URL=http://192.168.2.171:9119 npm run test:integration` (the no-credential part can be rerun separately with `MOSBOT_PROBE_MODE=preflight`)
+- Note: this file records only redacted field shapes, states, and conclusions; tokens, tickets, credentials, real conversation bodies, and account identity values do not enter the evidence.
+- Status: **Steps 1, 2, 3 and step 4 read/write verified** (on 2026-11-04 the user completed one basic login in the system browser; credentials are saved via safeStorage and can be silently restored; the step-3 `newbot` probe ran on a dedicated profile through create → canonical title claim → dual-end title conflict → first real reply → stop → cleanup); steps 5 and 6 are partially verified (see below and the M4 evidence)
 
-## 部署实测摘要（只读）
+## Deployed Actual Summary (read-only)
 
-| 项                      | 实测值                                                                                                                                                 |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `/api/health`           | `200`，`version=0.22.5`，`commit=bf0203a794`，`auth_required=true`，耗时约 18 ms                                                                       |
-| `/api/status`           | `200`，`overall=ok`，`gateway_running=true`，`gateway_state=running`，`gateway_mode=multiplex`，31 个顶层字段                                          |
-| 鉴权形态                | `auth_required=true`，`auth_flows=[cookie, native_pkce]`，`auth_providers=[basic]`（Username & Password，`supports_password=true`）                    |
-| 登录入口                | `/auth/native/authorize`（合法参数）→ `302 /login` 并下发 PKCE Cookie；用户在同一 Dashboard 的登录页输入账号密码后，经 loopback 回调把 code 交给桌面端 |
-| Scheme / 前缀           | 明文 `http://192.168.2.171:9119`，无前缀、无反代；属于方案允许的唯一精确 origin 例外                                                                   |
-| `install_id` / profiles | `install_id` 存在（值不记录）；已有多个 profile，本轮**不改动**，写入只针对带本轮标识的新测试对象                                                      |
-| 证据                    | `docs/evidence/probes/preflight-*.json`（探针原始行，已脱敏）                                                                                          |
+| Item                    | Actual value                                                                                                                                                                                                               |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/api/health`           | `200`, `version=0.22.5`, `commit=bf0203a794`, `auth_required=true`, about 18 ms                                                                                                                                            |
+| `/api/status`           | `200`, `overall=ok`, `gateway_running=true`, `gateway_state=running`, `gateway_mode=multiplex`, 31 top-level fields                                                                                                        |
+| Auth shape              | `auth_required=true`, `auth_flows=[cookie, native_pkce]`, `auth_providers=[basic]` (Username & Password, `supports_password=true`)                                                                                         |
+| Login entry             | `/auth/native/authorize` (valid params) → `302 /login` and issues a PKCE Cookie; after the user enters username/password on the same Dashboard login page, the code is handed to the desktop app via the loopback callback |
+| Scheme / prefix         | Plaintext `http://192.168.2.171:9119`, no prefix, no reverse proxy; the only exact-origin exception permitted by the plan                                                                                                  |
+| `install_id` / profiles | `install_id` exists (value not recorded); multiple profiles already exist and are **not modified** this round; writes target only new test objects tagged with this round's identifier                                     |
+| Evidence                | `docs/evidence/probes/preflight-*.json` (raw probe lines, redacted)                                                                                                                                                        |
 
-## 第 1 步 · REST 探活与认证
+## Step 1 · REST Liveness and Authentication
 
-| 能力                                         | 本地与部署版本                                | 请求结果                                             | 必交或扩展   | 状态                | 负责人   | 依赖卡  | 关闭证据                           |
-| -------------------------------------------- | --------------------------------------------- | ---------------------------------------------------- | ------------ | ------------------- | -------- | ------- | ---------------------------------- |
-| `/api/health` 探活                           | 本地 c419cf7c86 / 部署待测                    | 待探针                                               | 必交         | 未验证              | 主 Agent | M0b     | `pnpm test:integration` 报告       |
-| `/api/status` 部署状态与 auth_flows          | 同上                                          | 待探针                                               | 必交         | 未验证              | 主 Agent | M0b     | 同上                               |
-| `/api/auth/providers` 提供方列表             | 同上                                          | 待探针                                               | 必交         | 未验证              | 主 Agent | M0b     | 同上                               |
-| `GET /auth/native/authorize` + loopback 回调 | 同上                                          | 待探针                                               | 必交         | 未验证              | 主 Agent | M0b     | 登录回调 + state 校验记录          |
-| `POST /auth/native/token` 换码（PKCE S256）  | 同上                                          | 待探针                                               | 必交         | 未验证              | 主 Agent | M0b     | token 形状（不含值）               |
-| `/api/auth/me` 身份                          | 同上                                          | 待探针                                               | 必交         | 未验证              | 主 Agent | M0b     | 脱敏 user id / provider            |
-| `POST /auth/native/refresh` 刷新与轮换       | 同上                                          | 待探针                                               | 必交         | 未验证              | 主 Agent | M0b     | 轮换成功 + 旧 RT 失效              |
-| 失效刷新令牌 401 `session_expired`           | 同上                                          | 待探针                                               | 必交         | 未验证              | 主 Agent | M0b     | 探针 `refresh_invalid` 行          |
-| `POST /api/auth/ws-ticket` 一次性票据        | 同上                                          | 待探针                                               | 必交         | 未验证              | 主 Agent | M0b     | ttl/长度（不记票据）               |
-| 注销：本地清除凭据                           | 本地实现                                      | 待探针                                               | 必交         | 未验证              | 主 Agent | M0b     | 注销后快照断开                     |
-| 服务端注销（撤销 bearer 会话）               | 源码 c419cf7c86                               | `/auth/logout` 依赖 Cookie，无可用的 bearer 撤销端点 | 必交（部分） | 缺失（待 M0c 评估） | 主 Agent | M0b/M0c | 源码核查 + 探针 `remote_logout` 行 |
-| 浏览器取消登录 / 超时                        | 本地实现                                      | 待用户手动复验                                       | 必交         | 未验证              | 主 Agent | M0b     | 取消后应用回到可重试状态           |
-| 代理 / 证书 / URL 前缀                       | 本地实现（Electron 网络栈 + manual redirect） | 待探针                                               | 必交         | 未验证              | 主 Agent | M0b     | 前缀地址 + 重定向拒绝记录          |
+| Capability                                          | Local and deployed version                                      | Request result                                                         | Required or extension | Status                       | Owner      | Depends on card | Closure evidence                                  |
+| --------------------------------------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------- | --------------------- | ---------------------------- | ---------- | --------------- | ------------------------------------------------- |
+| `/api/health` liveness                              | local c419cf7c86 / deployed TBD                                 | awaiting probe                                                         | Required              | Not verified                 | Main Agent | M0b             | `pnpm test:integration` report                    |
+| `/api/status` deployment status and auth_flows      | same                                                            | awaiting probe                                                         | Required              | Not verified                 | Main Agent | M0b             | same as above                                     |
+| `/api/auth/providers` provider list                 | same                                                            | awaiting probe                                                         | Required              | Not verified                 | Main Agent | M0b             | same as above                                     |
+| `GET /auth/native/authorize` + loopback callback    | same                                                            | awaiting probe                                                         | Required              | Not verified                 | Main Agent | M0b             | login callback + state validation record          |
+| `POST /auth/native/token` code exchange (PKCE S256) | same                                                            | awaiting probe                                                         | Required              | Not verified                 | Main Agent | M0b             | token shape (without values)                      |
+| `/api/auth/me` identity                             | same                                                            | awaiting probe                                                         | Required              | Not verified                 | Main Agent | M0b             | redacted user id / provider                       |
+| `POST /auth/native/refresh` refresh and rotation    | same                                                            | awaiting probe                                                         | Required              | Not verified                 | Main Agent | M0b             | rotation succeeded + old RT invalid               |
+| Invalid refresh token 401 `session_expired`         | same                                                            | awaiting probe                                                         | Required              | Not verified                 | Main Agent | M0b             | probe `refresh_invalid` line                      |
+| `POST /api/auth/ws-ticket` one-time ticket          | same                                                            | awaiting probe                                                         | Required              | Not verified                 | Main Agent | M0b             | ttl/length (ticket not recorded)                  |
+| Sign-out: local credential clearing                 | local implementation                                            | awaiting probe                                                         | Required              | Not verified                 | Main Agent | M0b             | snapshot disconnected after sign-out              |
+| Server-side sign-out (revoke bearer session)        | source c419cf7c86                                               | `/auth/logout` depends on Cookie; no usable bearer revocation endpoint | Required (partial)    | Missing (for M0c assessment) | Main Agent | M0b/M0c         | source review + probe `remote_logout` line        |
+| Browser login cancel / timeout                      | local implementation                                            | awaiting manual user re-check                                          | Required              | Not verified                 | Main Agent | M0b             | after cancel the app returns to a retryable state |
+| Proxy / certificate / URL prefix                    | local implementation (Electron network stack + manual redirect) | awaiting probe                                                         | Required              | Not verified                 | Main Agent | M0b             | prefixed address + redirect rejection record      |
 
-## 第 2 步 · WS 与已有 Bot
+## Step 2 · WS and Existing Bots
 
-| 能力                                             | 请求结果         | 必交或扩展 | 状态   | 负责人   | 依赖卡 |
-| ------------------------------------------------ | ---------------- | ---------- | ------ | -------- | ------ |
-| `?ticket=` 一次性 WS 握手                        | 待实现 WS 客户端 | 必交       | 未验证 | 主 Agent | M0b    |
-| ticket 过期/重复使用拒绝                         | 待验证           | 必交       | 未验证 | 主 Agent | M0b    |
-| `gateway.ready`、`profiles.list`、`session.list` | 待验证           | 必交       | 未验证 | 主 Agent | M0b    |
-| resume、`session.events.since`、停止             | 待验证           | 必交       | 未验证 | 主 Agent | M0b    |
+| Capability                                       | Request result              | Required or extension | Status       | Owner      | Depends on card |
+| ------------------------------------------------ | --------------------------- | --------------------- | ------------ | ---------- | --------------- |
+| `?ticket=` one-time WS handshake                 | WS client to be implemented | Required              | Not verified | Main Agent | M0b             |
+| ticket expiry / reuse rejection                  | to be verified              | Required              | Not verified | Main Agent | M0b             |
+| `gateway.ready`, `profiles.list`, `session.list` | to be verified              | Required              | Not verified | Main Agent | M0b             |
+| resume, `session.events.since`, stop             | to be verified              | Required              | Not verified | Main Agent | M0b             |
 
-## 第 3–6 步（新 Bot、工作台、文件与后台、电脑）
+## Steps 3–6 (New Bot, Workbench, Files and Background, Computer)
 
-| 能力                                         | 状态     | 证据 / 缺口                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | 负责人   | 依赖卡  |
-| -------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------- |
-| 新 Bot 授权、首回复、双端标题竞争            | 已验证   | `tmp/dashboard-probe-2026-11-03T16-18-26-013Z.json` 的 `newBot` 行：标题认领、双端冲突被拒、canonical 不变、首 delta（seq=5）、停止、清理均 pass；缺口：未配置模型时的引导、重启续聊、真实双客户端同时观察                                                                                                                                                                                                                                                                                               | 主 Agent | M0b/M0c |
-| Profiles / Sessions / Kanban REST 与 WS 游标 | 已验证   | `m3-workbench.md`：分页 total 1791、搜索、Kanban 快照与游标 0→2、模型写入回读、WS 事件；缺口：插件禁用部署无真实证据                                                                                                                                                                                                                                                                                                                                                                                     | 主 Agent | M0b/M0c |
-| 文件上传、产物索引、保存与外开               | 部分验证 | `m4-attachments-and-computer.md`：真实附件被模型读取、产物索引/读取/保存打开；缺口：来源消息关联、过期/无权限/已删除状态                                                                                                                                                                                                                                                                                                                                                                                 | 主 Agent | M0b/M0c |
-| 未打开 Bot 的审批发现、跨端回执、通知        | 部分验证 | 真实审批请求/拒绝/允许/回执（chat 探针）+ GUI 全链路（内联卡→后台「待确认」→跳回→重投→拒绝回执）；**双客户端**：A 的回复被 B 观察、双方收到审批、A 拒绝后 B 折成「已由另一端处理」（`m1-dual-client.md`）。未打开 Bot 审批的 watcher 发现/通知点击/跨端回执已双客户端真实验证（`m1-unopened-approval.md`）；关窗→Dock 重开→退出重启见 `m1-window-lifecycle.md`；缺口：macOS 通知横幅像素与真实鼠标点击；并发审批已测（不重复执行，API 无获胜方回执）                                                     | 主 Agent | M0b/M0c |
-| 电脑状态、唤醒、预览、非抢占接管、租约       | 部分验证 | 真实 `status/thumbnail/observe/acquire/release`；单 viewer GUI 全链路（真实画面 1440×900、控制取得/归还/关窗）：`m4-attachments-and-computer.md`。**双 viewer 实测后来者可抢占租约（M0c 缺口确认）**；客户端被踢后自动重连只读；**M0c 原子认领补丁已就绪**（`docs/patches/0001-display-lease-atomic-claim.patch`，本地基线 apply check 通过），重启重验租约已实测；断线重连已模拟验证（socket 断开/offline→online）；观看窗口打开即显示 lease 快照；原子认领需服务端团队实施（用户仅授权 Dashboard API） | 主 Agent | M0c     |
+| Capability                                                                 | Status             | Evidence / gap                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Owner      | Depends on card |
+| -------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- | --------------- |
+| New Bot authorization, first reply, dual-end title race                    | Verified           | `tmp/dashboard-probe-2026-11-03T16-18-26-013Z.json` `newBot` lines: title claim, dual-end conflict rejected, canonical unchanged, first delta (seq=5), stop, cleanup all pass; gaps: guidance when no model is configured, restart-and-continue, real two clients observing simultaneously                                                                                                                                                                                                                                                                                                                                                                                                                                           | Main Agent | M0b/M0c         |
+| Profiles / Sessions / Kanban REST and WS cursor                            | Verified           | `m3-workbench.md`: pagination total 1791, search, Kanban snapshot and cursor 0→2, model write read-back, WS events; gap: no real evidence for plugin-disabled deployment                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | Main Agent | M0b/M0c         |
+| File upload, artifact index, save and external open                        | Partially verified | `m4-attachments-and-computer.md`: real attachment read by the model, artifact index/read/save-open; gaps: source-message association, expired/no-permission/deleted states                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Main Agent | M0b/M0c         |
+| Approval discovery, cross-client receipts, notifications for unopened Bots | Partially verified | Real approval request/deny/allow/receipt (chat probe) + GUI full link (inline card→background "Pending"→jump back→re-deliver→deny receipt); **dual client**: A's reply observed by B, both receive the approval, after A denies B folds it into "Handled in another window" (`m1-dual-client.md`). Watcher discovery/notification click/cross-client receipt for unopened Bot approvals verified with two real clients (`m1-unopened-approval.md`); close window→reopen from Dock→quit and restart see `m1-window-lifecycle.md`; gaps: macOS notification banner pixels and real mouse click; concurrent approvals tested (no duplicate execution; the API has no winner receipt)                                                    | Main Agent | M0b/M0c         |
+| Computer status, wake, preview, non-preemptive takeover, lease             | Partially verified | Real `status/thumbnail/observe/acquire/release`; single-viewer GUI full link (real frame 1440×900, control acquire/return/close window): `m4-attachments-and-computer.md`. **Two-viewer test found the later arrival can preempt the lease (M0c gap confirmed)**; after the client is kicked it auto-reconnects read-only; **the M0c atomic-claim patch is ready** (`docs/patches/0001-display-lease-atomic-claim.patch`, local baseline apply check passes), lease re-verification across restart measured; reconnection after disconnect simulated (socket drop/offline→online); the viewing window shows the lease snapshot on open; atomic claim needs the server team to implement (the user only authorizes the Dashboard API) | Main Agent | M0c             |
 
-## 客户端接入状态（2026-11-04）
+## Client Integration Status (2026-11-04)
 
-- 登录界面与静默恢复已实现：首次连接弹层（地址 → 预检 → 选择登录方式 → 系统浏览器 → 连接摘要）、
-  左下账号状态、注销；启动时用 safeStorage 中的刷新令牌静默恢复，不重复输入。
-- 证据：`docs/evidence/m1-first-connection.md`、`docs/evidence/screens/m1/`；离线表单/错误路径有 E2E。
-- 真实名单与 Bot Chat 历史已接入：连接后名单来自 `profiles.list`，Bot Chat 历史来自 REST 分页；
-  发送、流式 delta、终态、停止、审批/澄清卡、工作记录归组与自动重连已实现并在专用 profile 上验证；
-  `client.capabilities {server_requests:true}` 实测返回 16 个方法（含 approval/clarify）。真实审批请求
-  因部署对 `echo` 类命令自动放行而未触发，待自然触发复验。历史分页（更早一页）与 Markdown 渲染
-  （安全 HTML/链接）已实现并验证。草稿/选中项/偏好已持久化并通过重启 E2E；断线回放
-  （`session.events.since` + seq 去重 + open_requests 重投）已实现，真实网络断开场景待构造。
-  未打开 Bot 的待处理请求由后台 watcher 轮询 `session.active_list` 发现（只读附加 + `open_requests`），
-  应用内计数与系统通知已实现；真实审批触发与通知展示待自然条件复验。
-- M2 新建/外观后端已接入真实服务并验证：fresh `profiles.create`、`ui_meta['hermes-bots']` 外观 CAS、
-  过期 revision 冲突、改名、`/api/model/info` 就绪回读；创建弹层真实提交与模型引导已接入。
-  置顶、分区（新建/重命名/删除/移入移出/折叠）与外观/改名编辑已实现，组织状态存入本地 schema v2
-  （v1 自动迁移）并重启恢复。
-- M3 工作台：`/hermes` 外壳（返回保留聊天状态）与 Profiles/Sessions/Kanban 只读子页已接入真实 REST；
-  真实探针验证分页（total 1791、offset 不重叠）、搜索、消息分页、看板快照与 `latest_event_id`。
-  Kanban 新建任务/改状态（专用 board 验证、游标 0→2）、WS 实时事件（事件帧、cursor 3、connected）
-  与模型配置写入（专用 profile 写入并回读）已通过。
-- M4 第一块：附件上传（`file.attach` data URL）与真实推理读取已打通；电脑 `display.status`、
-  `display.thumbnail`（休眠时无帧、不伪造）与显式唤醒入口已接入。资料库按 Bot Chat 工作区索引
-  产物（`/api/files`），文本/图片预览与「保存并打开」已实现；专用 profile 真实验证 Bot 创建文件 →
-  索引 → 读取 token。电脑独立 RFB 观看窗口（noVNC + display ticket）与租约取得/归还已实现；真实探针验证
-  observe ticket、lease acquire（holder=human）、持租约时预览抑制与 release（holder=agent）。
-  证据：`docs/evidence/m1-roster-and-history.md`、`docs/evidence/m1-chat-streaming.md`。
-- 未连接时仍使用 fixture，M0a 演示不受影响。
+- Login UI and silent restore implemented: first-connection sheet (address → preflight → choose login method → system browser → connection summary), bottom-left account status, sign-out; on startup the refresh token in safeStorage is used to restore silently without re-entering.
+- Evidence: `docs/evidence/m1-first-connection.md`, `docs/evidence/screens/m1/`; offline form/error paths have E2E.
+- Real roster and Bot Chat history integrated: after connecting the roster comes from `profiles.list`, Bot Chat history from REST pagination; sending, streaming delta, final state, stop, approval/clarification cards, work-log grouping, and auto-reconnect are implemented and verified on a dedicated profile; `client.capabilities {server_requests:true}` actually returns 16 methods (including approval/clarify). A real approval request was not triggered because the deployment auto-allows `echo`-like commands; awaiting natural re-verification. History pagination (older page) and Markdown rendering (safe HTML/links) implemented and verified. Drafts/selection/preferences persisted and verified by restart E2E; disconnect replay (`session.events.since` + seq dedupe + open_requests re-delivery) implemented, real network-drop scenario still to be constructed. Pending requests for unopened Bots are discovered by a background watcher polling `session.active_list` (read-only attach + `open_requests`); in-app count and system notifications implemented; real approval trigger and notification display await natural conditions.
+- M2 create/appearance backend integrated with the real service and verified: fresh `profiles.create`, `ui_meta['hermes-bots']` appearance CAS, stale revision conflict, rename, `/api/model/info` readiness read-back; create sheet real submit and model guidance integrated. Pinning, sections (create/rename/delete/move in and out/collapse), and appearance/rename editing implemented; organization state stored in local schema v2 (auto-migrated from v1) and restored after restart.
+- M3 workbench: `/hermes` shell (return preserves chat state) and Profiles/Sessions/Kanban read-only subpages integrated with real REST; real probes verify pagination (total 1791, non-overlapping offset), search, message pagination, board snapshot and `latest_event_id`. Kanban task creation/status change (dedicated board verification, cursor 0→2), WS live events (event frame, cursor 3, connected), and model config writes (dedicated profile write and read-back) all passed.
+- M4 first part: attachment upload (`file.attach` data URL) and real inference reading wired up; computer `display.status`, `display.thumbnail` (no frame while sleeping, no fake), and explicit wake entry integrated. The library indexes artifacts per Bot Chat workspace (`/api/files`); text/image preview and "Save and open" implemented; on a dedicated profile verified real Bot file creation → index → read token. Standalone computer RFB viewing window (noVNC + display ticket) and lease acquire/return implemented; real probes verify observe ticket, lease acquire (holder=human), preview suppression while holding the lease, and release (holder=agent). Evidence: `docs/evidence/m1-roster-and-history.md`, `docs/evidence/m1-chat-streaming.md`.
+- When disconnected it still uses fixture; the M0a demo is unaffected.
 
-## 已登录证据说明
+## Signed-in Evidence Notes
 
-- 凭据：刷新令牌经 Electron safeStorage（Keychain）加密存于应用 userData 的
-  `dashboard-credentials.json`；access token 只在内存。探针使用独立 userData
-  （`.tmp/userdata-probe`），因此与日常应用互不影响。
-- 会话保持：探针默认**不注销**，后续运行先静默恢复再刷新；只有设置
-  `MOSBOT_PROBE_SIGN_OUT=1` 时才验证注销并清除凭据。
-- 重复运行：`MOSBOT_PROBE_MODE=restore` 只恢复 + 跑第 1 步；`ws` 跑第 2 步；`workbench` 跑第 4 步
-  读路径；`newbot` / `kanban` / `writes` 跑第 3、4 步写入（专用对象自动清理）；`all` 跑只读全量；
-  `MOSBOT_PROBE_TICKET_EXPIRY=1` 额外等待 31 s 复验过期。
-- 部署源码对照：本机 `~/.hermes/hermes-agent` 正好是部署 commit `bf0203a794`，第 3/4 步的请求
-  形状按它核对；本地基线 `c419cf7c86` 更新，差异在 M0c 记录。
+- Credentials: the refresh token is encrypted via Electron safeStorage (Keychain) and stored in the app userData's `dashboard-credentials.json`; the access token is in memory only. Probes use a separate userData (`.tmp/userdata-probe`), so they don't affect the day-to-day app.
+- Session retention: probes **do not sign out** by default; later runs restore silently first and then refresh; sign-out and credential clearing are verified only when `MOSBOT_PROBE_SIGN_OUT=1` is set.
+- Repeated runs: `MOSBOT_PROBE_MODE=restore` only restores + runs step 1; `ws` runs step 2; `workbench` runs step 4 read paths; `newbot` / `kanban` / `writes` run steps 3/4 writes (dedicated objects auto-cleaned); `all` runs all read-only; `MOSBOT_PROBE_TICKET_EXPIRY=1` additionally waits 31 s to re-verify expiry.
+- Deployed source comparison: the local `~/.hermes/hermes-agent` is exactly the deployed commit `bf0203a794`, and steps 3/4 request shapes were checked against it; the local baseline `c419cf7c86` is newer and differences are recorded in M0c.
 
-## 关闭条件
+## Closure Conditions
 
-- 第 1 步全部必交项通过后，把上表状态改为已验证并登记探针报告路径与关键字段。
-- 2026-11-04 更新：第 3 步已由 `newbot` 探针验证（见上表），第 4 步读写见 M3/M4 证据；
-  第 5、6 步仍为部分验证，关闭条件见 `docs/evidence/acceptance.md`。
-- 服务端注销缺失、以及其他缺失的必交能力进入 M0c，并在 `docs/plans/03-agent-handoff.md` 的 M0c 表中登记负责人、最小兼容契约与复验条件。
-- 未完成登录复验前，不把任何一项标为“已验证”。
+- After all required items in step 1 pass, change the table states to verified and record probe report paths and key fields.
+- 2026-11-04 update: step 3 has been verified by the `newbot` probe (see table above); step 4 read/write is covered by the M3/M4 evidence; steps 5 and 6 remain partially verified, with closure conditions in `docs/evidence/acceptance.md`.
+- Missing server-side sign-out and other missing required capabilities go to M0c, with owner, minimum compatible contract, and re-verification conditions registered in the M0c table of `docs/plans/03-agent-handoff.md`.
+- Do not mark anything "verified" before login re-verification is complete.

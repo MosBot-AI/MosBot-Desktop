@@ -1,43 +1,38 @@
-# M1 · 首次连接与静默恢复 · 证据
+# M1 · First Connection and Silent Restore · Evidence
 
-- 卡片：M1（首次连接、登录与凭据保存）；M0b 协议基础已通过真实服务验证
-- 状态：**首次连接界面与凭据持久化已完成并验证**；M1 的名单/聊天真实数据切换尚未开始
-- 记录时间：2026-11-04
-- 数据来源：真实 Dashboard `192.168.2.171:9119`（v0.22.5 / `bf0203a794`）；界面截图中的聊天仍是脱敏 fixture
+- Card: M1 (first connection, login, and credential storage); the M0b protocol foundation has been verified against the real service
+- Status: **First-connection UI and credential persistence complete and verified**; M1's switch to real roster/chat data has not started
+- Recorded: 2026-11-04
+- Data source: real Dashboard `192.168.2.171:9119` (v0.22.5 / `bf0203a794`); the chat in the UI screenshots is still redacted fixture
 
-## 已实现
+## Implemented
 
-- 左下连接入口：底栏显示真实账号与连接状态点（未连接时仍显示设计样例标识）。
-- 首次连接弹层（`ConnectionDialog`）：Dashboard 地址输入、预检状态、登录方式选择、浏览器交接、
-  连接摘要（账号/地址/会话有效期）、注销与重试；错误按类型给出中文/英文文案。
-- 登录链路：`preflight → /auth/native/authorize（系统浏览器）→ loopback 回调 → /auth/native/token`
-  （RFC 8252 PKCE + state 校验）；多提供方时先选择。
-- 凭据保存：刷新令牌经 Electron safeStorage（Keychain）加密写入 userData 的
-  `dashboard-credentials.json`；access token 只在内存；**非密钥**偏好（上次地址）写入
-  `dashboard-settings.json`。
-- 静默恢复：应用启动时读取上次地址并调用 `dashboard.restore`，成功则底栏显示账号，不提示输入；
-  失败按 `session_expired` 等类型提示重新登录。
-- 安全边界：renderer 只拿到账号快照，永远看不到 token；IPC 只接受应用自身顶层 frame。
+- Bottom-left connection entry: the footer shows the real account and connection status dot (still shows the design-sample marker when disconnected).
+- First-connection sheet (`ConnectionDialog`): Dashboard address input, preflight state, login method selection, browser handoff, connection summary (account/address/session validity), sign-out and retry; errors show zh/en copy by type.
+- Login chain: `preflight → /auth/native/authorize (system browser) → loopback callback → /auth/native/token` (RFC 8252 PKCE + state validation); select a provider first when there are multiple.
+- Credential storage: the refresh token is encrypted via Electron safeStorage (Keychain) and written to `dashboard-credentials.json` in userData; the access token stays in memory only; **non-secret** preferences (last address) go to `dashboard-settings.json`.
+- Silent restore: on app startup, read the last address and call `dashboard.restore`; on success the footer shows the account without prompting for input; on failure it prompts to sign in again by type such as `session_expired`.
+- Security boundary: the renderer only receives the account snapshot and never sees the token; IPC only accepts the app's own top-level frame.
 
-## 验证
+## Verification
 
-| 检查                                                 | 结果                                                                                    |
-| ---------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `pnpm typecheck` / `pnpm lint` / `pnpm format:check` | 通过                                                                                    |
-| `pnpm test`                                          | 96 个用例通过（含协议、传输、PKCE、凭据库、RPC、store）                                 |
-| `pnpm test:e2e`                                      | 10 个用例通过，新增「打开连接弹层 → 非法地址报错 → Esc 关闭并回焦」                     |
-| 真实登录                                             | 用户在系统浏览器完成一次 `basic` 登录；`/api/auth/me`、刷新轮换、ws-ticket 均通过       |
-| 静默恢复                                             | 无浏览器、无输入，重启应用后底栏直接显示账号 `research`；截图 `12-connected-footer.png` |
-| 凭据不落明文                                         | 凭据文件为 safeStorage 密文；renderer 无法读取 token                                    |
+| Check                                                | Result                                                                                                                            |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm typecheck` / `pnpm lint` / `pnpm format:check` | Pass                                                                                                                              |
+| `pnpm test`                                          | 96 cases pass (including protocol, transport, PKCE, credential store, RPC, store)                                                 |
+| `pnpm test:e2e`                                      | 10 cases pass, new "open connection sheet → invalid address error → Esc closes and returns focus"                                 |
+| Real login                                           | The user completed one `basic` login in the system browser; `/api/auth/me`, refresh rotation, ws-ticket all pass                  |
+| Silent restore                                       | No browser, no input; after restarting the app the footer directly shows account `research`; screenshot `12-connected-footer.png` |
+| Credentials not in plaintext                         | The credential file is safeStorage ciphertext; the renderer cannot read the token                                                 |
 
-## 截图
+## Screenshots
 
-- `docs/evidence/screens/m0a/12-connection.png`：首次连接弹层（未连接，地址预填测试部署）
-- `docs/evidence/screens/m1/12-connected-footer.png`：重启后静默恢复，底栏显示账号
-- `docs/evidence/screens/m1/13-connection-connected.png`：已连接摘要（账号/地址/会话有效期/注销）
+- `docs/evidence/screens/m0a/12-connection.png`: first-connection sheet (disconnected, address prefilled with the test deployment)
+- `docs/evidence/screens/m1/12-connected-footer.png`: silent restore after restart, footer shows the account
+- `docs/evidence/screens/m1/13-connection-connected.png`: connected summary (account/address/session validity/sign-out)
 
-## 待办（M1 后续）
+## TODO (M1 follow-up)
 
-- 用真实 `profiles.list` 替换 fixture 名单；真实 Bot Chat 历史、流式回复、停止与恢复。
-- 应用内重新登录/注销后的草稿隔离、通知与窗口生命周期。
-- 用户实际操作验收（当前仅自动截图与探针验证）。
+- Replace the fixture roster with real `profiles.list`; real Bot Chat history, streaming replies, stop, and resume.
+- Draft isolation, notifications, and window lifecycle after in-app re-login/sign-out.
+- User hands-on acceptance (currently only automated screenshots and probe verification).

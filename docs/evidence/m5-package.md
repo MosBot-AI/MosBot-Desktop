@@ -1,45 +1,50 @@
-# M5 · 打包产物 · 证据
+# M5 · Packaged Artifact · Evidence
 
-- 状态：**Apple Development 签名 ZIP 已构建并通过本机干净安装检查**（硬化运行时 + 最小
-  entitlements + `codesign --verify` 通过）；Developer ID 签名/公证仍阻塞于证书；DMG 未做
-- 记录时间：2026-11-04
-- 参考机：Apple M4，macOS 15.8.2，Node v26.13.0，pnpm 11.28.5
+- Status: **The Apple Development–signed ZIP is built and passes the clean-install check on this machine** (hardened runtime + minimal
+  entitlements + `codesign --verify` passing); Developer ID signing/notarization still blocked on a certificate; DMG not done
+- Recorded: 2026-11-04
+- Reference machine: Apple M4, macOS 15.8.2, Node v26.13.0, pnpm 11.28.5
 
-## 实现
+## Implementation
 
-- Forge `makers` 使用 `@electron-forge/maker-zip`（darwin）；`pnpm package` 供 E2E/探针，
-  `pnpm make` 产出可分发包。
-- `forge.config.js` 按环境变量启用 Developer ID 签名、hardened runtime 与公证；**发布构建可选 ad-hoc
-  完整签名**（`MOSBOT_ADHOC_SIGN=1 pnpm make` 时 `postPackage` 执行 `codesign --force --deep --sign -`），
-  日常测试构建保持 linker-signed（否则既有 userData 的 keychain 凭据无法解密）。ad-hoc 不等于发布
-  签名，`spctl` 仍拒绝；
-  entitlements 见 `build/entitlements.mac.plist`（仅 `allow-jit`、`allow-unsigned-executable-memory`）。
-- 打包 ignore 列表排除构建产物、文档、测试与仅开发依赖（ZIP 约 313 MB，asar 已开）。
+- Forge `makers` uses `@electron-forge/maker-zip` (darwin); `pnpm package` serves E2E/probes, and
+  `pnpm make` produces the distributable package.
+- `forge.config.js` enables Developer ID signing, hardened runtime and notarization from environment
+  variables; **release builds can optionally use a complete ad-hoc signature** (`MOSBOT_ADHOC_SIGN=1
+pnpm make` makes `postPackage` run `codesign --force --deep --sign -`), while routine test builds
+  stay linker-signed (otherwise the keychain credentials in existing userData cannot be decrypted).
+  ad-hoc is not a release signature and `spctl` still rejects it;
+  see `build/entitlements.mac.plist` for entitlements (only `allow-jit`,
+  `allow-unsigned-executable-memory`).
+- The packaging ignore list excludes build artifacts, docs, tests and dev-only dependencies (ZIP about
+  313 MB, asar enabled).
 
-## 结果
+## Results
 
-| 检查                                  | 结果                                                                                  |
-| ------------------------------------- | ------------------------------------------------------------------------------------- |
-| `pnpm make`                           | ✅ 通过                                                                               |
-| 产物                                  | `out/make/zip/darwin/arm64/MosBot-darwin-arm64-0.1.0.zip`，327,730,764 B（约 313 MB） |
-| SHA-256                               | `a9f7965ca0f2fc0ca6c3be063d1c669ca114d91b7747cd3a4f35666fe04f735f`                    |
-| 签名                                  | ad-hoc，`spctl` 拒绝（Developer ID 证书未配置）                                       |
-| 干净安装（解压 + 全新 userData）      | ✅ 见 `m5-install-upgrade.md`                                                         |
-| 覆盖升级与数据恢复（v1→v2、损坏回退） | ✅ 见 `m5-install-upgrade.md`                                                         |
-| DMG / 安装器                          | ⏳ 未做（当前 ZIP 解压即用）                                                          |
+| Check                                                           | Result                                                                                  |
+| --------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `pnpm make`                                                     | ✅ passed                                                                               |
+| Artifact                                                        | `out/make/zip/darwin/arm64/MosBot-darwin-arm64-0.1.0.zip`, 327,730,764 B (about 313 MB) |
+| SHA-256                                                         | `a9f7965ca0f2fc0ca6c3be063d1c669ca114d91b7747cd3a4f35666fe04f735f`                      |
+| Signature                                                       | ad-hoc, rejected by `spctl` (no Developer ID certificate configured)                    |
+| Clean install (extract + fresh userData)                        | ✅ see `m5-install-upgrade.md`                                                          |
+| In-place upgrade and data recovery (v1→v2, corruption fallback) | ✅ see `m5-install-upgrade.md`                                                          |
+| DMG / installer                                                 | ⏳ not done (the current ZIP is extract-and-use)                                        |
 
-## 待办
+## TODO
 
-- 取得 Developer ID Application 证书后：设置 `MOSBOT_MACOS_SIGN_IDENTITY` 与
-  `MOSBOT_NOTARY_*` 跑 `pnpm make`，用 `pnpm test:install` 验证 `kind=developer-id` 且 Gatekeeper
-  接受；随后在另一台 Mac / 新建用户下复验下载、quarantine 与安装（本机已用 Apple Development
-  证书验证签名链路，见 `m5-install-upgrade.md`）。
-- 评估是否引入 DMG 与体积优化；用真实旧的测试版安装包做覆盖升级。
+- Once a Developer ID Application certificate is available: set `MOSBOT_MACOS_SIGN_IDENTITY` and
+  `MOSBOT_NOTARY_*`, run `pnpm make`, and use `pnpm test:install` to verify `kind=developer-id` and
+  Gatekeeper acceptance; then re-verify download, quarantine and installation on another Mac / under a
+  new user (the signing chain has been verified on this machine with an Apple Development certificate,
+  see `m5-install-upgrade.md`).
+- Evaluate whether to add DMG and size optimization; use a real old test-version installer for the
+  in-place upgrade.
 
-## 2026-11-04 可选 ad-hoc 签名
+## 2026-11-04 Optional ad-hoc signing
 
-`MOSBOT_ADHOC_SIGN=1 pnpm make` 且未设置 `MOSBOT_MACOS_SIGN_IDENTITY` 时，`postPackage` 会对产物做
-ad-hoc 完整签名：
+With `MOSBOT_ADHOC_SIGN=1 pnpm make` and no `MOSBOT_MACOS_SIGN_IDENTITY` set, `postPackage` applies a
+complete ad-hoc signature to the artifact:
 
 ```
 Identifier=com.mosbot.desktop
@@ -48,6 +53,8 @@ Signature=adhoc
 codesign --verify --deep --strict  → 0
 ```
 
-这修复了产物 `Identifier=Electron`、Info.plist 未绑定的问题（macOS 通知注册的前提之一）；
-但改动代码身份会让旧 userData 的 safeStorage 凭据失效（`vault_unavailable`），因此只作为发布
-构建开关，默认测试包不签名。`spctl` 仍拒绝（无 Developer ID），第二台 Mac 需右键打开。
+This fixes the artifact having `Identifier=Electron` and an unbound Info.plist (one prerequisite for
+macOS notification registration); but changing the code identity invalidates the safeStorage
+credentials in old userData (`vault_unavailable`), so it is only a release-build switch and test
+packages are unsigned by default. `spctl` still rejects it (no Developer ID); a second Mac needs
+right-click → Open.

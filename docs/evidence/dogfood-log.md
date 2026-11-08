@@ -1,18 +1,17 @@
-# 7 天日用验收记录
+# 7-day daily-use acceptance log
 
-- 验收项：`docs/plans/README.md` 发布候选验收第 11 项「连续 7 天日常使用，无阻断」。
-- 规则：每天正常使用（聊天/审批/工作台/电脑/附件均可）；记录日期、用到的功能、是否出现阻断或
-  明显异常、证据（截图/日志路径可选）。未使用某天记为“未使用”，不补记。
-- 状态：**进行中**（尚未开始连续记录；从用户确认开始日期起填写）。
+- Acceptance item: `docs/plans/README.md` release-candidate acceptance item 11 "7 consecutive days of daily use with no blockers".
+- Rules: use the app normally each day (chat/approval/workbench/computer/attachments all count); record the date, the features used, whether a blocker or obvious anomaly occurred, and evidence (screenshot/log path optional). A day without use is recorded as "not used" and is not backfilled.
+- Status: **in progress** (continuous recording has not started yet; filled from the start date confirmed by the user).
 
-| 第几天 | 日期   | 使用内容 | 结果 | 问题/证据 |
-| ------ | ------ | -------- | ---- | --------- |
-| 1      | 待开始 | —        | —    | —         |
-| 2      |        |          |      |           |
-| 3      |        |          |      |           |
-| 4      |        |          |      |           |
-| 5      |        |          |      |           |
-| 6      |        |          |      |           |
-| 7      |        |          |      |           |
+| Day | Date    | Usage | Result | Issues/evidence |
+| --- | ------- | ----- | ------ | --------------- |
+| 1   | Pending | —     | —      | —               |
+| 2   |         |       |        |                 |
+| 3   |         |       |        |                 |
+| 4   |         |       |        |                 |
+| 5   |         |       |        |                 |
+| 6   |         |       |        |                 |
+| 7   |         |       |        |                 |
 
-连续 7 天且无阻断后，把本文件状态改为“通过”，并同步 `acceptance.md` 第 11 项。
+After 7 consecutive days with no blockers, change this file's status to "passed" and sync `acceptance.md` item 11.

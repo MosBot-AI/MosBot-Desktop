@@ -137,6 +137,11 @@ machines.
 
 ## Documentation
 
+Repository docs are bilingual: English primary files at the canonical paths and Chinese
+counterparts with a `_zh` suffix. Delivery tracking lives in the [GitHub delivery
+project](https://github.com/users/charleypeng/projects/1) and its
+[issues](https://github.com/charleypeng/MosBot-Desktop/issues).
+
 - Delivery baseline and milestones: [`docs/plans/README.md`](docs/plans/README.md)
 - Interface spec: [`docs/plans/01-bot-experience.md`](docs/plans/01-bot-experience.md)
 - Dashboard integration: [`docs/plans/02-dashboard-integration.md`](docs/plans/02-dashboard-integration.md)

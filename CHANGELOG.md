@@ -6,8 +6,8 @@ uses [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html). Source
 changes, built artifacts and installed/released builds are listed separately so a
 build is never implied by a source change.
 
-The repository has no published remote yet; comparison links are local anchors
-until the release repository exists.
+The source repository is published at https://github.com/charleypeng/MosBot-Desktop;
+comparison links stay local anchors until the first signed tag exists.
 
 ## [Unreleased]
 
@@ -428,6 +428,10 @@ until the release repository exists.
 
 ### Changed
 
+- Repository documentation is now bilingual: every file under `docs/` keeps an
+  English primary file at its canonical path and adds a Chinese `_zh` counterpart;
+  README/CHANGELOG links were updated to match. The GitHub delivery project,
+  milestones, labels and issues are in English.
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,
   credential vault, loopback state validation and the full sign-in/probe flow
   (89 tests).

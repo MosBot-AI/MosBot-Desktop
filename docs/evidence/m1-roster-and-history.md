@@ -1,40 +1,39 @@
-# M1 · 真实名单与 Bot Chat 历史（只读）· 证据
+# M1 · Real Roster and Bot Chat History (read-only) · Evidence
 
-- 卡片：M1（真实数据接入第一段）
-- 状态：**连接后名单与历史已从真实 Dashboard 读取并渲染**；历史分页已实现；发送/流式/停止见 `m1-chat-streaming.md`
-- 记录时间：2026-11-04
-- 数据来源：真实 Dashboard `192.168.2.171:9119`（v0.22.5 / `bf0203a794`）
-- 隐私：真实名单/会话内容不进入仓库截图；本文件只记录数量与脱敏 id，原始报告在
-  `docs/evidence/tmp/`（Git 忽略）。
+- Card: M1 (first stage of real data integration)
+- Status: **After connecting, roster and history are read from the real Dashboard and rendered**; history pagination implemented; sending/streaming/stop see `m1-chat-streaming.md`
+- Recorded: 2026-11-04
+- Data source: real Dashboard `192.168.2.171:9119` (v0.22.5 / `bf0203a794`)
+- Privacy: real roster/conversation content does not enter repo screenshots; this file records only counts and redacted ids; raw reports are in `docs/evidence/tmp/` (Git-ignored).
 
-## 实现
+## Implementation
 
-- 主进程新增 `listBots()` 与 `openChat(profileName)`：
-  - 名单：Gateway `profiles.list {include_sessions:true}`，映射 `name/display_name/description/model/provider/is_default/canonical_session/last_session`。
-  - 历史：`session.list {profile,title:"Bot Chat",include_hidden:true}` 精确查询 → `GET /api/sessions/{storedId}/messages?limit=50&order=latest&inline_images=false`。
-  - 只读映射：`role=user|assistant` 且有文本的消息才进入 transcript；工具/系统行、图片 data URI 不进 UI。
-- 渲染层在连接成功后自动：
-  1. 拉取真实名单，替换 fixture 名单（置顶取前 6 个，分区显示为单一 `Bots`）；
-  2. 默认选中 `is_default` profile，加载其 Bot Chat 历史并渲染为现有气泡；
-  3. 输入条接入真实发送与流式回复（见 `m1-chat-streaming.md`）；
-  4. 电脑页在真实模式下不提供唤醒入口（M4 接入前）。
-- 历史分页：滚动区域顶部提供「加载更早的消息」，按 offset 向更早翻页，去重后前插并保持首条可见消息位置；加载中禁用按钮并显示状态。
-- 断开连接后回退到设计样例 fixture，M0a 演示不受影响。
+- Main process adds `listBots()` and `openChat(profileName)`:
+  - roster: Gateway `profiles.list {include_sessions:true}`, mapping `name/display_name/description/model/provider/is_default/canonical_session/last_session`.
+  - history: exact query `session.list {profile,title:"Bot Chat",include_hidden:true}` → `GET /api/sessions/{storedId}/messages?limit=50&order=latest&inline_images=false`.
+  - read-only mapping: only messages with `role=user|assistant` and text enter the transcript; tool/system lines and image data URIs do not enter the UI.
+- After a successful connection the renderer automatically:
+  1. loads the real roster and replaces the fixture roster (pins take the first 6, sections shown as a single `Bots`);
+  2. selects the `is_default` profile by default, loads its Bot Chat history, and renders it into the existing bubbles;
+  3. wires the composer to real sending and streaming replies (see `m1-chat-streaming.md`);
+  4. on the computer page, real mode does not offer a wake entry (before M4 integration).
+- History pagination: the scroll area top offers "Load earlier messages", pages older by offset, dedupes and prepends while keeping the first visible message position; while loading the button is disabled and shows a state.
+- After disconnecting it falls back to the design-sample fixture, and the M0a demo is unaffected.
 
-## 验证
+## Verification
 
-| 检查                                                 | 结果                                                                                                           |
-| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `pnpm typecheck` / `pnpm lint` / `pnpm format:check` | 通过                                                                                                           |
-| `pnpm test`                                          | 120 个用例通过（含 profile/message 映射、远端 roster、分页与 Markdown）                                        |
-| `pnpm test:e2e`                                      | 10 个用例通过（fixture 模式不受影响）                                                                          |
-| 真实名单探针                                         | `MOSBOT_PROBE_MODE=roster`：10 个 profile、default 存在、10 个带 canonical session、默认模型 `gpt-6-luna-900k` |
-| 真实历史探针                                         | 默认 profile 的 Bot Chat：25 条可见消息、`hasMore=true`（最新页）                                              |
-| 真实历史分页                                         | `loadOlderChat`（offset 50）返回更早 16 条、`hasMore=true`、`nextOffset=100`；界面按钮带滚动锚点               |
-| 静默恢复                                             | 探针先恢复登录再读取，无需重新输入                                                                             |
+| Check                                                | Result                                                                                                                      |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm typecheck` / `pnpm lint` / `pnpm format:check` | Pass                                                                                                                        |
+| `pnpm test`                                          | 120 cases pass (including profile/message mapping, remote roster, pagination, Markdown)                                     |
+| `pnpm test:e2e`                                      | 10 cases pass (fixture mode unaffected)                                                                                     |
+| Real roster probe                                    | `MOSBOT_PROBE_MODE=roster`: 10 profiles, default exists, 10 with canonical session, default model `gpt-6-luna-900k`         |
+| Real history probe                                   | Default profile's Bot Chat: 25 visible messages, `hasMore=true` (latest page)                                               |
+| Real history pagination                              | `loadOlderChat` (offset 50) returns the earlier 16, `hasMore=true`, `nextOffset=100`; the UI button keeps the scroll anchor |
+| Silent restore                                       | The probe restores login first, then reads, without re-entering input                                                       |
 
-## 待办（M1 下一段）
+## TODO (next M1 stage)
 
-- 发送（`prompt.submit`）、流式 delta/工具事件、停止、审批/澄清回复、断线恢复与回放。
-- 真实名单的置顶/分区/未读（M2 整理能力）、真实外观（ui_meta）。
-- 真实数据截图与用户验收（需脱敏样例或用户同意后再纳入证据）。
+- Sending (`prompt.submit`), streaming delta/tool events, stop, approval/clarification replies, disconnect recovery and replay.
+- Real roster pinning/sections/unread (M2 organization), real appearance (ui_meta).
+- Real-data screenshots and user acceptance (include only after redacted samples or user consent).

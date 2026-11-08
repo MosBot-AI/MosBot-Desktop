@@ -4,7 +4,7 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
 [Keep a Changelog 1.1.0](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循
 [语义化版本 2.0.0](https://semver.org/lang/zh-CN/spec/v2.0.0.html)。源码改动、已构建产物与已安装/已发布版本分开列出，避免把源码改动误读为可安装版本。
 
-仓库尚未建立远程地址；对比链接暂用本文件锚点，发布仓库建立后替换为 comparison link。
+源码仓库已发布到 https://github.com/charleypeng/MosBot-Desktop；首个签名 tag 出现前，对比链接仍使用本文件锚点。
 
 ## [Unreleased]
 
@@ -272,6 +272,8 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
 
 ### 变更
 
+- 仓库文档改为中英双语：`docs/` 下每个文件在原路径保留英文主文件，并提供 `_zh` 中文版；
+  README/CHANGELOG 链接同步调整。GitHub 交付看板、里程碑、标签与 issue 改用英文。
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。
 - pnpm 作为 devDependency 固定，Electron Forge 的包管理检查无需全局 pnpm 即可复现。
 

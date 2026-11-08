@@ -1,61 +1,65 @@
-# M5 · 60 分钟重连/空闲 soak · 证据
+# M5 · 60-minute reconnect/idle soak · Evidence
 
-- 卡片：M5（接入规格「初始性能门槛」：60 分钟重连/空闲混合循环，记录 p95、堆及 RSS 曲线、最大队列、恢复次数）
-- 状态：**60 分钟正式运行通过**（40 轮、960,000 帧、批次年龄 p95 25 ms、内存有界）
-- 记录时间：2026-11-04
-- 数据性质：**fixture · 本地主进程管线回放**（四通道、无窗口、无网络、无 mock server）
+- Card: M5 (integration spec "initial performance thresholds": 60-minute reconnect/idle mixed loop, recording p95, heap and RSS curves, max queue, recovery count)
+- Status: **60-minute formal run passed** (40 rounds, 960,000 frames, batch-age p95 25 ms, memory bounded)
+- Recorded: 2026-11-04
+- Data nature: **fixture · local main-process pipeline replay** (four channels, no window, no network, no mock server)
 
-## 方法
+## Method
 
-- 4 个独立通道，每通道 100 帧/s；帧文本为脱敏 token，经真实合并器
-  （`src/shared/stream-batch.ts`，24 ms 窗口）合并。
-- 每个周期（90 s）：30 s 稳态流 → 30 s 空闲（队列必须排空）→ 重置合并器模拟断线 →
-  30 s 重连回放（`session.events.since` 的 25 帧突发 + 继续流式）→ 排空。
-- 每周期校验：文本滚动哈希与长度完整（无丢失/重复）、无未 flush 批次、批次年龄 p95、
-  队列峰值；每 5 s 采样 Node 进程 RSS/堆。
-- 断言：周期数、每周期文本完整、最差批次年龄 p95 ≤ 32 ms、队列 ≤ 200、后 1/3 RSS 均值
-  ≤ max(前 1/3 均值 + 64 MB, 1.5×)。
+- 4 independent channels, each at 100 frames/s; frame text is a redacted token, merged through the real
+  merger (`src/shared/stream-batch.ts`, 24 ms window).
+- Each cycle (90 s): 30 s steady stream → 30 s idle (queue must drain) → reset the merger to simulate a
+  disconnect → 30 s reconnect replay (a 25-frame burst from `session.events.since` + continued
+  streaming) → drain.
+- Each cycle verifies: text rolling hash and length complete (no loss/duplication), no unflushed
+  batches, batch-age p95, queue peak; Node process RSS/heap sampled every 5 s.
+- Assertions: cycle count, per-cycle text integrity, worst batch-age p95 ≤ 32 ms, queue ≤ 200, mean RSS
+  of the last third ≤ max(first-third mean + 64 MB, 1.5×).
 
-## 运行
+## Run
 
 ```bash
 BENCH_SOAK_SECONDS=3600 pnpm bench:soak
-# 短验证
+# short verification
 BENCH_SOAK_SECONDS=60 pnpm bench:soak
 ```
 
-## 短场景验证（60 s / 2 周期）
+## Short-scenario verification (60 s / 2 cycles)
 
-| 检查              | 结果                                                                 |
-| ----------------- | -------------------------------------------------------------------- |
-| 名义时长 → 实测   | 60 s → 60.05 s（修正了 harness 自身把 48 ms 当 48 s 的计时单位缺陷） |
-| 周期数 / 重连次数 | 2 / 2                                                                |
-| 每周期文本完整    | ✅                                                                   |
-| 最差批次年龄 p95  | 25 ms                                                                |
-| 队列峰值          | 4                                                                    |
-| RSS / 堆          | 30.3 → 26.2 MB / 峰值 11.7 MB（无增长）                              |
+| Check                       | Result                                                                                  |
+| --------------------------- | --------------------------------------------------------------------------------------- |
+| Nominal duration → measured | 60 s → 60.05 s (fixed a unit bug in the harness itself where 48 ms was treated as 48 s) |
+| Cycles / reconnects         | 2 / 2                                                                                   |
+| Per-cycle text integrity    | ✅                                                                                      |
+| Worst batch-age p95         | 25 ms                                                                                   |
+| Queue peak                  | 4                                                                                       |
+| RSS / heap                  | 30.3 → 26.2 MB / peak 11.7 MB (no growth)                                               |
 
-## 60 分钟正式结果
+## 60-minute formal results
 
-命令：`BENCH_SOAK_SECONDS=3600 pnpm bench:soak`（实际运行 2026-11-04 13:34–14:34）
+Command: `BENCH_SOAK_SECONDS=3600 pnpm bench:soak` (actual run 2026-11-04 13:34–14:34)
 
-| 检查                                           | 门槛              | 结果                                                                         |
-| ---------------------------------------------- | ----------------- | ---------------------------------------------------------------------------- |
-| 时长                                           | 3600 s            | ✅ **3602.3 s**                                                              |
-| 周期 / 重连次数                                | 40 / 40           | ✅ 40 / 40                                                                   |
-| 帧数 / 速率                                    | 4 通道 × 100 帧/s | ✅ **960,000 帧 @ 400 帧/s**                                                 |
-| 每周期文本完整（滚动哈希 + 长度 + 无未 flush） | 全部通过          | ✅ 40/40                                                                     |
-| 最差批次年龄 p95                               | ≤ 32 ms           | ✅ **25 ms**                                                                 |
-| 队列峰值                                       | ≤ 200             | ✅ **12**                                                                    |
-| RSS 曲线                                       | 不持续增长        | ✅ 30.6 → 44.4 MB（+13.8 MB）；前/后 1/3 均值 34.0 → 43.6 MB（门槛 ≤ 98 MB） |
-| 堆峰值                                         | 记录              | ✅ 17.4 MB                                                                   |
-| 采样点                                         | 每 5 s            | 720 个                                                                       |
+| Check                                                           | Threshold                 | Result                                                                                 |
+| --------------------------------------------------------------- | ------------------------- | -------------------------------------------------------------------------------------- |
+| Duration                                                        | 3600 s                    | ✅ **3602.3 s**                                                                        |
+| Cycles / reconnects                                             | 40 / 40                   | ✅ 40 / 40                                                                             |
+| Frames / rate                                                   | 4 channels × 100 frames/s | ✅ **960,000 frames @ 400 frames/s**                                                   |
+| Per-cycle text integrity (rolling hash + length + no unflushed) | all pass                  | ✅ 40/40                                                                               |
+| Worst batch-age p95                                             | ≤ 32 ms                   | ✅ **25 ms**                                                                           |
+| Queue peak                                                      | ≤ 200                     | ✅ **12**                                                                              |
+| RSS curve                                                       | no sustained growth       | ✅ 30.6 → 44.4 MB (+13.8 MB); first/last third mean 34.0 → 43.6 MB (threshold ≤ 98 MB) |
+| Heap peak                                                       | recorded                  | ✅ 17.4 MB                                                                             |
+| Sample points                                                   | every 5 s                 | 720                                                                                    |
 
-说明：运行期间并行执行了两次签名构建，断言仍全部通过，说明计时与内存余量充足。
-原始报告：`docs/evidence/tmp/perf-soak-2026-11-04T06-34-53-491Z.json`。
+Note: two signed builds ran in parallel during the run and all assertions still passed, showing ample
+timing and memory headroom.
+Raw report: `docs/evidence/tmp/perf-soak-2026-11-04T06-34-53-491Z.json`.
 
-## 未覆盖
+## Not covered
 
-- 这是主进程合并管线的合成负载，不含真实 WS 网络读与 JSON 解析（由 `bench:pipeline` 覆盖
-  JSON 部分）与渲染进程；渲染进程 10 分钟稳态见 `m5-performance.md`。
-- 真实服务断线（网络切换、服务重启）与真实审批/通知仍需真实联调，见 `acceptance.md`。
+- This is a synthetic load on the main-process merger pipeline; it does not include real WS network
+  reads and JSON parsing (the JSON part is covered by `bench:pipeline`) or the renderer process;
+  the renderer's 10-minute steady state is in `m5-performance.md`.
+- Real service disconnections (network switching, service restart) and real approvals/notifications
+  still need real integration runs, see `acceptance.md`.

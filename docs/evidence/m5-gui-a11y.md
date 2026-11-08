@@ -1,50 +1,53 @@
-# M5 · 键盘 / 输入法 / 缩放 / 降动态 / 焦点顺序 · 证据
+# M5 · Keyboard / IME / Zoom / Reduced Motion / Focus Order · Evidence
 
-- 卡片：M5（GUI 与可访问性回归；README 发布候选验收第 9 项「键盘、中文 IME、缩放、降动态和焦点顺序有运行验证」）
-- 状态：**自动回归通过**（打包产物 + 真实 Electron 窗口）；VoiceOver 人工走查与系统显示缩放待用户在真机验收
-- 记录时间：2026-11-04
-- 数据性质：fixture 设计切片（不连接 Dashboard）；命令：`pnpm test:e2e`（先 `electron-forge package`）
+- Card: M5 (GUI and accessibility regression; README release-candidate acceptance item 9 "keyboard, Chinese IME, zoom, reduced motion and focus order have runtime verification")
+- Status: **Automated regression passed** (packaged artifact + real Electron window); VoiceOver manual walkthrough and system display scaling pending user acceptance on a real machine
+- Recorded: 2026-11-04
+- Data nature: fixture design slice (no Dashboard connection); command: `pnpm test:e2e` (after `electron-forge package`)
 
-## 环境
+## Environment
 
-| 项          | 值                                                    |
-| ----------- | ----------------------------------------------------- |
-| 机型 / 系统 | Apple M4（`Mac16,10`），macOS 15.8.2（24H232）        |
-| 运行时      | Node v26.13.0；Electron 45.2.1；应用 0.1.0            |
-| 窗口        | 1000 × 760（默认），Playwright 驱动真实 Electron 窗口 |
+| Item         | Value                                                           |
+| ------------ | --------------------------------------------------------------- |
+| Machine / OS | Apple M4 (`Mac16,10`), macOS 15.8.2 (24H232)                    |
+| Runtime      | Node v26.13.0; Electron 45.2.1; app 0.1.0                       |
+| Window       | 1000 × 760 (default), Playwright driving a real Electron window |
 
-## 本次实现
+## Implementation
 
-- **macOS 应用菜单**（`src/main/menu.ts`）：应用菜单（关于 / 设置… / 隐藏 / 退出）、
-  文件（新建 Bot `Cmd+N`、搜索 Bot `Cmd+K`、关闭窗口）、编辑（撤销 / 重做 / 剪切 / 复制 /
-  粘贴 / 全选，保留系统中文输入法与剪贴板行为）、显示（放大 / 缩小 / 实际大小 / 全屏幕）、
-  窗口（显示主窗口 `Shift+Cmd+M`、最小化、缩放、全部置于顶层）。
-- 菜单命令经窄 IPC 送达渲染层，复用已有浮层动作：新建 Bot、搜索、底栏「外观与语言」；
-  菜单文案随界面语言在 简体中文 / English 之间切换（`setMenuLanguage`）。
-- **缩放**：放大/缩小/实际大小使用 `webContents.setZoomLevel`，`Cmd+=` / `Cmd+-` / `Cmd+0`，
-  范围 −2…+3。
-- **焦点**：菜单命令打开底栏菜单后焦点进入菜单首项，Esc/关闭后回到底栏入口；
-  搜索、新建弹层原有「打开聚焦、关闭回焦」保持。
-- 测试新增 `tests/e2e/m5-accessibility.spec.ts`（6 个用例）。
+- **macOS application menu** (`src/main/menu.ts`): app menu (About / Settings… / Hide / Quit),
+  File (New Bot `Cmd+N`, Search Bots `Cmd+K`, Close Window), Edit (Undo / Redo / Cut / Copy /
+  Paste / Select All, preserving the system Chinese IME and clipboard behavior), View (Zoom In /
+  Zoom Out / Actual Size / Enter Full Screen), Window (Show Main Window `Shift+Cmd+M`, Minimize,
+  Zoom, Bring All to Front).
+- Menu commands reach the renderer over narrow IPC and reuse the existing overlay actions: New Bot,
+  search, footer "Appearance & Language"; menu copy switches between Simplified Chinese / English
+  with the UI language (`setMenuLanguage`).
+- **Zoom**: zoom in / zoom out / actual size use `webContents.setZoomLevel`, `Cmd+=` / `Cmd+-` / `Cmd+0`,
+  range −2…+3.
+- **Focus**: after a menu command opens the footer menu, focus enters the menu's first item and
+  returns to the footer entry after Esc/close; the search and new-bot overlays keep their existing
+  "focus on open, refocus on close" behavior.
+- Tests add `tests/e2e/m5-accessibility.spec.ts` (6 cases).
 
-## 验证结果
+## Verification results
 
-| 检查                                                                                                                                         | 结果                                            |
-| -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| 菜单 → 新建 Bot：弹层打开且名称输入框聚焦，Esc 关闭                                                                                          | ✅                                              |
-| 菜单 → 搜索 Bot：浮层打开且输入框（combobox）聚焦，Esc 关闭                                                                                  | ✅                                              |
-| 菜单 → 设置：底栏「外观与语言」打开，焦点在菜单首项；Esc 后回到底栏入口                                                                      | ✅                                              |
-| 语言切换：点击 English 后原生菜单项变为 `New Bot` / `Settings…`；切回后为 `新建 Bot`                                                         | ✅                                              |
-| 缩放：`Cmd+=` 两次 → 1.2×；页面无横向溢出（1000 × 760）；`Cmd+0` 回到 1.0×；`Cmd+-` → 0.91× 后复位                                           | ✅                                              |
-| 中文 IME：composition 期间 Enter 不发送（草稿与 transcript 均不变）；compositionend 后 Enter 正常发送                                        | ✅                                              |
-| Shift+Enter 在输入条内换行且不发送                                                                                                           | ✅                                              |
-| 降动态：`prefers-reduced-motion: reduce` 时 `data-reduce-motion=true`，`--duration-press` 为 `0ms`；恢复后为非零                             | ✅                                              |
-| 可访问名称：所有可见 `button / a / input / textarea / select` 均有非空可访问名称（含 aria-label、labelledby、文本、placeholder、title 回退） | ✅                                              |
-| 键盘可达：Tab 顺序覆盖搜索、新建、待确认、置顶、分区行、底栏设置、详情、工作记录、审批按钮、输入条；每一站都有名称                           | ✅（见下）                                      |
-| 完整 E2E 回归                                                                                                                                | **18 个用例通过**（M0a 11 + 持久化 1 + 本次 6） |
-| `pnpm test` / `typecheck` / `lint` / `format:check`                                                                                          | ✅（单测 152，见下）                            |
+| Check                                                                                                                                                                                     | Result                                                    |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Menu → New Bot: overlay opens with the name input focused; Esc closes it                                                                                                                  | ✅                                                        |
+| Menu → Search Bots: overlay opens with the input (combobox) focused; Esc closes it                                                                                                        | ✅                                                        |
+| Menu → Settings: footer "Appearance & Language" opens with focus on the menu's first item; after Esc focus returns to the footer entry                                                    | ✅                                                        |
+| Language switch: after clicking English the native menu items become `New Bot` / `Settings…`; after switching back they are `新建 Bot`                                                    | ✅                                                        |
+| Zoom: `Cmd+=` twice → 1.2×; no horizontal overflow of the page (1000 × 760); `Cmd+0` back to 1.0×; `Cmd+-` → 0.91× then reset                                                             | ✅                                                        |
+| Chinese IME: Enter during composition does not send (draft and transcript unchanged); after compositionend Enter sends normally                                                           | ✅                                                        |
+| Shift+Enter inserts a newline in the composer and does not send                                                                                                                           | ✅                                                        |
+| Reduced motion: with `prefers-reduced-motion: reduce`, `data-reduce-motion=true` and `--duration-press` is `0ms`; after restoring it is non-zero                                          | ✅                                                        |
+| Accessible names: every visible `button / a / input / textarea / select` has a non-empty accessible name (including aria-label, labelledby, text, placeholder, title fallbacks)           | ✅                                                        |
+| Keyboard reachability: the Tab order covers search, new bot, pending approvals, pinned, section row, footer settings, detail, work log, approval buttons, composer; every stop has a name | ✅ (see below)                                            |
+| Full E2E regression                                                                                                                                                                       | **18 cases passed** (M0a 11 + persistence 1 + this run 6) |
+| `pnpm test` / `typecheck` / `lint` / `format:check`                                                                                                                                       | ✅ (152 unit tests, see below)                            |
 
-### Tab 顺序摘录（40 次 Tab，节选）
+### Tab order excerpt (40 Tabs, abridged)
 
 ```text
 停止 → 搜索 → 新建 Bot → 待确认 · 3 → 置顶头像 ×6 → 全部置顶
@@ -53,30 +56,43 @@
 → 给 … 发消息 → 停止 →（回到起点）
 ```
 
-说明：首站是「停止」是因为测试前一次发送触发了 fixture 回复节奏，输入条处于流式中；
-无隐藏焦点，也未把焦点移出可视区域。
+Note: the first stop is "Stop" because a send before the test triggered the fixture reply
+cadence and the composer was streaming; there is no hidden focus, and focus was never moved
+outside the visible area.
 
-## 网络断开提示（2026-11-04 新增）
+## Network-disconnection notice (added 2026-11-04)
 
-用户反馈一次真实断网后观看窗口只显示“画面连接已断开”，没有明确提示是网络问题。已补：
+After a real disconnection the user reported that the viewing window only showed "the screen
+connection was disconnected", with no clear indication that this was a network problem. Added:
 
-- 主窗口：监听 `online/offline`，断网时顶部固定 `role="alert"` 提示「网络已断开，恢复后会自动重连。」；
-  聊天连接横幅在断网时显示专门文案，而不是泛化的“连接已断开”。
-- 资料库：`unreachable` / `timeout` 映射为「网络已断开，请恢复网络后重试。」。
-- 电脑观看窗口：断网时状态改为「网络已断开，恢复后会自动重连画面。」；网络恢复后主进程
-  重新 `display.observe` 取得新 ticket（`computer.reconnect`），renderer 重建 RFB 连接。
-- 验证：E2E「losing the network shows a visible alert and recovers」通过（21 项 E2E 全绿）；
-  观看窗口的真实网络恢复重连需在网络可复现断开的条件下复验。
+- Main window: listens to `online/offline`; while offline a fixed `role="alert"` notice at the top
+  reads "The network is disconnected; it will reconnect automatically when the network recovers.";
+  the chat connection banner shows dedicated copy while offline instead of the generic
+  "connection disconnected".
+- Library: `unreachable` / `timeout` map to "The network is disconnected; please restore the network
+  and retry.".
+- Computer viewing window: while offline the status becomes "The network is disconnected; the screen
+  will reconnect automatically when the network recovers."; after the network recovers the main
+  process calls `display.observe` again for a new ticket (`computer.reconnect`) and the renderer
+  rebuilds the RFB connection.
+- Verification: E2E "losing the network shows a visible alert and recovers" passes (21 E2E cases
+  all green); the viewing window's real network-recovery reconnect still needs re-verification in a
+  network environment where the disconnection is reproducible.
 
-## 未覆盖 / 下一步
+## Not covered / next steps
 
-- **VoiceOver 人工走查**：当前只自动校验名称与 Tab 顺序，未用 VoiceOver 实际朗读/转子顺序；
-  需用户在场做一次真实走查并记录（窗口顺序、名称朗读、浮层焦点）。
-- **真实中文输入法**：composition 事件为合成事件，未接真实 macOS 输入法（拼音候选窗）实测；
-  发布前需人工输入一段中文并确认候选窗、Enter 上屏与 Shift+Enter 行为。
-- **系统显示缩放 / 分屏**：本次只验证应用内页面缩放（1.0–1.2×），未覆盖 macOS「显示器缩放」
-  与分屏窗口尺寸组合；M5 支持矩阵需补测后声明。
-- **原生菜单截图**：macOS 菜单栏无法随窗口截图采集，证据以自动断言与菜单项文案断言代替；
-  用户验收时可人工确认。
-- **可访问名称细节**：置顶按钮名称来自可见 Bot 名 + `title` 状态，未单独加状态朗读；
-  审批/工作记录按钮名称来自可见文本，后续可补 `aria-describedby` 的详细状态。
+- **VoiceOver manual walkthrough**: currently only names and Tab order are checked automatically;
+  VoiceOver has not been used to actually read aloud / walk the rotor order. The user needs to be
+  present for a real walkthrough and record it (window order, name reading, overlay focus).
+- **Real Chinese IME**: composition events are synthetic events; a real macOS IME (Pinyin candidate
+  window) was not tested. Before release, type a passage of Chinese manually and confirm the
+  candidate window, Enter commit and Shift+Enter behavior.
+- **System display scaling / Split View**: this run only verified in-app page zoom (1.0–1.2×); macOS
+  "Display scaling" and Split View window-size combinations are not covered; the M5 support matrix
+  needs additional testing before it can be stated.
+- **Native menu screenshot**: the macOS menu bar cannot be captured with a window screenshot, so the
+  evidence is automated assertions and menu-item copy assertions instead; the user can confirm
+  manually during acceptance.
+- **Accessible-name details**: the pinned button's name comes from the visible Bot name + `title`
+  state, with no separate spoken state; approval/work-log button names come from visible text;
+  `aria-describedby` with detailed state can be added later.

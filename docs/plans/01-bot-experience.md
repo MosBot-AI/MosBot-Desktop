@@ -1,67 +1,67 @@
-# Bot 界面与交互规格
+# Bot UI and Interaction Specification
 
-唯一视觉参考为 [GrokBot 原录屏](../scratch/录屏2026-11-03%2019.25.26.mov)。时长约 2 分 20 秒。下表记录逐段抽帧所见，右列为 MosBot 的实现决定。截图验收时裁出窗口，使用自有头像及脱敏内容，比较信息层级、占比、留白和操作前后状态。
+The only visual reference is the [original GrokBot recording](../scratch/录屏2026-11-03%2019.25.26.mov). It runs about 2 minutes 20 seconds. The table below records what segment-by-segment frame sampling shows; the right column is MosBot's implementation decision. For screenshot acceptance, crop the window, use our own avatars and redacted content, and compare information hierarchy, proportions, whitespace, and states before and after operations.
 
-| 录屏时间 | 可见行为 | MosBot 实现 |
+| Recording time | Visible behavior | MosBot implementation |
 | --- | --- | --- |
-| 00:00–00:18 | 左边顶部为三列大头像，单 Bot 与群聊同层，下面是头像、名字、消息摘要组成的分区列表。右边是窄名牌、聊天时间线、底部输入条。短用户消息为带 Bot 色的右侧气泡，回复左侧浅灰。约 00:12 出现录音计时 | 保留两栏、置顶头像和紧凑分组。正常聊天只有名牌、消息、输入条三层，底部提示仅在可行动时出现。录音能力可用时沿用输入条位置 |
-| 00:21–00:30 | 设置在当前窗口上覆一层，关闭回到聊天；分区折叠时右侧显示数量 | 左下 MosBot / 连接入口打开局部设置或 Hermes 工作台。分区折叠保留当前聊天 |
-| 00:30–01:00 | 展开分区，切换 Bot。00:45 附近测试 Bot 出现在置顶网格，00:46 可见分区菜单，00:50–00:51 调整顺序和就地改名 | 置顶用菜单和拖拽完成，提供键盘同等操作。分区菜单提供重命名、上移、下移和移除，移除分区时成员归入未分组 |
-| 01:00–01:09 | 对话出现结构化选择卡。点顶部 Bot 名牌打开第三栏，能拖分隔线；可切换「详情 / 资料库 / 电脑」，电脑有休眠卡 | 问题与审批使用聊天内交互卡。详情栏按需打开，保留对话可读宽度。电脑栏先读状态，由用户明确唤醒 |
-| 01:09–01:25 | 电脑从唤醒中变为屏幕预览，预览上有「打开」 | Bot 正脸、名称、三标签、16:10 预览和简短状态，预览右栏无键鼠输入 |
-| 01:26–01:50 | 独立深色电脑窗口；底部控制胶囊在「仅观看 / 取得控制权」和「你正在控制 / 停止」间切换；画面内有鼠标操作 | 对应「仅观看 · 取得控制权」与「你正在控制 · 归还控制」。归还输入权和关闭远端电脑是两个独立操作 |
-| 01:50–02:02 | 回到原聊天和资料栏，Bot 名称变化在多处同步。详情显示例行任务提示和语音偏好 | 关闭电脑窗口回原聊天。Bot 改名更新头像网格、列表、名牌和详情。资料库显示当前 Bot 已登记产物，空态一行文字 |
-| 02:03–02:08 | 搜索为居中的小浮层，结果保留头像、名字和一行摘要，输入即时过滤 | 搜索 Bot 名称、群名和预览，空查询列最近项。支持方向键、Enter、Esc。历史全文搜索放在对应独立页面 |
-| 02:09–02:17 | 创建 Bot 为居中小弹层，顶部实时预览，名称下方是形状和颜色，底部取消/创建。录屏展示选择外形，没有完成创建 | 使用 MosBot 自有资产提供即时预览，创建按钮在名称合法后激活；创建成功后选中 Bot，首条消息时再按真实契约建聊天 |
+| 00:00–00:18 | The left top shows three columns of large avatars, single Bots and group chats on the same level; below is a section list made of avatar, name, and message summary. On the right are a narrow nameplate, the chat timeline, and a bottom composer. Short user messages are right-side bubbles in the Bot color; replies are light gray on the left. A recording timer appears around 00:12 | Keep two columns, pinned avatars, and compact grouping. Normal chat has only three layers: nameplate, messages, composer; bottom hints appear only when actionable. Reuse the composer position when voice capability is available |
+| 00:21–00:30 | Settings overlay the current window; closing returns to chat; collapsed sections show a count on the right | The MosBot/connection entry at the bottom left opens local settings or the Hermes workbench. Collapsing a section keeps the current chat |
+| 00:30–01:00 | Expand a section, switch Bots. Around 00:45 the test Bot appears in the pinned grid, 00:46 shows the section menu, 00:50–00:51 reorders and renames in place | Pinning uses menus and drag-and-drop, with equivalent keyboard operations. Section menus offer rename, move up, move down, and remove; when a section is removed its members move to Ungrouped |
+| 01:00–01:09 | A structured choice card appears in the conversation. Tapping the Bot nameplate at the top opens the third column and the divider can be dragged; switchable between "Details / Library / Computer"; the computer has a sleep card | Questions and approvals use in-chat interaction cards. The details column opens on demand and preserves a readable conversation width. The computer tab reads status first; waking is explicit by the user |
+| 01:09–01:25 | The computer goes from waking to a screen preview, with "Open" on the preview | Bot face, name, three tabs, a 16:10 preview, and a short status; the preview right column has no keyboard or mouse input |
+| 01:26–01:50 | A standalone dark computer window; the bottom control capsule toggles between "View only / Take control" and "You are in control / Stop"; mouse operations are visible in the frame | Corresponds to "View only · Take control" and "You are in control · Return control". Returning input and closing the remote computer are two separate operations |
+| 01:50–02:02 | Back to the original chat and details tab; the Bot name change syncs in several places. Details show recurring-task hints and voice preferences | Closing the computer window returns to the original chat. Renaming the Bot updates the avatar grid, list, nameplate, and details. The library shows artifacts registered for the current Bot; the empty state is one line of text |
+| 02:03–02:08 | Search is a small centered overlay; results keep an avatar, name, and one-line summary; typing filters instantly | Search Bot names, group names, and previews; an empty query lists recents. Arrow keys, Enter, and Esc are supported. Full-text history search lives on its own standalone page |
+| 02:09–02:17 | Creating a Bot is a small centered modal, with a live preview at the top, shapes and colors below the name, and cancel/create at the bottom. The recording shows shape selection but does not finish creation | Use MosBot's own assets for an instant preview; the create button activates once the name is valid; after creation the Bot is selected, and the chat is created against the real contract on the first message |
 
-## 主窗口
+## Main Window
 
-默认建议 1000 × 760 CSS px，最小 720 × 500。参考帧 00:42 的窗口内左栏约占三分之一，右侧是单纯的聊天视图。实现从 288 px 的左栏起步，常用区三列、最多先展示两行，更多项目在「全部置顶」入口可见。左栏上部放搜索和添加，底部只放 MosBot 徽标、连接身份和一个菜单。菜单里的「Hermes 工作台」打开独立页面。点击分区收折，点击 Bot 才切换聊天。
+The default suggestion is 1000 × 760 CSS px, minimum 720 × 500. In reference frame 00:42 the left column takes about one third of the window, and the right side is a plain chat view. Implementation starts from a 288 px left column, with three columns in the common area, at most two rows shown initially, and more items visible through the "All pinned" entry. The upper part of the left column holds search and add; the bottom holds only the MosBot logo, connection identity, and one menu. "Hermes workbench" in that menu opens the standalone page. Tapping a section header collapses it; only tapping a Bot switches the chat.
 
-聊天栏顶部居中一个小名牌，包含头像、Bot 名和简短可读状态。名牌可点击、有明确展开反馈。聊天按内容自然宽度排布，最大约 720 px，气泡一般占内容宽度 76–84%，长代码和表格在自身容器内横向滚动。用户文本靠右、Bot 文本靠左。同一轮合并连续工具细节为一个可展开的「工作记录」，保持正文连贯。时间线向上翻历史时保住第一可见锚点，用户已向上阅读时显示「回到最新」，新回复不会拉走视口。
+A small nameplate sits centered at the top of the chat column, containing the avatar, Bot name, and a short readable status. The nameplate is clickable with clear expansion feedback. Chat is laid out at natural content width, about 720 px maximum; bubbles generally occupy 76–84% of the content width, and long code and tables scroll horizontally inside their own containers. User text aligns right, Bot text left. Within one turn, consecutive tool details merge into one expandable "work log" so the body stays coherent. When paging up through history, the first visible anchor is preserved; while the user has scrolled up, "Back to latest" appears, and new replies do not pull the viewport away.
 
-输入条固定在底部，左侧加号、中间可增长文本区、右侧发送或停止。附件由 M4 验证后启用；上传中有进度和取消，失败可重试或移除，未取得有效引用不能发送，文本仍可编辑。Enter 发送，Shift+Enter 换行，输入法 composition 期间 Enter 交给输入法。草稿、附件引用与滚动锚点按聊天隔离，切 Bot 或开关右栏保留。发送超时且服务端状态未知时保留文本和本地待确认气泡，提示「正在确认是否已发送」。停止后保留已生成文字，标「已停止」。
+The composer is fixed at the bottom: plus on the left, a growing text area in the middle, send or stop on the right. Attachments are enabled after M4 verification; uploads show progress and cancellation, failures can be retried or removed, and nothing can be sent without a valid reference while the text remains editable. Enter sends, Shift+Enter inserts a newline, and Enter during IME composition goes to the IME. Drafts, attachment references, and scroll anchors are isolated per chat and preserved when switching Bots or toggling the right column. When a send times out and the server state is unknown, keep the text and a local pending-confirmation bubble showing "Checking whether it was sent". After a stop, keep the generated text labeled "Stopped".
 
-展开详情时宽窗口新增 320–440 px 右栏，优先为聊天保留至少 400 px。支持拖分隔线并记忆宽度。小窗口可自动拓展至可用屏幕范围，空间仍不足时将详情作为从右侧打开的覆盖层，关闭恢复焦点和滚动。用户可继续在原聊天和搜索之间切换。电脑窗口独立，仅显示指定 Bot 的远端画面与控制条，关闭后焦点回原 Bot 的电脑入口。
+Expanding details adds a 320–440 px right column on wide windows, reserving at least 400 px for chat first. The divider is draggable and its width is remembered. Small windows can expand automatically to the available screen area; if space is still insufficient, details open as an overlay from the right, and closing restores focus and scroll. Users can keep switching between the original chat and search. The computer window is standalone, showing only the designated Bot's remote screen and control bar; closing it returns focus to that Bot's computer entry.
 
-## 日常使用与后台状态
+## Daily Use and Background States
 
-- 左栏在有待处理请求时显示紧凑的「待确认 · N」，折叠分区汇总提示；点击直达原 Bot 和请求。索引覆盖当前账号全部可访问 Bot，未完成同步时显示同步中，断网时显示连接状态，均不伪装成零。未读以最后阅读位置计算，只有消息实际可见才推进；切到别的 Bot 不清除计数。
-- 应用在后台或主窗口关闭时，对新审批、澄清、任务完成及失败发送一次系统通知；流式增量不通知。用户可关闭通知，拒绝系统权限仍保留应用内提示。通知默认仅显示事件类型，点击后验证账号和请求是否仍有效，再打开目标；过期请求展示回执。
-- macOS 菜单提供新建 Bot、搜索、设置、显示主窗口和退出，并显示对应快捷键；保持复制、粘贴、撤销及中文 IME 的系统行为。键盘可完成全部主要操作，检查 VoiceOver 名称、焦点和窗口顺序。
-- 关闭主窗口保留应用及连接，从 Dock 可恢复。关闭电脑窗口立即禁止输入并归还本窗口租约；真正退出时保存草稿、停止本地传输并尽力归还，远端任务继续与否以服务器状态为准。退出不自动发送 Stop，重新启动先对账再恢复状态。离线/休眠恢复先同步，不能沿用旧控制权。
-- 设置提供跟随系统/浅色/深色和简体中文/英文，切换保留草稿、滚动和运行状态。首版支持矩阵内的窗口大小、系统缩放、深色、降动态和键盘操作均实际验收。
+- When pending requests exist, the left column shows a compact "Pending · N" and collapsed sections aggregate the hint; tapping goes straight to the original Bot and request. The index covers all accessible Bots of the current account; while sync is incomplete it shows syncing, when offline it shows connection status, and it never pretends to be zero. Unread is computed from the last read position and advances only when messages are actually visible; switching to another Bot does not clear the count.
+- While the app is in the background or the main window is closed, send one system notification each for new approvals, clarifications, task completions, and failures; streaming deltas are not notified. Users can turn notifications off, and denying the system permission still keeps in-app alerts. Notifications show only the event type by default; on click, verify the account and whether the request is still valid before opening the target; expired requests show a receipt.
+- The macOS menu offers New Bot, Search, Settings, Show Main Window, and Quit, with their shortcuts shown; system behavior for copy, paste, undo, and Chinese IME is preserved. All major operations are completable by keyboard; check VoiceOver names, focus, and window order.
+- Closing the main window keeps the app and the connection, and it can be restored from the Dock. Closing the computer window immediately blocks input and returns this window's lease; on a real quit, save drafts, stop local transport, and return the lease on a best-effort basis, while whether remote tasks continue follows server state. Quitting does not automatically send Stop; restarting reconciles first, then restores state. Offline/sleep recovery syncs first and never reuses an old control lease.
+- Settings offer System/Light/Dark and Simplified Chinese/English; switching preserves drafts, scroll, and running state. Window sizes, system scaling, dark mode, reduced motion, and keyboard operation within the first-version support matrix are actually accepted.
 
-## 视觉和品牌
+## Visuals and Brand
 
-- 左栏使用安静的中性浅灰，聊天稍亮，选中行提升一阶明度差，分隔只用 1 px 细线。暗色以同样层级推导。对话的主要彩色来自头像、当前 Bot 的发送按钮和用户气泡。用户气泡的文字对比单独校验，亮黄色等浅色 Bot 使用深字或混合色底。
-- 密度起点为 4/8/12/16/24 px。常用头像 48–56 px、行头像 30–36 px、名牌头像约 20 px、详情和创建预览 64–88 px。列表行约 48 px，摘要一行，聊天正文 14–15 px / 1.5，菜单与状态 12–13 px。圆角以 10–14 px 与胶囊为主，只有名牌、弹层和输入条使用轻微层次阴影。
-- Bot 状态优先显示「需要你确认」「工作中」「回复中」「离线」「空闲」。未读使用独立角标，避免与工作状态混淆。状态文本由真正的会话、审批和连接事件驱动，隐藏技术噪声。审批或提问卡保留标题、必要上下文和明确动作，处理后折为简洁回执。
-- 动效只服务于操作确认。按下/切换约 120 ms，详情栏约 180–220 ms，聊天流式增量不触发逐字进场。选中 Bot 的眼睛可随真实状态切换姿态，创建预览随形色即时更新。其他头像仅低频眨眼，后台、不可见和降动态模式用静态姿态。悬停、键盘焦点、选中、离线和等待审批有不同样式。
-- 文案以 Bot 名和当前动作为中心，例如「给项目助理发消息」「连接已断开，正在恢复」「仅观看」「归还控制」。zh-Hans 和 en 使用 message keys，准备中英文同内容截图，长名支持截断和完整可访问名称。
+- The left column uses a quiet neutral light gray, chat is slightly brighter, the selected row gains one step of brightness, and separators use only 1 px hairlines. Dark mode derives from the same hierarchy. The primary color in the conversation comes from avatars, the current Bot's send button, and user bubbles. User-bubble text contrast is checked separately; light Bot colors such as bright yellow use dark text or a mixed background.
+- Density starts at 4/8/12/16/24 px. Common avatars 48–56 px, row avatars 30–36 px, nameplate avatar about 20 px, details and creation preview 64–88 px. List rows about 48 px, one-line summaries, chat body 14–15 px / 1.5, menus and status 12–13 px. Radii are mostly 10–14 px and capsules; only the nameplate, modals, and composer use subtle layered shadows.
+- Bot status prioritizes "Needs your confirmation", "Working", "Replying", "Offline", and "Idle". Unread uses a separate badge to avoid confusion with work status. Status text is driven by real session, approval, and connection events, hiding technical noise. Approval or question cards keep the title, necessary context, and clear actions, and collapse into a concise receipt once handled.
+- Motion only serves operation confirmation. Press/toggle about 120 ms, details column about 180–220 ms, streaming deltas do not trigger per-character entrance. The selected Bot's eyes can change pose with real state, and the creation preview updates instantly with shape and color. Other avatars blink only at a low frequency; background, invisible, and reduced-motion modes use static poses. Hover, keyboard focus, selection, offline, and awaiting approval each have distinct styles.
+- Copy centers on the Bot name and current action, for example "Message the project assistant", "Connection lost, recovering", "View only", "Return control". zh-Hans and en use message keys; prepare screenshots with identical content in both languages; long names support truncation and a full accessible name.
 
-## 移动端资产清单
+## Mobile Asset List
 
-来源为 `~/dev/MosBot`，抽查时提交 `91d9b43`。实现时固定实际取用的 Git SHA，登记原路径、许可及转换命令。
+The source is `~/dev/MosBot`, with commit `91d9b43` used for spot checks. During implementation, pin the actual Git SHA used and register the original paths, licenses, and conversion commands.
 
-| 用途 | 来源 | 实现约束 |
+| Purpose | Source | Implementation constraints |
 | --- | --- | --- |
-| App/Dock/安装包 | `AppScope/resources/base/media/app_icon.png`、`AppScope/resources/light/media/app_icon.png`（均 1024²），及 `app_icon_layered.json` 引用的 `mosbot_icon_foreground.png` / `mosbot_icon_background.png` | 从原图生成适合打包的多分辨率 icon，小尺寸保留眼睛和轮廓 |
-| 聊天、置顶、空态、欢迎 | `entry/src/main/resources/base/media/mosbot_robot*.svg`；可用 `entry/src/main/ets/state/bot/BotFaceShapes.ets`、`BotFacePose.ets` 和 `components/bot/BotFace.ets` 定义的形状及姿态 | 把可重用路径和姿态移植为本地 SVG + CSS/Web Animations，聊天与创建弹层共用渲染组件。以移动端 MosBot 默认 blob 为初始外观，其他形状按移动端清单取用并保留适用署名，核对 `licenses/hermes-desktop-bots-LICENSE` |
-| 设置、首次连接和关于 | `entry/src/main/resources/base/media/mosbot_wordmark_letters.svg`、`mosbot_wordmark_robot*.svg`、`mosbot_wordmark_eyes.svg`；层次对照 `MosBotWordmark.ets` | 从移动端原始图层合成词标，避免把大词标重复铺到聊天导航中 |
+| App/Dock/installer | `AppScope/resources/base/media/app_icon.png`, `AppScope/resources/light/media/app_icon.png` (both 1024²), plus `mosbot_icon_foreground.png` / `mosbot_icon_background.png` referenced by `app_icon_layered.json` | Generate a multi-resolution icon suitable for packaging from the originals; preserve the eyes and outline at small sizes |
+| Chat, pinned, empty state, welcome | `entry/src/main/resources/base/media/mosbot_robot*.svg`; shapes and poses defined in `entry/src/main/ets/state/bot/BotFaceShapes.ets`, `BotFacePose.ets`, and `components/bot/BotFace.ets` | Port reusable paths and poses as local SVG + CSS/Web Animations; chat and the creation modal share one rendering component. Start from the mobile MosBot default blob appearance; take other shapes from the mobile inventory with applicable attribution; check `licenses/hermes-desktop-bots-LICENSE` |
+| Settings, first connection, and About | `entry/src/main/resources/base/media/mosbot_wordmark_letters.svg`, `mosbot_wordmark_robot*.svg`, `mosbot_wordmark_eyes.svg`; layers per `MosBotWordmark.ets` | Compose the wordmark from the original mobile layers; avoid repeating the large wordmark across chat navigation |
 
-## 页面及状态清单
+## Pages and State Inventory
 
-| 区域 | 交互和异常 |
+| Area | Interactions and exceptions |
 | --- | --- |
-| 首次连接 | MosBot 徽标、Dashboard 地址、连接按钮。认证去系统浏览器。回到应用时显示验证中、已连接、取消、版本不兼容和可重试错误。空 Bot 名单与加载失败分开显示 |
-| 常用和分区 | 右键或菜单可置顶、取消、移至分区。拖动目标有插入位置，Esc 取消，菜单提供同等功能。分区移除可撤销。分区顺序和收折默认本机保存，名称与身份不混用 |
-| 创建或编辑 Bot | 名称可用中文，内部 slug 独立且唯一；名称、形状、颜色保持紧凑弹层；创建后在聊天内显示「完成配置」，打开绑定该 Bot 的模型/授权流程。状态区分未配置、验证中、就绪、授权失败；浏览器返回或点击重新检查后回读原 profile，成功后恢复草稿，由用户发送。取消可稍后继续，不重复创建。改名/外观冲突保留本地输入；删除 Profile 仅在工作台独立确认 |
-| 搜索浮层 | 输入先聚焦。最近项和匹配项可键盘选择，转到目标时关闭浮层，取消则回到原焦点。搜索不修改列表顺序和分区 |
-| Bot 详情 | 显示头像、名、描述和例行任务概览。资料项显示文件名、类型、大小、来源消息及可执行动作；图片/文本可预览，其他类型保存后显式外部打开。加载、空、无权限、过期/已删除和失败分别呈现。电脑显示休眠、唤醒中、预览、仅观看、自己控制、他人控制、重连和失败 |
-| Hermes 工作台 | 从左下菜单进入独立 `/hermes`，子页为 `/hermes/profiles`、`/hermes/sessions`、`/hermes/kanban`。显示当前连接和 profile 范围。返回 Bots 恢复到进入前的 Bot、滚动、草稿和详情状态 |
-| 设置 | 居中覆盖层放连接、外观、语言、通知和关于；支持重新登录、注销与清除本账号本地数据。注销立即隐藏身份数据且保留其隔离草稿供原账号重登；清除数据另行确认。关于提供版本、支持范围、更新说明和脱敏诊断导出 |
+| First connection | MosBot logo, Dashboard address, connect button. Authentication goes to the system browser. On return to the app, show verifying, connected, cancelled, version-incompatible, and retryable errors. An empty Bot list and a load failure display separately |
+| Recents and sections | Context menu or menu can pin, unpin, and move to a section. Drag targets show insertion positions, Esc cancels, and menus provide equivalent functions. Section removal is undoable. Section order and collapse state are saved locally by default; name and identity are never mixed |
+| Create or edit Bot | Names may be Chinese; the internal slug is separate and unique; name, shape, and color stay in a compact modal; after creation, show "Finish setup" in chat, opening the model/authorization flow bound to that Bot. States distinguish unconfigured, verifying, ready, and authorization failed; after returning from the browser or tapping re-check, re-read the original profile, and on success restore the draft for the user to send. Cancelling allows continuing later without duplicate creation. Rename/appearance conflicts preserve local input; deleting a Profile is confirmed only in the workbench |
+| Search overlay | The input is focused first. Recents and matches are keyboard-selectable; navigating to a target closes the overlay, and cancelling returns to the original focus. Search does not modify list order or sections |
+| Bot details | Shows avatar, name, description, and recurring-task overview. Library items show file name, type, size, source message, and available actions; images/text can be previewed, other types are saved and then explicitly opened externally. Loading, empty, no permission, expired/deleted, and failure each render separately. The computer shows sleep, waking, preview, view-only, self-control, other-operator control, reconnecting, and failure |
+| Hermes workbench | Entered from the bottom-left menu at standalone `/hermes`, with subpages `/hermes/profiles`, `/hermes/sessions`, and `/hermes/kanban`. Shows the current connection and profile scope. Returning to Bots restores the Bot, scroll, draft, and details state from before entry |
+| Settings | A centered overlay holds connection, appearance, language, notifications, and about; supports re-login, sign-out, and clearing local data for this account. Sign-out immediately hides identity data while keeping its isolated drafts for the same account to sign back in; clearing data requires separate confirmation. About provides version, support scope, release notes, and a redacted diagnostics export |
 
-验收使用 `00:42` 双栏、`00:46` 分区菜单、`01:04` 详情、`01:24` 电脑预览、`01:26/01:27` 观看与接管、`02:03` 搜索和 `02:14` 创建。以真实运行的窗口验证逐项点按、Tab 顺序、关闭回焦、长回复流动时切 Bot、缩窄窗口及断网后的留存行为。
+Acceptance uses `00:42` two-column, `00:46` section menu, `01:04` details, `01:24` computer preview, `01:26/01:27` viewing and takeover, `02:03` search, and `02:14` creation. In a really running window, verify item-by-item tapping, Tab order, close-and-refocus, switching Bots while a long reply streams, narrowing the window, and retention behavior after network loss.
 
-M0a 必须交付可运行窗口供用户试用，记录布局、密度、Bot 切换和右栏手感的验收结论。待调整项闭环前不冻结视觉基线；截图与自动测试不能代替这一步。M5 再用真实数据和安装包验收全部主要流程。
+M0a must deliver a runnable window for user trial, recording acceptance conclusions on layout, density, Bot switching, and right-column feel. The visual baseline is not frozen until the adjustment list is closed; screenshots and automated tests cannot replace this step. M5 then accepts all major flows with real data and the installer.

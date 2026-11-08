@@ -1,36 +1,42 @@
-# M2 · 整理与编辑（置顶 / 分区 / 改名 / 外观）· 证据
+# M2 · Organize and Edit (Pin / Sections / Rename / Appearance) · Evidence
 
-- 卡片：M2（分区、置顶、搜索、外观编辑、改名、本地 schema 迁移）
-- 状态：**远端 Bot 的置顶、分区、折叠、外观/改名编辑已实现并持久化；真实服务外观 CAS 与改名已在
-  `m2-create-and-appearance.md` 验证**
-- 记录时间：2026-11-04
+- Card: M2 (sections, pinning, search, appearance editing, rename, local schema migration)
+- Status: **Pinning, sections, collapsing and appearance/rename editing for remote Bots are implemented and persisted;
+  real-service appearance CAS and rename have been verified in `m2-create-and-appearance.md`**
+- Recorded: 2026-11-04
 
-## 实现
+## Implementation
 
-- **本地状态 schema v2**：每连接新增 `organization`（`pinned`、`sections[{id,title,botIds,collapsed}]`、
-  `unsortedCollapsed`）。读取 v1 文档时自动迁移（补空 organization，保留草稿/选中项/详情栏/偏好）；
-  更高版本仍拒绝覆盖；原子写 + 上一版备份不变。
-- **置顶**：详情栏「管理」里置顶/取消置顶；左栏置顶网格按保存顺序渲染；未设置时保持默认前 6 个。
-- **分区**：详情栏可新建分区、把 Bot 移入/移出分区；左栏分区头支持折叠、`⋯` 菜单重命名/删除；
-  删除分区后 Bot 回到「未分组」；空分区显示空状态。
-- **搜索**：远端名单替换后沿用既有搜索索引（profile 名/摘要），无需额外后端。
-- **编辑 Bot**：详情栏「编辑外观与名称」复用创建弹层（编辑模式），预填当前名称/形状/颜色；保存时
-  `profiles.configure` 带 `ui_meta_expected_revisions` CAS 写入外观与标题，名称变化再走
-  `PATCH /api/profiles/{name}` 改名；revision 冲突提示重试；成功后 upsert 并保持选中。
-- 所有组织变更经 600 ms 防抖写入 `local-state.json`，重启恢复（含折叠状态）。
+- **Local state schema v2**: each connection gains `organization` (`pinned`, `sections[{id,title,botIds,collapsed}]`,
+  `unsortedCollapsed`). Reading a v1 document migrates automatically (adds an empty organization, keeps drafts/selection/inspector/preferences);
+  higher versions are still refused rather than overwritten; atomic write + previous-version backup unchanged.
+- **Pinning**: pin/unpin in the inspector "Manage" area; the left-column pinned grid renders in saved order; when
+  nothing is set, the default first 6 are kept.
+- **Sections**: the inspector can create sections and move Bots into/out of a section; the left-column section header
+  supports collapsing, and the `⋯` menu supports renaming/deleting; after a section is deleted its Bots return to
+  "Ungrouped"; empty sections show an empty state.
+- **Search**: after the remote roster is replaced, the existing search index (profile name/summary) is reused; no extra backend needed.
+- **Edit Bot**: the inspector's "Edit appearance and name" reuses the creation sheet (edit mode), pre-filling the current
+  name/shape/color; on save `profiles.configure` writes appearance and title with `ui_meta_expected_revisions` CAS, and a
+  name change goes through `PATCH /api/profiles/{name}` rename; a revision conflict prompts a retry; on success the Bot is
+  upserted and stays selected.
+- All organization changes are written to `local-state.json` with a 600 ms debounce and restored after restart (including
+  collapsed state).
 
-## 验证
+## Verification
 
-| 检查                                | 结果                                                                            |
-| ----------------------------------- | ------------------------------------------------------------------------------- |
-| `pnpm test`                         | **133 个用例通过**（新增远端组织 reducer/selector、v1→v2 迁移、组织持久化投影） |
-| `pnpm test:e2e`                     | 11 个用例通过（fixture 路径与重启持久化不受影响）                               |
-| typecheck / lint / format / package | 通过                                                                            |
-| 真实外观 CAS / 改名                 | 见 `m2-create-and-appearance.md`：写入、回读、冲突、改名均通过                  |
+| Check                               | Result                                                                                                                |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `pnpm test`                         | **133 cases passed** (new remote-organization reducer/selector, v1→v2 migration, organization persistence projection) |
+| `pnpm test:e2e`                     | 11 cases passed (fixture path and restart persistence unaffected)                                                     |
+| typecheck / lint / format / package | passed                                                                                                                |
+| Real appearance CAS / rename        | see `m2-create-and-appearance.md`: write, read-back, conflict and rename all pass                                     |
 
-## 未完成 / 限制
+## Incomplete / limitations
 
-- 分区与置顶是**本机组织视图**，不写服务端；换机器不共享（与移动端 `ui_meta` 组织字段的同步留待后续）。
-- 暂不支持拖动排序；分区顺序为创建顺序，置顶顺序为点击顺序。
-- 编辑弹层仅对连接模式下的 Bot 开放；fixture 模式保持只读演示。
-- 改名会改变 profile 名，但 canonical Bot Chat 与会话保留；草稿按新 profile 名继续。
+- Sections and pinning are a **local organization view** and are not written to the server; they do not sync across
+  machines (sync with the mobile `ui_meta` organization fields is left for later).
+- Drag-to-reorder is not supported yet; section order is creation order and pinned order is click order.
+- The edit sheet is only available for Bots in connected mode; fixture mode stays a read-only demo.
+- Renaming changes the profile name, but the canonical Bot Chat and sessions are kept; drafts continue under the new
+  profile name.
