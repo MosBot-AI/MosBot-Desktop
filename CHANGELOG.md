@@ -431,7 +431,8 @@ comparison links stay local anchors until the first signed tag exists.
 - Repository documentation is now bilingual: every file under `docs/` keeps an
   English primary file at its canonical path and adds a Chinese `_zh` counterpart;
   README/CHANGELOG links were updated to match. The GitHub delivery project,
-  milestones, labels and issues are in English.
+  milestones, labels and issues are in English. The local-only reference recording is
+  now marked as not committed, so no public link points at an ignored file.
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,
   credential vault, loopback state validation and the full sign-in/probe flow
   (89 tests).

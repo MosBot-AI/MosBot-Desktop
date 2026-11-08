@@ -274,6 +274,7 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
 
 - 仓库文档改为中英双语：`docs/` 下每个文件在原路径保留英文主文件，并提供 `_zh` 中文版；
   README/CHANGELOG 链接同步调整。GitHub 交付看板、里程碑、标签与 issue 改用英文。
+  本地录屏参考已标注为未提交，公开文档不再链接被忽略的文件。
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。
 - pnpm 作为 devDependency 固定，Electron Forge 的包管理检查无需全局 pnpm 即可复现。
 
