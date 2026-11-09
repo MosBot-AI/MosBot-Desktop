@@ -127,6 +127,7 @@ docs           方案（中文）、品牌来源、证据
 - 性能证据：[`docs/evidence/m5-performance-zh.md`](docs/evidence/m5-performance-zh.md)
 - 键盘与可访问性证据：[`docs/evidence/m5-gui-a11y-zh.md`](docs/evidence/m5-gui-a11y-zh.md)
 - 安装与升级证据：[`docs/evidence/m5-install-upgrade-zh.md`](docs/evidence/m5-install-upgrade-zh.md)
+- 发布说明（0.1.0）：[`docs/evidence/release-notes-0.1.0-zh.md`](docs/evidence/release-notes-0.1.0-zh.md)
 - 更新日志：[`CHANGELOG-zh.md`](CHANGELOG-zh.md)
 
 ## 已知限制

@@ -157,6 +157,7 @@ project](https://github.com/orgs/MosBot-AI/projects/4) and its
 - Performance evidence: [`docs/evidence/m5-performance.md`](docs/evidence/m5-performance.md)
 - Keyboard/accessibility evidence: [`docs/evidence/m5-gui-a11y.md`](docs/evidence/m5-gui-a11y.md)
 - Install/upgrade evidence: [`docs/evidence/m5-install-upgrade.md`](docs/evidence/m5-install-upgrade.md)
+- Release notes (0.1.0): [`docs/evidence/release-notes-0.1.0.md`](docs/evidence/release-notes-0.1.0.md)
 - Changelog: [`CHANGELOG.md`](CHANGELOG.md)
 
 ## Known limitations (M0a)

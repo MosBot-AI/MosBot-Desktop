@@ -5,6 +5,7 @@
 - Status: **The current ad-hoc signed ZIP (2026-11-09, includes the notification-click fix) is built and passes the clean-install check on this machine** (`codesign --verify --deep --strict` passes); Developer ID signing/notarization is still blocked on a certificate; DMG not done
 - Recorded: 2026-11-09 (history: 2026-11-04)
 - Reference machine: Apple M4, macOS 15.8.2, Node v26.13.0, pnpm 11.28.5
+- Release notes: [`release-notes-0.1.0.md`](release-notes-0.1.0.md)
 
 ## Implementation
 

@@ -5,6 +5,7 @@
 - 状态：**当前 ad-hoc 签名 ZIP（2026-11-09，含通知点击修复）已构建并通过本机干净安装检查**（`codesign --verify --deep --strict` 通过）；Developer ID 签名/公证仍阻塞于证书；DMG 未做
 - 记录时间：2026-11-09（历史：2026-11-04）
 - 参考机：Apple M4，macOS 15.8.2，Node v26.13.0，pnpm 11.28.5
+- 发布说明：[`release-notes-0.1.0-zh.md`](release-notes-0.1.0-zh.md)
 
 ## 实现
 
