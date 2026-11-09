@@ -194,6 +194,14 @@
       "labels": ["type:blocker", "phase:m3", "priority:p1", "needs:server"],
       "itemId": "PVTI_lADOFIcP2s4BqyP2zhHFp18",
       "url": "https://github.com/MosBot-AI/MosBot-Desktop/issues/17"
+    },
+    "19": {
+      "title": "Blocker · Cross-client approval receipt is not reflected on the original client",
+      "state": "open",
+      "milestone": "M1 · Chat vertical slice",
+      "labels": ["type:blocker", "phase:m1", "priority:p0", "needs:server"],
+      "itemId": "PVTI_lADOFIcP2s4BqyP2zhHQUak",
+      "url": "https://github.com/MosBot-AI/MosBot-Desktop/issues/19"
     }
   }
 }
