@@ -69,6 +69,13 @@
 - M4 first part: attachment upload (`file.attach` data URL) and real inference reading wired up; computer `display.status`, `display.thumbnail` (no frame while sleeping, no fake), and explicit wake entry integrated. The library indexes artifacts per Bot Chat workspace (`/api/files`); text/image preview and "Save and open" implemented; on a dedicated profile verified real Bot file creation → index → read token. Standalone computer RFB viewing window (noVNC + display ticket) and lease acquire/return implemented; real probes verify observe ticket, lease acquire (holder=human), preview suppression while holding the lease, and release (holder=agent). Evidence: `docs/evidence/m1-roster-and-history.md`, `docs/evidence/m1-chat-streaming.md`.
 - When disconnected it still uses fixture; the M0a demo is unaffected.
 
+## M6 capability probe (2026-11-09)
+
+- `groups.capabilities`: ✅ `driver=true` · `methods=18` · `room_link_enabled=true`.
+- `groups.list`: ✅ `rooms=2` — the hosted-room driver is operational on the deployment.
+- `wake.status`: ⛔ `available=false` · `enabled=false` · `listening=false`; voice wake is unavailable on this headless deployment.
+- No M6 implementation has started. Full results: `docs/evidence/m6-capability-probe.md`.
+
 ## Signed-in Evidence Notes
 
 - Credentials: the refresh token is encrypted via Electron safeStorage (Keychain) and stored in the app userData's `dashboard-credentials.json`; the access token is in memory only. Probes use a separate userData (`.tmp/userdata-probe`), so they don't affect the day-to-day app.

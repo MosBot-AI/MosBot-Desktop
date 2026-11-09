@@ -88,6 +88,13 @@
   证据：`docs/evidence/m1-roster-and-history-zh.md`、`docs/evidence/m1-chat-streaming-zh.md`。
 - 未连接时仍使用 fixture，M0a 演示不受影响。
 
+## M6 能力探测（2026-11-09）
+
+- `groups.capabilities`：✅ `driver=true` · `methods=18` · `room_link_enabled=true`。
+- `groups.list`：✅ `rooms=2`，部署上的 hosted-room driver 已可运行。
+- `wake.status`：⛔ `available=false` · `enabled=false` · `listening=false`；该无头部署的语音唤醒不可用。
+- M6 尚未开始实现。完整结果：`docs/evidence/m6-capability-probe-zh.md`。
+
 ## 已登录证据说明
 
 - 凭据：刷新令牌经 Electron safeStorage（Keychain）加密存于应用 userData 的
