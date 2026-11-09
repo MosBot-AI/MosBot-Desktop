@@ -374,6 +374,40 @@ export function createProbeService(deps: ProbeDeps): ProbeService {
           );
         }
 
+        const groups = await client.call('groups.capabilities', {}, emptySchema);
+        if (groups.ok) {
+          const data = asRecord(groups.data) ?? {};
+          const methods = Array.isArray(data['methods']) ? (data['methods'] as unknown[]) : [];
+          const roomLink = asRecord(data['room_link']) ?? {};
+          rows.push(
+            row(
+              'groups_capabilities',
+              '群聊 groups.capabilities',
+              'pass',
+              `driver=${String(data['driver'])} · methods=${methods.length} · room_link_enabled=${String(roomLink['enabled'])}`,
+            ),
+          );
+        } else {
+          rows.push(
+            row('groups_capabilities', '群聊 groups.capabilities', 'fail', groups.error.message),
+          );
+        }
+
+        const wake = await client.call('wake.status', {}, emptySchema);
+        if (wake.ok) {
+          const data = asRecord(wake.data) ?? {};
+          rows.push(
+            row(
+              'wake_status',
+              '语音唤醒 wake.status',
+              'pass',
+              `available=${String(data['available'])} · enabled=${String(data['enabled'])} · listening=${String(data['listening'])}`,
+            ),
+          );
+        } else {
+          rows.push(row('wake_status', '语音唤醒 wake.status', 'fail', wake.error.message));
+        }
+
         const profiles = await client.call(
           'profiles.list',
           { include_sessions: true },
