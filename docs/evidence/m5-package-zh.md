@@ -2,9 +2,8 @@
 
 [English](m5-package.md)
 
-- 状态：**Apple Development 签名 ZIP 已构建并通过本机干净安装检查**（硬化运行时 + 最小
-  entitlements + `codesign --verify` 通过）；Developer ID 签名/公证仍阻塞于证书；DMG 未做
-- 记录时间：2026-11-04
+- 状态：**当前 ad-hoc 签名 ZIP（2026-11-09，含通知点击修复）已构建并通过本机干净安装检查**（`codesign --verify --deep --strict` 通过）；Developer ID 签名/公证仍阻塞于证书；DMG 未做
+- 记录时间：2026-11-09（历史：2026-11-04）
 - 参考机：Apple M4，macOS 15.8.2，Node v26.13.0，pnpm 11.28.5
 
 ## 实现
@@ -23,8 +22,8 @@
 | 检查                                  | 结果                                                                                  |
 | ------------------------------------- | ------------------------------------------------------------------------------------- |
 | `pnpm make`                           | ✅ 通过                                                                               |
-| 产物                                  | `out/make/zip/darwin/arm64/MosBot-darwin-arm64-0.1.0.zip`，327,730,764 B（约 313 MB） |
-| SHA-256                               | `a9f7965ca0f2fc0ca6c3be063d1c669ca114d91b7747cd3a4f35666fe04f735f`                    |
+| 产物                                  | `out/make/zip/darwin/arm64/MosBot-darwin-arm64-0.1.0.zip`，328,802,141 B（约 314 MB） |
+| SHA-256                               | `56a19b77aabb5e66cd5f1efd503511e49349d2aa47e2aa3b96cfcb8b444d26f9`                    |
 | 签名                                  | ad-hoc，`spctl` 拒绝（Developer ID 证书未配置）                                       |
 | 干净安装（解压 + 全新 userData）      | ✅ 见 `m5-install-upgrade-zh.md`                                                      |
 | 覆盖升级与数据恢复（v1→v2、损坏回退） | ✅ 见 `m5-install-upgrade-zh.md`                                                      |
@@ -53,3 +52,12 @@ codesign --verify --deep --strict  → 0
 这修复了产物 `Identifier=Electron`、Info.plist 未绑定的问题（macOS 通知注册的前提之一）；
 但改动代码身份会让旧 userData 的 safeStorage 凭据失效（`vault_unavailable`），因此只作为发布
 构建开关，默认测试包不签名。`spctl` 仍拒绝（无 Developer ID），第二台 Mac 需右键打开。
+
+## 2026-11-09 重新构建
+
+- 命令：`MOSBOT_ADHOC_SIGN=1 npm run make`（main `f2b86d6`，已含通知点击修复）。
+- 产物：`out/make/zip/darwin/arm64/MosBot-darwin-arm64-0.1.0.zip`，328,802,141 B。
+- SHA-256：`56a19b77aabb5e66cd5f1efd503511e49349d2aa47e2aa3b96cfcb8b444d26f9`。
+- 签名：ad-hoc；`codesign --verify --deep --strict` 退出码 0；`spctl` 仍拒绝（无 Developer ID）。
+- 干净安装复验：`node scripts/verify-install.mjs` 离线首启检查全部通过；唯一预期失败是 Developer ID/Gatekeeper 检查。报告：`docs/evidence/tmp/install-verify-2026-11-09T15-53-19-054Z.json`。
+- main 回归：`vitest run` 173 passed，`npm run test:e2e` 21 passed，typecheck/lint/format 全绿。

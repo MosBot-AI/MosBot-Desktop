@@ -3,9 +3,9 @@
 [English](m5-install-upgrade.md)
 
 - 卡片：M5（签名公证、干净安装、覆盖升级与数据恢复；README 发布候选验收第 9、10 项）
-- 状态：**未签名（ad-hoc）ZIP 的本机干净安装通过；v1→v2 覆盖升级与损坏回退通过**；
+- 状态：**当前 ad-hoc ZIP（2026-11-09）的本机干净安装通过；v1→v2 覆盖升级与损坏回退通过**；
   Developer ID 签名/公证配置已就绪但**无证书未验证**；真实干净系统/另一台 Mac 未测
-- 记录时间：2026-11-04
+- 记录时间：2026-11-09（历史：2026-11-04）
 - 数据性质：打包产物（ZIP 解压 + 全新 userData）+ E2E（本地状态迁移）
 
 ## 环境
@@ -100,3 +100,11 @@
 - **强退待确认发送**：发布候选验收要求“强退后待确认发送不会自动重发”，本次未构造；
   需要一次真实发送中强杀进程的测试。
 - **体积**：ZIP 约 313 MB（Electron 运行时占主要部分），asar 内依赖裁剪仍需评估。
+
+## 2026-11-09 干净安装复验
+
+- 产物：`out/make/zip/darwin/arm64/MosBot-darwin-arm64-0.1.0.zip`（328,802,141 B），SHA-256 `56a19b77aabb5e66cd5f1efd503511e49349d2aa47e2aa3b96cfcb8b444d26f9`。
+- 解压到临时目录并以全新 userData 启动：窗口标题、版本、bundle id、fixture 名单、底栏与离线连接弹层全部通过；登录前不存在凭据。
+- 签名：ad-hoc，`codesign --verify --deep --strict` 退出码 0；`spctl` 因未配置 Developer ID 证书而拒绝（预期）。
+- E2E 回归：21 passed，包含 v1→v2 升级与损坏回退用例。
+- 报告：`docs/evidence/tmp/install-verify-2026-11-09T15-53-19-054Z.json`。

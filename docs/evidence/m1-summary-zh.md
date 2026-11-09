@@ -3,24 +3,24 @@
 [English](m1-summary.md)
 
 - 卡片：M1（登录、已有 Bot、发送、Markdown、历史分页、审批/澄清、停止、恢复、后台提醒、草稿持久化）
-- 状态：**代码实现完成并通过自动验证；两项真实条件待复验**（真实人工审批触发、真实断网回放）
-- 记录时间：2026-11-04
+- 状态：**代码实现完成并通过自动验证；macOS 通知横幅/点击已验证。剩余：真实网卡断开与修复后的真实鼠标点击。**
+- 记录时间：2026-11-09（历史：2026-11-04）
 - 目标服务：`192.168.2.171:9119`（v0.22.5 / `bf0203a794`）
 
 ## 对照验收项
 
-| 验收项                                  | 状态                                       | 证据                                                                |
-| --------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------- |
-| 真实登录（系统浏览器 + PKCE）与静默恢复 | ✅                                         | `m1-first-connection-zh.md`、`capabilities-zh.md`                   |
-| 已有 Bot 名单与 Bot Chat 历史           | ✅                                         | `m1-roster-and-history-zh.md`                                       |
-| 发送、流式 delta、Markdown、停止        | ✅                                         | `m1-chat-streaming-zh.md`（真实探针：delta、complete、interrupted） |
-| 历史分页（加载更早）                    | ✅                                         | `m1-roster-and-history-zh.md`（真实：older=16、nextOffset=100）     |
-| 审批/澄清卡与按 request id 回执         | ✅ 实现 + 单测                             | 真实请求未触发（部署自动放行 echo 类命令），待自然复验              |
-| 断线恢复与事件回放                      | ✅ 实现 + 注入式单测                       | 真实断网场景待构造                                                  |
-| 后台未打开 Bot 的待处理发现 + 系统通知  | ✅ 实现 + 单测；GUI 真实出现「待确认 · 1」 | 系统通知横幅与点击仍待用户在场复验；跨端回执待办                    |
-| 草稿/选中项/右栏/偏好持久化             | ✅                                         | 重启 E2E `persistence.spec.ts`                                      |
-| 工作记录归组                            | ✅                                         | `m1-chat-streaming-zh.md`                                           |
-| 双端同时观察/停止/审批                  | ⏳ 部分                                    | 标题竞争与 canonical 已在 M0b 验证；双端聊天观察待专门构造          |
+| 验收项                                  | 状态                 | 证据                                                                                                   |
+| --------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------ |
+| 真实登录（系统浏览器 + PKCE）与静默恢复 | ✅                   | `m1-first-connection-zh.md`、`capabilities-zh.md`                                                      |
+| 已有 Bot 名单与 Bot Chat 历史           | ✅                   | `m1-roster-and-history-zh.md`                                                                          |
+| 发送、流式 delta、Markdown、停止        | ✅                   | `m1-chat-streaming-zh.md`（真实探针：delta、complete、interrupted）                                    |
+| 历史分页（加载更早）                    | ✅                   | `m1-roster-and-history-zh.md`（真实：older=16、nextOffset=100）                                        |
+| 审批/澄清卡与按 request id 回执         | ✅                   | 真实请求/拒绝/允许/回执见 `m1-background-approvals-zh.md`                                              |
+| 断线恢复与事件回放                      | ✅ 实现 + 注入式单测 | 真实断网场景待构造                                                                                     |
+| 后台未打开 Bot 的待处理发现 + 系统通知  | ✅                   | 2026-11-09 真实横幅；点击修复 + 回归 `scripts/gui-pending-open.mjs`；见 `m1-notification-visual-zh.md` |
+| 草稿/选中项/右栏/偏好持久化             | ✅                   | 重启 E2E `persistence.spec.ts`                                                                         |
+| 工作记录归组                            | ✅                   | `m1-chat-streaming-zh.md`                                                                              |
+| 双端同时观察/停止/审批                  | ⏳ 部分              | 标题竞争与 canonical 已在 M0b 验证；双端聊天观察待专门构造                                             |
 
 ## 2026-11-04 真实服务复跑
 
@@ -31,8 +31,8 @@
 
 ## 自动验证
 
-- `pnpm test`：130 用例（协议、传输、PKCE、凭据、RPC、聊天、持久化、待处理 watcher、Markdown）
-- `pnpm test:e2e`：11 用例（M0a 切片 + 连接弹层 + 重启持久化）
+- `pnpm test`：173 用例（协议、传输、PKCE、凭据、RPC、聊天、持久化、待处理 watcher、pending-open、Markdown）
+- `pnpm test:e2e`：21 用例（M0a 切片 + M5 可访问性 + 重启持久化 + 升级）
 - `pnpm typecheck` / `pnpm lint` / `pnpm format:check` / `pnpm package`：通过
 
 ## 未关闭项

@@ -3,8 +3,8 @@
 [简体中文](m1-background-approvals-zh.md)
 
 - Card: M1 (pending requests for unopened Bots, system notifications)
-- Status: **Background discovery, in-app reminders, and system notifications implemented and covered by unit tests; real approval triggering and system notification display await natural-condition re-verification**
-- Recorded: 2026-11-04
+- Status: **Background discovery, in-app reminders and system notifications verified; the real macOS banner was captured on 2026-11-09 and the notification-click navigation bug was fixed and regression-covered. Remaining: in-app reminder when notifications are denied.**
+- Recorded: 2026-11-09 (history: 2026-11-04)
 - Data source: real Dashboard `192.168.2.171:9119` (v0.22.5 / `bf0203a794`), read-only subscription, no writes
 
 ## Implementation
@@ -19,13 +19,13 @@
 
 ## Verification
 
-| Check                                                | Result                                                                                                                                                               |
-| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm typecheck` / `pnpm lint` / `pnpm format:check` | Pass                                                                                                                                                                 |
-| `pnpm test`                                          | **130 cases pass** (2 new PendingWatcher, pending count/selector tests)                                                                                              |
-| `pnpm test:e2e`                                      | **11 cases pass** (fixture mode and persistence restart tests unaffected)                                                                                            |
-| Real `session.active_list`                           | ✅ Pass: 7 active sessions, `waiting=0` (none pending currently)                                                                                                     |
-| Real notification display / approval trigger         | ⏳ Not verified: the deployment auto-allows `echo`-like commands and no manual approval was produced; the system notification needs the user present to observe once |
+| Check                                                | Result                                                                                                                                                                  |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm typecheck` / `pnpm lint` / `pnpm format:check` | Pass                                                                                                                                                                    |
+| `pnpm test`                                          | **173 cases pass** (including pending watcher, pending-open and notification-click regression tests)                                                                    |
+| `pnpm test:e2e`                                      | **21 cases pass**                                                                                                                                                       |
+| Real `session.active_list`                           | ✅ Pass: 7 active sessions, `waiting=0` (none pending currently)                                                                                                        |
+| Real notification display / approval trigger         | ✅ Real banner captured 2026-11-09 (`screens/m1/notification-banner-2026-11-09.png`); click navigation fixed and covered by `scripts/gui-pending-open.mjs` (#10 closed) |
 
 ## Known Limitations
 
@@ -76,3 +76,10 @@ Report: `docs/evidence/tmp/notification-gui-2026-11-04T09-45-55-682Z.json`.
 
 - **The actual pixels of the macOS notification banner and a real mouse click are not verified**: this shell has no screen-recording permission (`screencapture` returns a black image), and Notification Center items cannot be clicked from here either. So this item can only count as "programmatic verification of the notification request and click handling"; the user still needs to confirm the banner display and a real click on site.
 - Key behavior: an approval request stays pending only while **a client is still attached** to that session. Switching the window to another Bot disconnects the old chat connection, and when no client is available to ask, the server automatically denies the request (the agent continues). Therefore "approvals for unopened Bots" must be produced by another client still observing that session (e.g. a phone or another computer); a single client cannot create an unopened approval by "switching away". This also explains the earlier GUI test timing differences.
+
+## 2026-11-09 Real Banner and Click Regression
+
+- The user's signed app showed a real macOS banner at 22:42 (title = the probe Bot name, body `需要你确认`); screenshot: `screens/m1/notification-banner-2026-11-09.png`.
+- The click restored the window but did not open the pending Bot because that profile was absent from the loaded roster. Fixed in PR #18 (`f2b86d6`): the renderer refreshes `profiles.list` before selecting the pending Bot.
+- Regression `scripts/gui-pending-open.mjs` on the real service: before the click the roster did not contain the new profile; after the notification-click IPC the roster refreshed, `selectedProfile` became the new profile and the nameplate showed it.
+- Remaining: a real pointer click after the fix has not been repeated; the in-app reminder after notifications are denied is still untested.

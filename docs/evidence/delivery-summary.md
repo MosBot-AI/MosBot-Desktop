@@ -2,23 +2,24 @@
 
 [简体中文](delivery-summary-zh.md)
 
-- Updated: 2026-11-04 · Latest implementation commit: `587384b`
+- Updated: 2026-11-09 · Latest implementation commit: `f2b86d6`
 - Plan basis: `docs/plans/README.md`, `01-bot-experience.md`, `02-dashboard-integration.md`,
   `03-agent-handoff.md`
-- Conclusion: **Code and automated acceptance have converged; the first release is still blocked by 5 external/user actions** (see the end).
+- Conclusion: **Code and automated acceptance have converged; the first release is still blocked by 3 external/user actions** (see the end).
 
 ## 1. Current status
 
 | Item                                   | Status                                                                                                                                         |
 | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Unit tests                             | 169 passed                                                                                                                                     |
+| Unit tests                             | 173 passed                                                                                                                                     |
 | E2E (hidden window, packaged artifact) | 21 passed                                                                                                                                      |
 | typecheck / lint / format              | all green                                                                                                                                      |
 | Full 10-minute hidden performance gate | passed: steady p95 32.2ms, burst 30.2ms, send/switch feedback 17.3ms, 10k history 27.8ms                                                       |
 | 60-minute soak                         | passed (`m5-soak.md`)                                                                                                                          |
 | Real-service integration               | approvals/receipts, dual client, unopened-Bot notifications, window lifecycle, computer frame/control, workbench writes, attachments/artifacts |
-| Signing                                | Apple Development chain passes; Developer ID/notarization not done (no certificate)                                                            |
-| Clean install                          | passed on the local temp directory + fresh userData; second Mac not done                                                                       |
+| Signing                                | ad-hoc full signature; Developer ID/notarization not done by user decision (no certificate)                                                    |
+| Clean install                          | 2026-11-09 ZIP passes locally with fresh userData; second Mac not done                                                                         |
+| Notification banner / click            | real banner captured 2026-11-09; click navigation fixed and regression-covered (#10 closed)                                                    |
 
 ## 2. Implementation scope (mapped to plan slices)
 
@@ -48,19 +49,12 @@ MOSBOT_DASHBOARD_URL=http://192.168.2.171:9119 MOSBOT_PROBE_MODE=chat pnpm test:
 # Real GUI: see section 4 of docs/evidence/acceptance.md
 ```
 
-## 5. The 5 items blocking the first release (see `final-checklist.md` for details)
+## 5. Remaining items before the first release (see `final-checklist.md` for details)
 
-1. **Notification banner**: screen recording is authorized and screencapture works; but automation executes the app binary directly,
-   bypassing LaunchServices, so macOS did not register notifications (no entry in ncprefs). Changed to default ad-hoc full signing;
-   you need to first produce a signed build with `MOSBOT_ADHOC_SIGN=1 pnpm make`, launch it from Finder and allow notifications;
-   afterwards automatic screenshot verification is possible (signing changes the keychain identity, so a one-time re-login is required).
-2. ~~Computer non-preemptive lease~~: **removed from first-release scope by the user** (known limitation: a later client can take
-   over; the client shows someone else in control / returns to read-only after being kicked).
-3. ~~Developer ID signing + notarization~~: **the user decided the first release uses internal signing** (default ad-hoc full
-   signing); Gatekeeper rejection is a known limitation.
-4. ~~7-day dogfooding~~: **the user will review/manage it themselves**; no longer a development-side blocker.
-5. **Unconfigured-model environment / plugin-disabled state**: the user has authorized direct use of the test server for
-   configuration; continue trying API/configuration paths.
+1. **Clean install on a second Mac / new user**: the local clean-install check passes; real second-machine acceptance is still open.
+2. **Seven consecutive days of daily use**: user-managed; the log stays in `dogfood-log.md`.
+3. **Server gaps**: `/api/files` source field (#15), plugin-disabled state (#17) and unconfigured-model environment (#16) need a
+   scope decision or server work. The computer-lease patch (#14) is out of first-release scope.
 
-Also: the M0a visual baseline needs your confirmation; the artifact "from message" field depends on new fields in the server-side
-`/api/files` (scope negotiable).
+Resolved on 2026-11-09: the real macOS notification banner was captured and the click navigation bug was fixed (Issue #10);
+M0a visual baseline confirmed; internal signing decision recorded; lease moved out of first-release scope.
