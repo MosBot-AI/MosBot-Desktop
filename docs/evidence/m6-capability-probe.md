@@ -6,6 +6,7 @@
 - Status: **Group chat is operational on the target deployment (hosted-room driver running, 2 rooms listed); voice wake is unavailable on this headless deployment. Implementation has not started.**
 - Recorded: 2026-11-09
 - Target service: `192.168.2.171:9119` (v0.22.5 / `bf0203a794`)
+- Design draft: [`m6-group-chat-design.md`](m6-group-chat-design.md)
 - Command: `MOSBOT_DASHBOARD_URL=http://192.168.2.171:9119 MOSBOT_PROBE_MODE=ws npm run test:integration`
 - Data nature: real Dashboard WebSocket, read-only RPC (`groups.capabilities`, `groups.list`, `wake.status`); no state-changing calls
 - Report (ignored working data): `docs/evidence/tmp/dashboard-probe-2026-11-09T16-14-52-900Z.json`

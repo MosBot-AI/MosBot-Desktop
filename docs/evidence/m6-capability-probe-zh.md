@@ -6,6 +6,7 @@
 - 状态：**目标部署群聊已可运行（hosted-room driver 运行中，可列出 2 个房间）；该无头部署的语音唤醒不可用。实现尚未开始。**
 - 记录时间：2026-11-09
 - 目标服务：`192.168.2.171:9119`（v0.22.5 / `bf0203a794`）
+- 设计草案：[`m6-group-chat-design-zh.md`](m6-group-chat-design-zh.md)
 - 命令：`MOSBOT_DASHBOARD_URL=http://192.168.2.171:9119 MOSBOT_PROBE_MODE=ws npm run test:integration`
 - 数据性质：真实 Dashboard WebSocket，只读 RPC（`groups.capabilities`、`groups.list`、`wake.status`）；没有状态变更调用
 - 报告（工作区忽略数据）：`docs/evidence/tmp/dashboard-probe-2026-11-09T16-14-52-900Z.json`
