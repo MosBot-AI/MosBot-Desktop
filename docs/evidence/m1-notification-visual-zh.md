@@ -32,3 +32,11 @@ Application Support/MosBot` 下运行。
     预期；需要用户在自己的实例上确认（Notification Center 是否有 MosBot 条目、通知样式是否为
     「横幅」），再决定是否继续验证。
 - 已提交的截图只是 macOS 权限提示（`screens/m1/notification-permission.png`），**不是审批横幅**。
+
+## 2026-11-09 复跑
+
+- 命令：`node scripts/gui-notification-signed.mjs`；运行时用户已从 Finder 打开签名版，系统屏幕录制权限可用。
+- 运行前后 `com.mosbot.desktop` 的通知偏好条目均存在。
+- 脚本用隐藏测试实例制造了一条真实审批，并以 700 ms 间隔抓取 20 帧全屏。**所有帧的右上角区域都没有出现通知横幅像素**，抓取期间也没有 MosBot 窗口恢复。
+- 报告（工作区忽略数据）：`docs/evidence/tmp/notification-signed-2026-11-09T14-31-32-486Z.json`。
+- 下次尝试前确认：专注模式/勿扰已关闭；系统设置 → 通知 → MosBot 使用“横幅”；签名版与探针登录同一账号（探针当前选中 profile `mosbot-qa2`，签名版选中 `default`）。

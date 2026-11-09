@@ -22,3 +22,11 @@ Screenshot: `screens/m1/notification-permission.png`.
   - Retried with the signed binary + a copy of the user userData launched in Playwright: it likewise recorded `shown=true`, with no banner in the captures; after a synthetic click (Swift CGEvent) the window was still minimized (the click did not hit the banner).
   - Possible causes: differences in notification authorization sync for processes not launched via LaunchServices, or the system's notification display style not as expected; the user needs to confirm on their own instance (whether Notification Center has a MosBot entry, whether the notification style is "Banners"), then decide whether to continue verification.
 - The committed screenshot is only the macOS permission prompt (`screens/m1/notification-permission.png`), **not the approval banner**.
+
+## 2026-11-09 Re-run
+
+- Command: `node scripts/gui-notification-signed.mjs` while the user's signed app was running from Finder and the system screen-recording permission was available.
+- The `com.mosbot.desktop` notification preference entry was present before and after the run.
+- The script created a real approval from a hidden test instance and captured 20 full-screen frames at 700 ms intervals. **No notification banner pixels appeared in the top-right region of any frame**, and no MosBot window was restored during capture.
+- Report (ignored working data): `docs/evidence/tmp/notification-signed-2026-11-09T14-31-32-486Z.json`.
+- Next checks before another attempt: confirm Focus/Do Not Disturb is off, System Settings → Notifications → MosBot uses "Banners", and the signed app is signed in to the same account as the probe (probe selected profile `mosbot-qa2`; the signed app currently selects `default`).
