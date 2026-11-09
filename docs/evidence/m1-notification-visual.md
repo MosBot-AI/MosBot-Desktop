@@ -2,7 +2,7 @@
 
 [简体中文](m1-notification-visual-zh.md)
 
-- Status: **Banner visually verified on 2026-11-09; the real mouse-click path is still awaiting user confirmation.** The permission prompt and the approval banner have both been captured.
+- Status: **Banner visually verified and the click navigation fixed on 2026-11-09.** A real pointer click after the fix has not been repeated, but the exact notification-click IPC path is covered by a real-service regression.
 - Recorded: 2026-11-04
 - Data nature: real Dashboard + signed package (`out/MosBot-signed.app`, complete ad-hoc signature); screenshots cropped to the notification banner area, no other desktop content.
 
@@ -37,3 +37,11 @@ Screenshot: `screens/m1/notification-permission.png`.
 - Screenshot (cropped to the banner): `screens/m1/notification-banner-2026-11-09.png`.
 - The signed app showed the in-app "待确认 · 1" badge while the request was pending.
 - Click path: the signed app window came to the front and showed the pending badge, but the captured frames show `mosbot-qa2` selected with an empty chat rather than the probe Bot's approval card. User confirmation is needed: whether they clicked the banner, and whether the probe Bot's approval card opened.
+
+## 2026-11-09 Click Path Regression
+
+- Script: `node scripts/gui-pending-open.mjs` (real service, probe profile).
+- It creates a Bot that is absent from the renderer roster, then sends the same `pendingEvent {type:"open", profile}` IPC that a system-notification click sends.
+- Before the click: the renderer roster did not contain the new profile. After the click: the roster refreshed, `selectedProfile` changed to the new profile and the nameplate showed the new Bot. This is the exact case that previously only restored the window.
+- Report (ignored working data): `docs/evidence/tmp/pending-open-2026-11-09T15-45-09-989Z.json`.
+- Unit coverage: `tests/unit/pending-open.test.ts` (known, new, refresh-failure and deleted-profile cases).
