@@ -36,6 +36,7 @@ The auto-cleaned dedicated-profile `chat` probe passed again: sending, first del
 
 1. Real NIC disconnect/replay: the reconnection and `session.events.since` catch-up are covered with a simulated socket drop; a real network disconnect has not been constructed.
 2. A real pointer click after the notification-click fix has not been repeated; the exact IPC handler is covered by `scripts/gui-pending-open.mjs`.
-3. Dual-client observation/stop/approval has dedicated evidence (`m1-dual-client.md`, `m1-concurrency-and-crash.md`); no blocker remains for M1.
+3. Dual-client observation/stop/approval has dedicated evidence (`m1-dual-client.md`, `m1-concurrency-and-crash.md`).
+4. **Cross-client approval receipt fails on the 2026-11-09 rerun** (#19, server-side response routing); M1 stays blocked until it is fixed and re-verified.
 
 The above does not block starting M2; M2's create and organize capabilities proceed in parallel with M1 and are verified together before M5.
