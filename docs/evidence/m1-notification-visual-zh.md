@@ -2,7 +2,7 @@
 
 [English](m1-notification-visual.md)
 
-- 状态：**2026-11-09 已视觉验证通知横幅；真实鼠标点击路径仍待用户确认。** 权限提示与审批横幅均已抓屏。
+- 状态：**2026-11-09 已视觉验证横幅，并修复点击导航。** 修复后未再次做真实鼠标点击，但通知点击的同一 IPC 路径已由真实服务回归覆盖。
 - 记录时间：2026-11-04
 - 数据性质：真实 Dashboard + 已签名包（`out/MosBot-signed.app`，ad-hoc 完整签名）；截图已裁剪到
   通知横幅区域，不含桌面其他内容。
@@ -46,3 +46,11 @@ Application Support/MosBot` 下运行。
 - 截图（已裁剪到横幅）：`screens/m1/notification-banner-2026-11-09.png`。
 - 请求待处理期间，签名版显示了应用内「待确认 · 1」角标。
 - 点击路径：签名版窗口已来到前台并显示待确认角标，但抓取帧里选中的是 `mosbot-qa2`、聊天为空，而不是探针 Bot 的审批卡。需要用户确认：是否点击了横幅，以及探针 Bot 的审批卡是否打开。
+
+## 2026-11-09 点击路径回归
+
+- 脚本：`node scripts/gui-pending-open.mjs`（真实服务 + 探针 profile）。
+- 脚本创建一个不在渲染层名单中的 Bot，然后发送与系统通知点击完全相同的 `pendingEvent {type:"open", profile}` IPC。
+- 点击前：渲染层名单不含新 profile；点击后：名单刷新、`selectedProfile` 切到新 profile、名牌显示新 Bot。这正是此前只恢复窗口的场景。
+- 报告（工作区忽略数据）：`docs/evidence/tmp/pending-open-2026-11-09T15-45-09-989Z.json`。
+- 单测覆盖：`tests/unit/pending-open.test.ts`（已知、新建、刷新失败、已删除四种情况）。
