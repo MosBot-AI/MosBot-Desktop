@@ -443,6 +443,12 @@ comparison links stay local anchors until the first signed tag exists.
 - The app's dev dependency on pnpm keeps Electron Forge's package-manager check
   reproducible without a global install.
 
+### Fixed
+
+- A system-notification click now refreshes the Bot roster and opens the matching
+  Bot even when that Bot was created by another client after the roster was loaded;
+  previously only the window came to the front.
+
 ### Notes
 
 - Source only: no signed installer, upgrade path or real Dashboard connection exists

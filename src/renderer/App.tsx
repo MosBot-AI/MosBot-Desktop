@@ -15,6 +15,7 @@ import { ChatView } from './features/chat/ChatView';
 import { ConnectionDialog } from './features/connection/ConnectionDialog';
 import { Workbench } from './features/workbench/Workbench';
 import { restoreConnectionOnStartup } from './features/connection/useConnection';
+import { openPendingProfile } from './app/pending-open';
 import { CreateBotDialog } from './features/create/CreateBotDialog';
 import { InspectorPanel } from './features/inspector/InspectorPanel';
 import { SearchOverlay } from './features/search/SearchOverlay';
@@ -264,7 +265,13 @@ export function App(): ReactElement {
       } else if (event.type === 'remove') {
         dispatch({ type: 'pending-remove', requestId: event.requestId });
       } else {
-        dispatch({ type: 'select-bot', botId: event.profile });
+        void openPendingProfile({
+          profile: event.profile,
+          bots: appStore.getState().remote.bots,
+          listBots: () => dashboard.listBots(),
+          applyBots: (bots) => dispatch({ type: 'remote-ready', bots: [...bots] }),
+          select: (profile) => dispatch({ type: 'select-bot', botId: profile }),
+        });
       }
     });
   }, [dispatch]);
