@@ -387,6 +387,14 @@ export function createProbeService(deps: ProbeDeps): ProbeService {
               `driver=${String(data['driver'])} · methods=${methods.length} · room_link_enabled=${String(roomLink['enabled'])}`,
             ),
           );
+          const groupList = await client.call('groups.list', {}, emptySchema);
+          if (groupList.ok) {
+            const listData = asRecord(groupList.data) ?? {};
+            const rooms = Array.isArray(listData['rooms']) ? (listData['rooms'] as unknown[]) : [];
+            rows.push(row('groups_list', '群聊 groups.list', 'pass', `rooms=${rooms.length}`));
+          } else {
+            rows.push(row('groups_list', '群聊 groups.list', 'fail', groupList.error.message));
+          }
         } else {
           rows.push(
             row('groups_capabilities', '群聊 groups.capabilities', 'fail', groups.error.message),

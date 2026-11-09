@@ -3,12 +3,12 @@
 [English](m6-capability-probe.md)
 
 - 卡片：M6（群头像/群聊、录音转写）
-- 状态：**目标部署已具备群聊协议能力；该无头部署的语音唤醒不可用。实现尚未开始。**
+- 状态：**目标部署群聊已可运行（hosted-room driver 运行中，可列出 2 个房间）；该无头部署的语音唤醒不可用。实现尚未开始。**
 - 记录时间：2026-11-09
 - 目标服务：`192.168.2.171:9119`（v0.22.5 / `bf0203a794`）
 - 命令：`MOSBOT_DASHBOARD_URL=http://192.168.2.171:9119 MOSBOT_PROBE_MODE=ws npm run test:integration`
-- 数据性质：真实 Dashboard WebSocket，只读 RPC（`groups.capabilities`、`wake.status`）；没有状态变更调用
-- 报告（工作区忽略数据）：`docs/evidence/tmp/dashboard-probe-2026-11-09T16-06-57-170Z.json`
+- 数据性质：真实 Dashboard WebSocket，只读 RPC（`groups.capabilities`、`groups.list`、`wake.status`）；没有状态变更调用
+- 报告（工作区忽略数据）：`docs/evidence/tmp/dashboard-probe-2026-11-09T16-14-52-900Z.json`
 
 ## 结果
 
@@ -20,7 +20,7 @@
 
 ## 结论
 
-- **目标部署在协议层已具备群聊能力**：hosted-room driver 正在运行，gateway 公布 18 个 `groups.*` 方法与 room link。M6 群聊工作可以排期；实现前仍需按录屏确定入口层级。
+- **目标部署群聊已可运行**：hosted-room driver 正在运行，gateway 公布 18 个 `groups.*` 方法与 room link，`groups.list` 返回 2 个已有房间。M6 群聊工作可以排期；实现前仍需按录屏确定入口层级。
 - **该无头部署的语音唤醒不可用**（`available=false`），因此无法在这里证明唤醒词/录音验收。`voice.record`/`voice.tts` 会改变状态且需要音频输入，本次未调用；录音转写仍未验证。
 - M6 尚未开始实现；本次探测只建立能力基线。
 
