@@ -1,5 +1,7 @@
 # M2 · Create and Appearance (backend vertical slice) · Evidence
 
+[简体中文](m2-create-and-appearance-zh.md)
+
 - Card: M2 (real creation, appearance CAS, rename, model-ready read-back, post-creation selection and configuration guidance)
 - Status: **Creation / appearance / rename / ready read-back implemented and verified on the real service; the real submission and model guidance of the creation sheet are wired in**
 - Recorded: 2026-11-04

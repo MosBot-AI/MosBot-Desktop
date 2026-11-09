@@ -1,5 +1,7 @@
 # M1 · First Connection and Silent Restore · Evidence
 
+[简体中文](m1-first-connection-zh.md)
+
 - Card: M1 (first connection, login, and credential storage); the M0b protocol foundation has been verified against the real service
 - Status: **First-connection UI and credential persistence complete and verified**; M1's switch to real roster/chat data has not started
 - Recorded: 2026-11-04

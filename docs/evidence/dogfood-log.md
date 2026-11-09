@@ -1,5 +1,7 @@
 # 7-day daily-use acceptance log
 
+[简体中文](dogfood-log-zh.md)
+
 - Acceptance item: `docs/plans/README.md` release-candidate acceptance item 11 "7 consecutive days of daily use with no blockers".
 - Rules: use the app normally each day (chat/approval/workbench/computer/attachments all count); record the date, the features used, whether a blocker or obvious anomaly occurred, and evidence (screenshot/log path optional). A day without use is recorded as "not used" and is not backfilled.
 - Status: **in progress** (continuous recording has not started yet; filled from the start date confirmed by the user).

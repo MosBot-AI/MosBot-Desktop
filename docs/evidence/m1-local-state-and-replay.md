@@ -1,5 +1,7 @@
 # M1 · Local State Persistence and Disconnect Replay · Evidence
 
+[简体中文](m1-local-state-and-replay-zh.md)
+
 - Card: M1 (draft persistence, disconnect recovery)
 - Status: **Draft/selected Bot/right-panel/language-appearance persistence implemented and verified by restart E2E; disconnect replay implemented and covered by unit tests**; replay after a real network drop has not been constructed against a live service
 - Recorded: 2026-11-04

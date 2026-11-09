@@ -1,8 +1,10 @@
 # M2 · 整理与编辑（置顶 / 分区 / 改名 / 外观）· 证据
 
+[English](m2-organize-and-edit.md)
+
 - 卡片：M2（分区、置顶、搜索、外观编辑、改名、本地 schema 迁移）
 - 状态：**远端 Bot 的置顶、分区、折叠、外观/改名编辑已实现并持久化；真实服务外观 CAS 与改名已在
-  `m2-create-and-appearance_zh.md` 验证**
+  `m2-create-and-appearance-zh.md` 验证**
 - 记录时间：2026-11-04
 
 ## 实现
@@ -26,7 +28,7 @@
 | `pnpm test`                         | **133 个用例通过**（新增远端组织 reducer/selector、v1→v2 迁移、组织持久化投影） |
 | `pnpm test:e2e`                     | 11 个用例通过（fixture 路径与重启持久化不受影响）                               |
 | typecheck / lint / format / package | 通过                                                                            |
-| 真实外观 CAS / 改名                 | 见 `m2-create-and-appearance_zh.md`：写入、回读、冲突、改名均通过               |
+| 真实外观 CAS / 改名                 | 见 `m2-create-and-appearance-zh.md`：写入、回读、冲突、改名均通过               |
 
 ## 未完成 / 限制
 

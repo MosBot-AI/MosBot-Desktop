@@ -1,5 +1,7 @@
 # M1 · 聊天纵切 · 验收汇总
 
+[English](m1-summary.md)
+
 - 卡片：M1（登录、已有 Bot、发送、Markdown、历史分页、审批/澄清、停止、恢复、后台提醒、草稿持久化）
 - 状态：**代码实现完成并通过自动验证；两项真实条件待复验**（真实人工审批触发、真实断网回放）
 - 记录时间：2026-11-04
@@ -9,15 +11,15 @@
 
 | 验收项                                  | 状态                                       | 证据                                                                |
 | --------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------- |
-| 真实登录（系统浏览器 + PKCE）与静默恢复 | ✅                                         | `m1-first-connection_zh.md`、`capabilities_zh.md`                   |
-| 已有 Bot 名单与 Bot Chat 历史           | ✅                                         | `m1-roster-and-history_zh.md`                                       |
-| 发送、流式 delta、Markdown、停止        | ✅                                         | `m1-chat-streaming_zh.md`（真实探针：delta、complete、interrupted） |
-| 历史分页（加载更早）                    | ✅                                         | `m1-roster-and-history_zh.md`（真实：older=16、nextOffset=100）     |
+| 真实登录（系统浏览器 + PKCE）与静默恢复 | ✅                                         | `m1-first-connection-zh.md`、`capabilities-zh.md`                   |
+| 已有 Bot 名单与 Bot Chat 历史           | ✅                                         | `m1-roster-and-history-zh.md`                                       |
+| 发送、流式 delta、Markdown、停止        | ✅                                         | `m1-chat-streaming-zh.md`（真实探针：delta、complete、interrupted） |
+| 历史分页（加载更早）                    | ✅                                         | `m1-roster-and-history-zh.md`（真实：older=16、nextOffset=100）     |
 | 审批/澄清卡与按 request id 回执         | ✅ 实现 + 单测                             | 真实请求未触发（部署自动放行 echo 类命令），待自然复验              |
 | 断线恢复与事件回放                      | ✅ 实现 + 注入式单测                       | 真实断网场景待构造                                                  |
 | 后台未打开 Bot 的待处理发现 + 系统通知  | ✅ 实现 + 单测；GUI 真实出现「待确认 · 1」 | 系统通知横幅与点击仍待用户在场复验；跨端回执待办                    |
 | 草稿/选中项/右栏/偏好持久化             | ✅                                         | 重启 E2E `persistence.spec.ts`                                      |
-| 工作记录归组                            | ✅                                         | `m1-chat-streaming_zh.md`                                           |
+| 工作记录归组                            | ✅                                         | `m1-chat-streaming-zh.md`                                           |
 | 双端同时观察/停止/审批                  | ⏳ 部分                                    | 标题竞争与 canonical 已在 M0b 验证；双端聊天观察待专门构造          |
 
 ## 2026-11-04 真实服务复跑

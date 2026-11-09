@@ -1,5 +1,7 @@
 # 界面测试后台模式（不打扰用户）
 
+[English](test-mode-background.md)
+
 - 目的：在所有自动化界面测试中不抢焦点、不显示窗口、不占用 Dock，让用户可以正常使用电脑。
 - 变更：主进程支持 `MOSBOT_TEST_BACKGROUND=1`；E2E harness 与所有 `scripts/gui-*.mjs` 默认开启。
 - 需要人观看的检查才用 `MOSBOT_TEST_FOREGROUND=1`（例如确认 macOS 通知横幅、录屏截图）。

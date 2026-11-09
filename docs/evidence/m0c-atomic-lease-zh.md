@@ -1,5 +1,7 @@
 # M0c · 电脑租约原子条件认领 · 补丁与部署说明
 
+[English](m0c-atomic-lease.md)
+
 - 状态：**补丁仅作为对照方案保存；不部署、不改测试服**（用户 2026-11-04 明确：授权范围只是使用
   Dashboard API，不包含服务端代码/部署/重启）
 - 结论：M0c 的“非抢占原子认领”必须由服务端实现；在现有 API 范围内无法从客户端补齐，M4 相应
@@ -67,7 +69,7 @@ git apply /path/to/0001-display-lease-atomic-claim.patch
 1. 两 viewer：A 先 acquire 成功；B 再 acquire 返回 `lease_conflict`，**A 不被踢**，B 显示他人控制。
 2. A release 后 B 可 acquire。
 3. 迟到回执/关窗/断线：失去 viewer 身份不能释放他人租约；关窗释放自己的租约。
-4. 记录双 viewer 脚本输出与新报告到本页，更新 `acceptance.md` 第 8 项与 `capabilities_zh.md`。
+4. 记录双 viewer 脚本输出与新报告到本页，更新 `acceptance.md` 第 8 项与 `capabilities-zh.md`。
 
 复验脚本：`node scripts/gui-computer-dual.mjs`（当前预期输出 `takeover-allowed`；打补丁后应为
 `takeover-refused`）。

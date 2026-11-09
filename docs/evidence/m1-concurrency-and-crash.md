@@ -1,5 +1,7 @@
 # M1 · Concurrent Approvals and Force-Quit Safety · Evidence
 
+[简体中文](m1-concurrency-and-crash-zh.md)
+
 - Card: M1 / concurrency and force-quit gaps in release-candidate acceptance items 4 and 10
 - Status: **Verified via real-service GUI; one API limitation on concurrent receipts**
 - Recorded: 2026-11-04

@@ -1,5 +1,7 @@
 # UI Test Background Mode (without disturbing the user)
 
+[简体中文](test-mode-background-zh.md)
+
 - Purpose: make all automated UI tests not steal focus, not show windows, and not occupy the Dock, so the user can keep
   using the computer normally.
 - Change: the main process supports `MOSBOT_TEST_BACKGROUND=1`; the E2E harness and all `scripts/gui-*.mjs` enable it by default.

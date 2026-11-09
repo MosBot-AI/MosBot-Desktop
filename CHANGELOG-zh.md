@@ -1,5 +1,7 @@
 # 更新日志
 
+[English](CHANGELOG.md)
+
 MosBot Desktop 的所有重要变更记录在此。格式遵循
 [Keep a Changelog 1.1.0](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循
 [语义化版本 2.0.0](https://semver.org/lang/zh-CN/spec/v2.0.0.html)。源码改动、已构建产物与已安装/已发布版本分开列出，避免把源码改动误读为可安装版本。
@@ -24,7 +26,7 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
 - 按需详情栏（详情/资料库/电脑，可拖拽宽度、窄窗口覆盖态）、键盘可用的搜索浮层，以及实时预览的新建 Bot 弹层。
 - 从 MosBot@3c118c4 复制的品牌资产与 provenance 记录、`pnpm assets:sync` 命令，以及从移动端移植的程序化 BotFace 几何。
 - 工具链：`pnpm dev`、`pnpm package`、`pnpm typecheck`、`pnpm test`、`pnpm test:e2e`、`pnpm lint`、`pnpm format`、Playwright Electron 冒烟测试与证据截屏。
-- 中英成对的 `README.md` / `README_zh.md`：环境要求、运行与检查命令、目录结构、文档索引与 M0a 已知限制。
+- 中英成对的 `README.md` / `README-zh.md`：环境要求、运行与检查命令、目录结构、文档索引与 M0a 已知限制。
 - 名单与置顶头像的悬停反馈：延迟出现的预览浮层（名称、最后摘要、状态、最近活动），脸部切到 `listening` 姿态并轻微上浮；指针悬停与键盘聚焦都会触发。
 - M0b 协议基础：Dashboard 地址策略（其余一律 https，仅保留一个精确的明文测试 origin）；基于 Electron 网络栈、zod 校验的 REST 传输（超时、响应大小上限、禁止跟随重定向）；RFC 8252 PKCE 登录与 loopback 回调 + state 校验；safeStorage 加密的刷新令牌凭据库（access token 只存内存）；仅接受应用自身顶层 frame 的 Dashboard IPC 桥。
 - M0b 探针：可重跑的 `pnpm test:integration`，打包应用后先做无凭据 REST 探活，再经系统浏览器登录，随后跑已登录探针与本地注销检查；能力矩阵见 `docs/evidence/capabilities.md`。
@@ -106,7 +108,7 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
 - 覆盖升级 E2E：上一测试版的 v1 文档保留草稿、选中 Bot 与主题并原地升级到 v2；主文档损坏时
   可从备份恢复。证据：`docs/evidence/m5-install-upgrade.md`。
 
-- `README.md` / `README_zh.md` 补齐用户指南：连接与登录、Bot/聊天/审批、文件与产物、
+- `README.md` / `README-zh.md` 补齐用户指南：连接与登录、Bot/聊天/审批、文件与产物、
   本地数据与手动升级，并用当前限制替换过时的 M0a 列表。
 
 - 已用本机 Apple Development 证书端到端验证签名链路（硬化运行时、最小 entitlements、
@@ -272,8 +274,9 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
 
 ### 变更
 
-- 仓库文档改为中英双语：`docs/` 下每个文件在原路径保留英文主文件，并提供 `_zh` 中文版；
-  README/CHANGELOG 链接同步调整。GitHub 交付看板、里程碑、标签与 issue 改用英文。
+- 仓库文档改为中英双语：`docs/` 下每个文件在原路径保留英文主文件，并提供 `-zh` 中文版，
+  成对文件顶部互加语言链接；README/CHANGELOG 链接同步调整。GitHub 交付看板迁到
+  MosBot-AI 组织，按英文跟踪状态、阶段、优先级、验证与证据；里程碑、标签与 issue 也用英文。
   本地录屏参考已标注为未提交，公开文档不再链接被忽略的文件。
 - `pnpm test` 覆盖扩展：地址策略、传输错误分类、PKCE、凭据库、loopback state 校验与完整登录/探针流程（89 个用例）。
 - pnpm 作为 devDependency 固定，Electron Forge 的包管理检查无需全局 pnpm 即可复现。

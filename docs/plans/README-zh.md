@@ -1,14 +1,16 @@
 # MosBot Desktop 从零实施计划
 
+[English](README.md)
+
 2026-11-03 · 重做交付基线 · macOS 优先
 
 打开 MosBot 后，用户看到熟悉的 Bot，点头像接着聊。需要查看 Bot 正在做什么时，点聊天顶部的名牌，再去看资料或电脑。Profile、Session 和 Kanban 集中在独立的 Hermes 工作台，由用户主动进入。
 
 ## Agent 从这里开始
 
-1. 读本页确定交付边界，然后按 [Agent 执行手册](03-agent-handoff_zh.md) 的任务卡开工。手册包含可直接使用的启动指令、每阶段产物及能力阻塞的处理方式。
-2. 对照 [录屏与界面规格](01-bot-experience_zh.md) 打开 `../scratch/录屏2026-11-03 19.25.26.mov`，先做可运行的界面切片。用脱敏的确定性样例复现录屏中的界面状态。
-3. 用 [Dashboard 接入与流式架构](02-dashboard-integration_zh.md) 建协议样例与真实联调，先跑通「连接 → 选 Bot → 发消息 → 断线恢复 → 停止」。
+1. 读本页确定交付边界，然后按 [Agent 执行手册](03-agent-handoff-zh.md) 的任务卡开工。手册包含可直接使用的启动指令、每阶段产物及能力阻塞的处理方式。
+2. 对照 [录屏与界面规格](01-bot-experience-zh.md) 打开 `../scratch/录屏2026-11-03 19.25.26.mov`，先做可运行的界面切片。用脱敏的确定性样例复现录屏中的界面状态。
+3. 用 [Dashboard 接入与流式架构](02-dashboard-integration-zh.md) 建协议样例与真实联调，先跑通「连接 → 选 Bot → 发消息 → 断线恢复 → 停止」。
 4. 每张任务卡完成时提交可复现证据。验收分为截图、自动测试、真实 Dashboard 联调及打包后运行四类，分别记录环境和结果。
 
 新目录为 `~/dev/MosBot_Desktop`。从零重做，不沿用旧 Desktop 的界面和实施完成状态。界面仅以 GrokBot 录屏为参考，品牌资源以 `~/dev/MosBot` 为来源，接口以 `~/dev/hermes-agent` 及目标部署为准。UI fixture 和真实客户端通过同一类型接口切换。安装包只接入真实 Dashboard。

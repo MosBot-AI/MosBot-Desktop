@@ -1,5 +1,7 @@
 # Changelog
 
+[简体中文](CHANGELOG-zh.md)
+
 All notable changes to MosBot Desktop are documented here. The format follows
 [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/) and the project
 uses [Semantic Versioning 2.0.0](https://semver.org/spec/v2.0.0.html). Source
@@ -46,7 +48,7 @@ comparison links stay local anchors until the first signed tag exists.
   client.
 - Tooling: `pnpm dev`, `pnpm package`, `pnpm typecheck`, `pnpm test`, `pnpm test:e2e`,
   `pnpm lint`, `pnpm format`, Playwright Electron smoke tests and evidence capture.
-- Bilingual `README.md` / `README_zh.md` with requirements, run and check commands,
+- Bilingual `README.md` / `README-zh.md` with requirements, run and check commands,
   layout, documentation index and the M0a limitations.
 - Hover feedback on roster and pinned avatars: a delayed preview card (name, last
   summary, presence, last activity) plus a `listening` face reaction and a small
@@ -186,7 +188,7 @@ comparison links stay local anchors until the first signed tag exists.
   selected Bot and the theme, upgrades in place to v2, and recovers from a corrupt document via
   the backup. Evidence: `docs/evidence/m5-install-upgrade.md`.
 
-- README/README_zh now include the user guide for connecting and signing in, Bots,
+- README/README-zh now include the user guide for connecting and signing in, Bots,
   chats and approvals, files and artifacts, local data and manual upgrades, plus the
   current limitations instead of the stale M0a list.
 
@@ -429,10 +431,12 @@ comparison links stay local anchors until the first signed tag exists.
 ### Changed
 
 - Repository documentation is now bilingual: every file under `docs/` keeps an
-  English primary file at its canonical path and adds a Chinese `_zh` counterpart;
-  README/CHANGELOG links were updated to match. The GitHub delivery project,
-  milestones, labels and issues are in English. The local-only reference recording is
-  now marked as not committed, so no public link points at an ignored file.
+  English primary file at its canonical path and adds a Chinese `-zh` counterpart,
+  with reciprocal language links; README/CHANGELOG links were updated to match. The
+  GitHub delivery project moved to the MosBot-AI organization and tracks status,
+  phase, priority, verification and evidence in English; milestones, labels and
+  issues are English too. The local-only reference recording is now marked as not
+  committed, so no public link points at an ignored file.
 - `pnpm test` now also covers protocol/URL policy, transport error taxonomy, PKCE,
   credential vault, loopback state validation and the full sign-in/probe flow
   (89 tests).

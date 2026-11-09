@@ -1,5 +1,7 @@
 # M1 · Background Approval Discovery and Notifications · Evidence
 
+[简体中文](m1-background-approvals-zh.md)
+
 - Card: M1 (pending requests for unopened Bots, system notifications)
 - Status: **Background discovery, in-app reminders, and system notifications implemented and covered by unit tests; real approval triggering and system notification display await natural-condition re-verification**
 - Recorded: 2026-11-04

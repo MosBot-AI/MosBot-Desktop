@@ -1,5 +1,7 @@
 # M5 · 60-minute reconnect/idle soak · Evidence
 
+[简体中文](m5-soak-zh.md)
+
 - Card: M5 (integration spec "initial performance thresholds": 60-minute reconnect/idle mixed loop, recording p95, heap and RSS curves, max queue, recovery count)
 - Status: **60-minute formal run passed** (40 rounds, 960,000 frames, batch-age p95 25 ms, memory bounded)
 - Recorded: 2026-11-04

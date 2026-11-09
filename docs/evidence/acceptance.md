@@ -1,5 +1,7 @@
 # Release-candidate acceptance index (M5)
 
+[简体中文](acceptance-zh.md)
+
 - Purpose: map each item of `docs/plans/README.md` "Release-candidate acceptance" to evidence, status and remaining gaps, as the
   entry point for M5 closure and the user's final acceptance.
 - Updated: 2026-11-04 (round-14 exhaustive check; earlier versions contained stale descriptions; this version is based on current evidence)

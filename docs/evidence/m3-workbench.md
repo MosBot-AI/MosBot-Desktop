@@ -1,5 +1,7 @@
 # M3 · Hermes Workbench (shell + three read-only sub-pages) · Evidence
 
+[简体中文](m3-workbench-zh.md)
+
 - Card: M3 (Profiles overview/detail, Sessions paging/search/history, Kanban board snapshot, restore on returning to chat)
 - Status: **Workbench shell, three sub-pages, Kanban task creation/status change with a real-time WS cursor, and model configuration writes are all wired in and verified**
 - Recorded: 2026-11-04

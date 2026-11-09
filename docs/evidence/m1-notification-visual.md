@@ -1,5 +1,7 @@
 # M1 · System Notification Visual Verification (Permission Prompt Confirmed, Approval Banner Awaiting Re-verification)
 
+[简体中文](m1-notification-visual-zh.md)
+
 - Status: **Partially verified**. The macOS notification permission prompt did appear and was captured; the approval notification banner was not captured in this trigger (the signed app was restarted/window state not restored, see below).
 - Recorded: 2026-11-04
 - Data nature: real Dashboard + signed package (`out/MosBot-signed.app`, complete ad-hoc signature); screenshots cropped to the notification banner area, no other desktop content.

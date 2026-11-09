@@ -1,5 +1,7 @@
 # MosBot Desktop
 
+[简体中文](README-zh.md)
+
 A macOS-first Electron client for Hermes Agent bots: open the app, land on your
 Bots, and keep talking to the one you were using. Profiles, sessions and Kanban
 live in a separate Hermes workbench you open when you need them.
@@ -138,8 +140,8 @@ machines.
 ## Documentation
 
 Repository docs are bilingual: English primary files at the canonical paths and Chinese
-counterparts with a `_zh` suffix. Delivery tracking lives in the [GitHub delivery
-project](https://github.com/users/charleypeng/projects/1) and its
+counterparts with a `-zh` suffix. Delivery tracking lives in the [GitHub delivery
+project](https://github.com/orgs/MosBot-AI/projects/4) and its
 [issues](https://github.com/charleypeng/MosBot-Desktop/issues).
 
 - Delivery baseline and milestones: [`docs/plans/README.md`](docs/plans/README.md)

@@ -1,5 +1,7 @@
 # MosBot Desktop · Delivery Notes (current candidate)
 
+[简体中文](delivery-summary-zh.md)
+
 - Updated: 2026-11-04 · Latest implementation commit: `587384b`
 - Plan basis: `docs/plans/README.md`, `01-bot-experience.md`, `02-dashboard-integration.md`,
   `03-agent-handoff.md`

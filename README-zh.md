@@ -1,5 +1,7 @@
 # MosBot Desktop
 
+[English](README.md)
+
 面向 macOS 的 Hermes Agent 桌面客户端：打开应用就看到熟悉的 Bot，点头像接着聊；需要看
 Profile、Session 和 Kanban 时再进入独立的 Hermes 工作台。
 
@@ -19,8 +21,8 @@ Kanban 打开时通过事件 WebSocket 保持实时（重连重签票、旧游�
 与 `file.attach` 上传后随消息发送；资料库通过 `/api/files` 索引 Bot Chat 工作区，支持文本/图片预览与
 「保存并打开」；电脑页读取真实状态与预览，并提供显式唤醒入口；独立观看窗口渲染 RFB 画面，可显式取得/归还控制权。返回 Bots 时聊天、草稿与滚动位置保持不变。未连接时仍使用 fixture。
 尚无签名安装包和升级路径；`pnpm make` 可产出未签名 macOS ZIP（`out/make/zip/darwin/arm64/`）。详见
-[`docs/evidence/m0a-design-slice_zh.md`](docs/evidence/m0a-design-slice_zh.md) 与
-[`docs/evidence/capabilities_zh.md`](docs/evidence/capabilities_zh.md)。
+[`docs/evidence/m0a-design-slice-zh.md`](docs/evidence/m0a-design-slice-zh.md) 与
+[`docs/evidence/capabilities-zh.md`](docs/evidence/capabilities-zh.md)。
 
 ## 环境要求
 
@@ -108,24 +110,24 @@ docs           方案（中文）、品牌来源、证据
 
 ## 文档
 
-仓库文档中英双语：原路径为英文主文件，中文版使用 `_zh` 后缀。交付跟踪见
-[GitHub 交付看板](https://github.com/users/charleypeng/projects/1) 与
+仓库文档中英双语：原路径为英文主文件，中文版使用 `-zh` 后缀。交付跟踪见
+[GitHub 交付看板](https://github.com/orgs/MosBot-AI/projects/4) 与
 [issues](https://github.com/charleypeng/MosBot-Desktop/issues)。
 
-- 交付基线与里程碑：[`docs/plans/README_zh.md`](docs/plans/README_zh.md)
-- 界面规格：[`docs/plans/01-bot-experience_zh.md`](docs/plans/01-bot-experience_zh.md)
-- Dashboard 接入：[`docs/plans/02-dashboard-integration_zh.md`](docs/plans/02-dashboard-integration_zh.md)
-- 任务卡：[`docs/plans/03-agent-handoff_zh.md`](docs/plans/03-agent-handoff_zh.md)
-- 品牌资产与许可：[`docs/assets/brand_zh.md`](docs/assets/brand_zh.md)
+- 交付基线与里程碑：[`docs/plans/README-zh.md`](docs/plans/README-zh.md)
+- 界面规格：[`docs/plans/01-bot-experience-zh.md`](docs/plans/01-bot-experience-zh.md)
+- Dashboard 接入：[`docs/plans/02-dashboard-integration-zh.md`](docs/plans/02-dashboard-integration-zh.md)
+- 任务卡：[`docs/plans/03-agent-handoff-zh.md`](docs/plans/03-agent-handoff-zh.md)
+- 品牌资产与许可：[`docs/assets/brand-zh.md`](docs/assets/brand-zh.md)
 - M0c 原子租约补丁：[`docs/patches/0001-display-lease-atomic-claim.patch`](docs/patches/0001-display-lease-atomic-claim.patch)
-- 交付说明：[`docs/evidence/delivery-summary_zh.md`](docs/evidence/delivery-summary_zh.md)
-- 用户最终验收清单：[`docs/evidence/final-checklist_zh.md`](docs/evidence/final-checklist_zh.md)
-- 验收证据索引：[`docs/evidence/acceptance_zh.md`](docs/evidence/acceptance_zh.md)
+- 交付说明：[`docs/evidence/delivery-summary-zh.md`](docs/evidence/delivery-summary-zh.md)
+- 用户最终验收清单：[`docs/evidence/final-checklist-zh.md`](docs/evidence/final-checklist-zh.md)
+- 验收证据索引：[`docs/evidence/acceptance-zh.md`](docs/evidence/acceptance-zh.md)
 - 界面测试默认使用隐藏、不可聚焦的窗口（`MOSBOT_TEST_BACKGROUND`）；只有需要人观看的检查才显式设置 `MOSBOT_TEST_FOREGROUND=1`。
-- 性能证据：[`docs/evidence/m5-performance_zh.md`](docs/evidence/m5-performance_zh.md)
-- 键盘与可访问性证据：[`docs/evidence/m5-gui-a11y_zh.md`](docs/evidence/m5-gui-a11y_zh.md)
-- 安装与升级证据：[`docs/evidence/m5-install-upgrade_zh.md`](docs/evidence/m5-install-upgrade_zh.md)
-- 更新日志：[`CHANGELOG.zh-CN.md`](CHANGELOG.zh-CN.md)
+- 性能证据：[`docs/evidence/m5-performance-zh.md`](docs/evidence/m5-performance-zh.md)
+- 键盘与可访问性证据：[`docs/evidence/m5-gui-a11y-zh.md`](docs/evidence/m5-gui-a11y-zh.md)
+- 安装与升级证据：[`docs/evidence/m5-install-upgrade-zh.md`](docs/evidence/m5-install-upgrade-zh.md)
+- 更新日志：[`CHANGELOG-zh.md`](CHANGELOG-zh.md)
 
 ## 已知限制
 

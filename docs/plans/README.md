@@ -1,5 +1,7 @@
 # MosBot Desktop Implementation Plan from Scratch
 
+[简体中文](README-zh.md)
+
 2026-11-03 · Revised delivery baseline · macOS first
 
 When users open MosBot, they see a familiar Bot and continue the conversation by tapping its avatar. To check what the Bot is doing, they tap the nameplate at the top of the chat, then look at the details or the computer. Profiles, Sessions, and Kanban live in a separate Hermes workbench that users enter deliberately.

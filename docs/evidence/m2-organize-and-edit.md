@@ -1,5 +1,7 @@
 # M2 · Organize and Edit (Pin / Sections / Rename / Appearance) · Evidence
 
+[简体中文](m2-organize-and-edit-zh.md)
+
 - Card: M2 (sections, pinning, search, appearance editing, rename, local schema migration)
 - Status: **Pinning, sections, collapsing and appearance/rename editing for remote Bots are implemented and persisted;
   real-service appearance CAS and rename have been verified in `m2-create-and-appearance.md`**

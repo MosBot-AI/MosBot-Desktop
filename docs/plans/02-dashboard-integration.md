@@ -1,5 +1,7 @@
 # Hermes Dashboard Integration and Streaming Architecture
 
+[简体中文](02-dashboard-integration-zh.md)
+
 The source baseline is `~/dev/hermes-agent` at `c419cf7c86`. Compare against the Dashboard network module of mobile `91d9b43` and llmwiki's "Hermes Dashboard backend contract". The paths and methods below come from source-code inspection; the deployment version, permissions, plugins, route switches, and proxy compatibility are verified by M0b on the designated real service `192.168.2.171:9119`. Update contract fixtures with the target deployment's results before enabling features.
 
 ## Process and Transport

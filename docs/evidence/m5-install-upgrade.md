@@ -1,5 +1,7 @@
 # M5 · Signing Configuration, Clean Install and In-place Upgrade · Evidence
 
+[简体中文](m5-install-upgrade-zh.md)
+
 - Card: M5 (signing and notarization, clean install, in-place upgrade and data recovery; README release-candidate acceptance items 9 and 10)
 - Status: **Clean install of the unsigned (ad-hoc) ZIP on this machine passed; v1→v2 in-place upgrade and corruption fallback passed**;
   Developer ID signing/notarization configuration is ready but **not verified without a certificate**; a real clean system / another Mac has not been tested

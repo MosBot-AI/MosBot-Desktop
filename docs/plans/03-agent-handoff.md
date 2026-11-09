@@ -1,5 +1,7 @@
 # Agent Execution Handbook
 
+[简体中文](03-agent-handoff-zh.md)
+
 This document is for task handoff in a new chat or implementation branch. Deliver M0a/M0b first, establish M0c from the probe results, then advance M1–M5. Card status is not started, in progress, blocked, or accepted; stating a blocker is not the same as completing it. M6 is scheduled independently.
 
 ## Ready to Hand to the Main Agent
@@ -58,7 +60,7 @@ Each item keeps the missing evidence, patch location, minimum compatible version
 ## M5 Delivery Checklist
 
 - Provide a versioned signed installer, checksums, the supported macOS/architecture/backend matrix, release notes, and known limitations; do not claim support for versions not verified on the real deployment.
-- Root `README.md` (English) and `README_zh.md` (Chinese) cover installation, OAuth connection, model configuration, notifications, file saving, manual in-place upgrade, recovery, and feedback channels. The bilingual changelog stays in sync; plan, test and evidence documents are bilingual too (English primary file at the canonical path plus a `_zh` Chinese counterpart).
+- Root `README.md` (English) and `README-zh.md` (Chinese) cover installation, OAuth connection, model configuration, notifications, file saving, manual in-place upgrade, recovery, and feedback channels. The bilingual changelog stays in sync; plan, test and evidence documents are bilingual too (English primary file at the canonical path plus a `-zh` Chinese counterpart).
 - `docs/evidence/acceptance.md` indexes commands, versions, results, and redacted evidence for each README acceptance item, distinguishing fixtures, the real service, the signed installer, and user acceptance. Degraded tests for missing service capabilities only prove exception handling.
 - 7 consecutive days of actual use include real chat, approvals, artifacts, the workbench, the computer, sleep recovery, and restarts; record results each day. No data loss, duplicate sends, unauthorized operations, or unresolved blockers; after fixes, retest affected flows, and restart the consecutive observation after reliability fixes.
 - Deliver only after all required items pass and the user completes final operational acceptance; do not label a build still missing credentials, service capabilities, signing, or user acceptance as a complete first version.

@@ -1,5 +1,7 @@
 # Dashboard 能力矩阵（M0b）
 
+[English](capabilities.md)
+
 - 唯一验收目标：`192.168.2.171:9119`（系统浏览器登录，RFC 8252 PKCE + loopback）
 - 本地源码基线：`hermes-agent@c419cf7c86`；**部署实测：v0.22.5 / commit `bf0203a794` / release 2026.9.24**
 - 版本关系：部署 commit 是本地基线的祖先（落后 3133 个提交）。凡本客户端依赖的方法以**部署实测**为准，差异与最低兼容版本在 M0c 记录。
@@ -54,14 +56,14 @@
 | 新 Bot 授权、首回复、双端标题竞争            | 已验证   | `tmp/dashboard-probe-2026-11-03T16-18-26-013Z.json` 的 `newBot` 行：标题认领、双端冲突被拒、canonical 不变、首 delta（seq=5）、停止、清理均 pass；缺口：未配置模型时的引导、重启续聊、真实双客户端同时观察                                                                                                                                                                                                                                                                                               | 主 Agent | M0b/M0c |
 | Profiles / Sessions / Kanban REST 与 WS 游标 | 已验证   | `m3-workbench.md`：分页 total 1791、搜索、Kanban 快照与游标 0→2、模型写入回读、WS 事件；缺口：插件禁用部署无真实证据                                                                                                                                                                                                                                                                                                                                                                                     | 主 Agent | M0b/M0c |
 | 文件上传、产物索引、保存与外开               | 部分验证 | `m4-attachments-and-computer.md`：真实附件被模型读取、产物索引/读取/保存打开；缺口：来源消息关联、过期/无权限/已删除状态                                                                                                                                                                                                                                                                                                                                                                                 | 主 Agent | M0b/M0c |
-| 未打开 Bot 的审批发现、跨端回执、通知        | 部分验证 | 真实审批请求/拒绝/允许/回执（chat 探针）+ GUI 全链路（内联卡→后台「待确认」→跳回→重投→拒绝回执）；**双客户端**：A 的回复被 B 观察、双方收到审批、A 拒绝后 B 折成「已由另一端处理」（`m1-dual-client_zh.md`）。未打开 Bot 审批的 watcher 发现/通知点击/跨端回执已双客户端真实验证（`m1-unopened-approval_zh.md`）；关窗→Dock 重开→退出重启见 `m1-window-lifecycle_zh.md`；缺口：macOS 通知横幅像素与真实鼠标点击；并发审批已测（不重复执行，API 无获胜方回执）                                            | 主 Agent | M0b/M0c |
+| 未打开 Bot 的审批发现、跨端回执、通知        | 部分验证 | 真实审批请求/拒绝/允许/回执（chat 探针）+ GUI 全链路（内联卡→后台「待确认」→跳回→重投→拒绝回执）；**双客户端**：A 的回复被 B 观察、双方收到审批、A 拒绝后 B 折成「已由另一端处理」（`m1-dual-client-zh.md`）。未打开 Bot 审批的 watcher 发现/通知点击/跨端回执已双客户端真实验证（`m1-unopened-approval-zh.md`）；关窗→Dock 重开→退出重启见 `m1-window-lifecycle-zh.md`；缺口：macOS 通知横幅像素与真实鼠标点击；并发审批已测（不重复执行，API 无获胜方回执）                                            | 主 Agent | M0b/M0c |
 | 电脑状态、唤醒、预览、非抢占接管、租约       | 部分验证 | 真实 `status/thumbnail/observe/acquire/release`；单 viewer GUI 全链路（真实画面 1440×900、控制取得/归还/关窗）：`m4-attachments-and-computer.md`。**双 viewer 实测后来者可抢占租约（M0c 缺口确认）**；客户端被踢后自动重连只读；**M0c 原子认领补丁已就绪**（`docs/patches/0001-display-lease-atomic-claim.patch`，本地基线 apply check 通过），重启重验租约已实测；断线重连已模拟验证（socket 断开/offline→online）；观看窗口打开即显示 lease 快照；原子认领需服务端团队实施（用户仅授权 Dashboard API） | 主 Agent | M0c     |
 
 ## 客户端接入状态（2026-11-04）
 
 - 登录界面与静默恢复已实现：首次连接弹层（地址 → 预检 → 选择登录方式 → 系统浏览器 → 连接摘要）、
   左下账号状态、注销；启动时用 safeStorage 中的刷新令牌静默恢复，不重复输入。
-- 证据：`docs/evidence/m1-first-connection_zh.md`、`docs/evidence/screens/m1/`；离线表单/错误路径有 E2E。
+- 证据：`docs/evidence/m1-first-connection-zh.md`、`docs/evidence/screens/m1/`；离线表单/错误路径有 E2E。
 - 真实名单与 Bot Chat 历史已接入：连接后名单来自 `profiles.list`，Bot Chat 历史来自 REST 分页；
   发送、流式 delta、终态、停止、审批/澄清卡、工作记录归组与自动重连已实现并在专用 profile 上验证；
   `client.capabilities {server_requests:true}` 实测返回 16 个方法（含 approval/clarify）。真实审批请求
@@ -83,7 +85,7 @@
   产物（`/api/files`），文本/图片预览与「保存并打开」已实现；专用 profile 真实验证 Bot 创建文件 →
   索引 → 读取 token。电脑独立 RFB 观看窗口（noVNC + display ticket）与租约取得/归还已实现；真实探针验证
   observe ticket、lease acquire（holder=human）、持租约时预览抑制与 release（holder=agent）。
-  证据：`docs/evidence/m1-roster-and-history_zh.md`、`docs/evidence/m1-chat-streaming_zh.md`。
+  证据：`docs/evidence/m1-roster-and-history-zh.md`、`docs/evidence/m1-chat-streaming-zh.md`。
 - 未连接时仍使用 fixture，M0a 演示不受影响。
 
 ## 已登录证据说明
@@ -104,5 +106,5 @@
 - 第 1 步全部必交项通过后，把上表状态改为已验证并登记探针报告路径与关键字段。
 - 2026-11-04 更新：第 3 步已由 `newbot` 探针验证（见上表），第 4 步读写见 M3/M4 证据；
   第 5、6 步仍为部分验证，关闭条件见 `docs/evidence/acceptance.md`。
-- 服务端注销缺失、以及其他缺失的必交能力进入 M0c，并在 `docs/plans/03-agent-handoff_zh.md` 的 M0c 表中登记负责人、最小兼容契约与复验条件。
+- 服务端注销缺失、以及其他缺失的必交能力进入 M0c，并在 `docs/plans/03-agent-handoff-zh.md` 的 M0c 表中登记负责人、最小兼容契约与复验条件。
 - 未完成登录复验前，不把任何一项标为“已验证”。

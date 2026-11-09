@@ -1,5 +1,7 @@
 # M1 · 主窗口关闭 / Dock 重开 / 退出重启 · 审批生命周期证据
 
+[English](m1-window-lifecycle.md)
+
 - 卡片：M1 / 发布候选验收「后台、关闭主窗口、从 Dock 重开、退出后重启均有结果」
 - 状态：**真实服务 GUI 全链路通过**（打包产物 + 专用 Bot，自动清理）
 - 记录时间：2026-11-04
@@ -37,5 +39,5 @@
 - 完整退出后重启：网关保留未回答的审批，重新 resume 时作为 `open_requests` 重投；客户端已在
   同一会话上显示并处理。
 - **通知横幅像素与真实鼠标点击仍未验证**（本机 shell 无屏幕录制权限）；通知请求与点击处理
-  路径见 `m1-background-approvals_zh.md`。
-- “未打开 Bot 的审批”仍需要另一个客户端保持附着（见 `m1-background-approvals_zh.md` 的行为说明）。
+  路径见 `m1-background-approvals-zh.md`。
+- “未打开 Bot 的审批”仍需要另一个客户端保持附着（见 `m1-background-approvals-zh.md` 的行为说明）。

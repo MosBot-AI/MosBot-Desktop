@@ -1,5 +1,7 @@
 # M1 · Real Sending, Streaming Replies, and Stop · Evidence
 
+[简体中文](m1-chat-streaming-zh.md)
+
 - Card: M1 (chat vertical slice)
 - Status: **Send / streaming delta / final state / stop / approval and clarification cards / auto-reconnect implemented**; real approval triggering and disconnect replay still need dedicated construction and verification
 - Recorded: 2026-11-04

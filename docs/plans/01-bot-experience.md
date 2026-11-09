@@ -1,5 +1,7 @@
 # Bot UI and Interaction Specification
 
+[简体中文](01-bot-experience-zh.md)
+
 The only visual reference is the original GrokBot recording (local file `../scratch/录屏2026-11-03 19.25.26.mov`, not committed to the repository). It runs about 2 minutes 20 seconds. The table below records what segment-by-segment frame sampling shows; the right column is MosBot's implementation decision. For screenshot acceptance, crop the window, use our own avatars and redacted content, and compare information hierarchy, proportions, whitespace, and states before and after operations.
 
 | Recording time | Visible behavior | MosBot implementation |

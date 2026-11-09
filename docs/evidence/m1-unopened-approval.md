@@ -1,5 +1,7 @@
 # M1 · Approval Discovery for Unopened Bots / Direct Notification / Cross-client Receipts · Evidence
 
+[简体中文](m1-unopened-approval-zh.md)
+
 - Card: M1 / release-candidate acceptance "Bots that are unopened or in collapsed sections can be discovered and jumped to when waiting for approval; background notifications; cross-client handling receipt sync"
 - Status: **Real-service GUI full chain passes** (two clients, dedicated Bot, auto-cleaned)
 - Recorded: 2026-11-04

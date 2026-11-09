@@ -1,5 +1,7 @@
 # Hermes Dashboard 接入与流式架构
 
+[English](02-dashboard-integration.md)
+
 源码基线为 `~/dev/hermes-agent` 的 `c419cf7c86`。对照移动端 `91d9b43` 的 Dashboard 网络模块及 llmwiki《Hermes Dashboard 后端契约》。下文的路径和方法来自源码核查，部署版本、权限、插件、路由开关及代理兼容性由 M0b 在指定真实服务 `192.168.2.171:9119` 上验证。以目标部署的结果更新契约 fixture 后再开启功能。
 
 ## 进程和传输

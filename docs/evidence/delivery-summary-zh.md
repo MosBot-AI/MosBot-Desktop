@@ -1,8 +1,10 @@
 # MosBot Desktop · 交付说明（当前候选）
 
+[English](delivery-summary.md)
+
 - 更新：2026-11-04 · 最新实现提交：`587384b`
-- 方案依据：`docs/plans/README_zh.md`、`01-bot-experience_zh.md`、`02-dashboard-integration_zh.md`、
-  `03-agent-handoff_zh.md`
+- 方案依据：`docs/plans/README-zh.md`、`01-bot-experience-zh.md`、`02-dashboard-integration-zh.md`、
+  `03-agent-handoff-zh.md`
 - 结论：**代码与自动化验收已收敛；首版仍被 5 项外部/用户动作阻塞**（见文末）。
 
 ## 一、当前状态
@@ -13,7 +15,7 @@
 | E2E（隐藏窗口、打包产物） | 21 passed                                                                                |
 | typecheck / lint / format | 全绿                                                                                     |
 | 完整 10 分钟隐藏性能门槛  | 通过：steady p95 32.2ms、burst 30.2ms、send/switch 反馈 17.3ms、10k 历史 27.8ms          |
-| 60 分钟 soak              | 通过（`m5-soak_zh.md`）                                                                  |
+| 60 分钟 soak              | 通过（`m5-soak-zh.md`）                                                                  |
 | 真实服务联调              | 审批/回执、双客户端、未打开 Bot 通知、窗口生命周期、电脑画面/控制、工作台写入、附件/产物 |
 | 签名                      | Apple Development 链路通过；Developer ID/公证未做（无证书）                              |
 | 干净安装                  | 本机临时目录 + 全新 userData 通过；第二台 Mac 未做                                       |
@@ -41,10 +43,10 @@ pnpm typecheck && pnpm test && pnpm test:e2e
 pnpm bench:stream
 BENCH_SOAK_SECONDS=3600 pnpm bench:soak
 MOSBOT_DASHBOARD_URL=http://192.168.2.171:9119 MOSBOT_PROBE_MODE=chat pnpm test:integration
-# 真实 GUI：见 docs/evidence/acceptance_zh.md 第四节
+# 真实 GUI：见 docs/evidence/acceptance-zh.md 第四节
 ```
 
-## 五、阻塞首版的 5 项（详见 `final-checklist_zh.md`）
+## 五、阻塞首版的 5 项（详见 `final-checklist-zh.md`）
 
 1. **通知横幅**：屏幕录制已授权、抓屏可用；但自动化直接执行 app 二进制绕过 LaunchServices，macOS 未注册通知（ncprefs 无条目）。已改为默认 ad-hoc 完整签名；需要先用 `MOSBOT_ADHOC_SIGN=1 pnpm make` 产出签名包、你用 Finder 启动并允许通知，之后可自动抓屏验证（签名会改变 keychain 身份，需重新登录一次）。
 2. ~~电脑非抢占租约~~：**已由用户移出首版范围**（已知限制：后来者可抢占；客户端显示他人控制/被踢回只读）。

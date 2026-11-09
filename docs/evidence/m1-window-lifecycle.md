@@ -1,5 +1,7 @@
 # M1 · Main Window Close / Dock Reopen / Quit and Restart · Approval Lifecycle Evidence
 
+[简体中文](m1-window-lifecycle-zh.md)
+
 - Card: M1 / release-candidate acceptance "background, closing the main window, reopening from the Dock, and restarting after quit all have results"
 - Status: **Real-service GUI full chain passes** (packaged artifact + dedicated Bot, auto-cleaned)
 - Recorded: 2026-11-04

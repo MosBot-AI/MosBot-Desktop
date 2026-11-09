@@ -1,5 +1,7 @@
 # M5 · Packaged Artifact · Evidence
 
+[简体中文](m5-package-zh.md)
+
 - Status: **The Apple Development–signed ZIP is built and passes the clean-install check on this machine** (hardened runtime + minimal
   entitlements + `codesign --verify` passing); Developer ID signing/notarization still blocked on a certificate; DMG not done
 - Recorded: 2026-11-04

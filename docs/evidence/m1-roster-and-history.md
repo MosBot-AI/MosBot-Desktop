@@ -1,5 +1,7 @@
 # M1 · Real Roster and Bot Chat History (read-only) · Evidence
 
+[简体中文](m1-roster-and-history-zh.md)
+
 - Card: M1 (first stage of real data integration)
 - Status: **After connecting, roster and history are read from the real Dashboard and rendered**; history pagination implemented; sending/streaming/stop see `m1-chat-streaming.md`
 - Recorded: 2026-11-04

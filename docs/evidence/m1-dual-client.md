@@ -1,5 +1,7 @@
 # M1 · Dual Client (Same Account) Chat and Approval Receipts · Evidence
 
+[简体中文](m1-dual-client-zh.md)
+
 - Card: M1 (cross-client chat observation, approval discovery, and receipt sync), remaining items in M0b steps 3/5
 - Status: **Real-service GUI full chain passes** (two independent packaged instances, same account, dedicated profile, auto-cleaned)
 - Recorded: 2026-11-04

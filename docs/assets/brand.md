@@ -1,5 +1,7 @@
 # Brand Asset Provenance and Usage
 
+[简体中文](brand-zh.md)
+
 The MosBot brand assets in this repository come from the mobile project `~/dev/MosBot`, pinned at commit **`3c118c4`**. Assets are copied verbatim, without resampling; the UI colors them through CSS `mask`, so the same files serve both the light and dark themes.
 
 ## Sync Method

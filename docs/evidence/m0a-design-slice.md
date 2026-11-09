@@ -1,5 +1,7 @@
 # M0a · Clickable Design Slice · Evidence
 
+[简体中文](m0a-design-slice-zh.md)
+
 - Card: M0a (see `docs/plans/03-agent-handoff.md`)
 - Status: **UI slice is runnable; awaiting the user's hands-on acceptance before the visual baseline is frozen**; M0a is not yet closed
 - Recorded: 2026-11-03

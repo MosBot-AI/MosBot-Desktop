@@ -1,5 +1,7 @@
 # MosBot Desktop · Final acceptance checklist (for the user)
 
+[简体中文](final-checklist-zh.md)
+
 - Updated: 2026-11-04
 - Purpose: explain **what has actually been verified**, **what remains for you or the outside world to complete**, and the concrete steps and re-verification commands for each item.
 - Corresponding index: `docs/evidence/acceptance.md` (item-by-item evidence); this page only lists the parts that "need you to act/decide".

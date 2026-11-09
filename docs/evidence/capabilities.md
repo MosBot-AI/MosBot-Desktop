@@ -1,5 +1,7 @@
 # Dashboard Capability Matrix (M0b)
 
+[简体中文](capabilities-zh.md)
+
 - Sole acceptance target: `192.168.2.171:9119` (system browser login, RFC 8252 PKCE + loopback)
 - Local source baseline: `hermes-agent@c419cf7c86`; **deployed actual: v0.22.5 / commit `bf0203a794` / release 2026.9.24**
 - Version relationship: the deployed commit is an ancestor of the local baseline (3133 commits behind). Methods this client relies on follow the **deployed actual**; differences and minimum compatible versions are recorded in M0c.

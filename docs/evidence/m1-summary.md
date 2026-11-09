@@ -1,5 +1,7 @@
 # M1 · Chat Vertical Slice · Acceptance Summary
 
+[简体中文](m1-summary-zh.md)
+
 - Card: M1 (login, existing Bots, sending, Markdown, history pagination, approval/clarification, stop, recovery, background reminders, draft persistence)
 - Status: **Code implementation complete and passing automated verification; two real-world conditions await re-verification** (real manual approval trigger, real offline replay)
 - Recorded: 2026-11-04

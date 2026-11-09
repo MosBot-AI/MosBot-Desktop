@@ -1,5 +1,7 @@
 # M5 · Streaming performance thresholds · Evidence
 
+[简体中文](m5-performance-zh.md)
+
 - Card: M5 (performance; README release-candidate acceptance item 9, integration spec "high throughput and backpressure / initial performance thresholds")
 - Status: **In-process load test on this machine passed** (10-minute steady state + 5-second 5× burst + 10,000-message history); 60-minute reconnect/idle loop and real-service interaction rerun pending
 - Recorded: 2026-11-04

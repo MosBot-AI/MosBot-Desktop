@@ -1,5 +1,7 @@
 # M4 · Attachments and Computer (first slice) · Evidence
 
+[简体中文](m4-attachments-and-computer-zh.md)
+
 - Card: M4 (attachment send/receive, computer status/preview/wake; the artifact index and the watch/takeover window are in the next slice)
 - Status: **Attachment upload/real inference read, library artifact index/preview/save-and-open, computer status/preview/wake, the
   standalone RFB viewer window and lease acquire/release are all wired in**; real-frame acceptance of the viewer window awaits

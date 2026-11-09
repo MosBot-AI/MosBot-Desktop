@@ -1,5 +1,7 @@
 # M5 · Keyboard / IME / Zoom / Reduced Motion / Focus Order · Evidence
 
+[简体中文](m5-gui-a11y-zh.md)
+
 - Card: M5 (GUI and accessibility regression; README release-candidate acceptance item 9 "keyboard, Chinese IME, zoom, reduced motion and focus order have runtime verification")
 - Status: **Automated regression passed** (packaged artifact + real Electron window); VoiceOver manual walkthrough and system display scaling pending user acceptance on a real machine
 - Recorded: 2026-11-04

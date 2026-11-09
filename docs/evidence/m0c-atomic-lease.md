@@ -1,5 +1,7 @@
 # M0c · Computer Lease Atomic Conditional Claim · Patch and Deployment Notes
 
+[简体中文](m0c-atomic-lease-zh.md)
+
 - Status: **The patch is kept only as a reference proposal; not deployed and the test server is not modified** (user 2026-11-04 clarification: the authorization scope is only the Dashboard API, not server code/deployment/restart)
 - Conclusion: M0c's "non-preemptive atomic claim" must be implemented server-side; it cannot be completed from the client within the existing API scope. The corresponding M4 item remains an external dependency; the user must decide whether to have the server team implement it or adjust the v1 scope
 - Recorded: 2026-11-04

@@ -1,6 +1,8 @@
 # M0a · 可点的设计切片 · 证据
 
-- 卡片：M0a（见 `docs/plans/03-agent-handoff_zh.md`）
+[English](m0a-design-slice.md)
+
+- 卡片：M0a（见 `docs/plans/03-agent-handoff-zh.md`）
 - 状态：**界面切片可运行，等待用户实际操作验收后冻结视觉基线**；M0a 尚未关闭
 - 记录时间：2026-11-03
 - 数据来源：**fixture**（确定性、脱敏设计样例），不含真实 Dashboard 数据
@@ -79,7 +81,7 @@ npm run dev        # 或 npx pnpm@11.28.5 dev
 
 如需重新安装依赖：`npx pnpm@11.28.5 install`（`pnpm` 同时作为 devDependency 固定，Electron Forge 依赖它做打包检查）。
 
-对照 `docs/plans/01-bot-experience_zh.md` 检查：左栏占比与密度、置顶三列、分区收折、长中文名截断、气泡宽度与行高、名牌点击、右栏拖拽手感、搜索与创建弹层、深浅色与中英切换。记录「布局 / 密度 / Bot 切换 / 右栏手感」的结论与待调整项；通过后冻结视觉基线并进入 M1 真实链路。
+对照 `docs/plans/01-bot-experience-zh.md` 检查：左栏占比与密度、置顶三列、分区收折、长中文名截断、气泡宽度与行高、名牌点击、右栏拖拽手感、搜索与创建弹层、深浅色与中英切换。记录「布局 / 密度 / Bot 切换 / 右栏手感」的结论与待调整项；通过后冻结视觉基线并进入 M1 真实链路。
 
 ## 未验证 / 阻塞
 
