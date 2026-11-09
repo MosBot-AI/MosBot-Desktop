@@ -61,7 +61,7 @@
   "issues": {
     "1": {
       "title": "M0a · Design slice: runnable window and visual baseline",
-      "state": "open",
+      "state": "closed",
       "milestone": "M0a · Design slice",
       "labels": ["type:plan", "phase:m0a", "priority:p0", "needs:user"],
       "itemId": "PVTI_lADOFIcP2s4BqyP2zhHFpU4",
@@ -133,7 +133,7 @@
     },
     "10": {
       "title": "Blocker · macOS notification banner visual and real click need user confirmation",
-      "state": "open",
+      "state": "closed",
       "milestone": "M1 · Chat vertical slice",
       "labels": ["type:acceptance", "phase:m1", "priority:p0", "needs:user"],
       "itemId": "PVTI_lADOFIcP2s4BqyP2zhHFpoE",
