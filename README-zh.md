@@ -26,7 +26,7 @@ Kanban 打开时通过事件 WebSocket 保持实时（重连重签票、旧游�
 
 ## 环境要求
 
-- macOS 13 或更新版本，Apple Silicon 或 Intel
+- 已测：macOS 15.8.2 + Apple Silicon（arm64）；本发布候选未声明支持 Intel 与更早 macOS
 - Node.js 24+（开发使用 Node 26）
 - pnpm 11.28.5 —— 已作为项目 devDependency 固定，因此无需全局安装，
   用 `npx pnpm@11.28.5` 即可；Electron Forge 打包时会读取它
@@ -130,14 +130,16 @@ docs           方案（中文）、品牌来源、证据
 - 发布说明（0.1.0）：[`docs/evidence/release-notes-0.1.0-zh.md`](docs/evidence/release-notes-0.1.0-zh.md)
 - 更新日志：[`CHANGELOG-zh.md`](CHANGELOG-zh.md)
 
-## 已知限制
+## 已知限制（发布候选）
 
-- macOS 构建目前是未签名 ZIP（无 DMG / 公证）；签名需要 Apple Developer 证书，连续 7 天
-  日用验收尚未开始。
-- 真实审批（请求/拒绝/允许）、后台「待确认」、电脑观看窗口真实画面与双客户端聊天/审批回执同步
-  已在测试部署验证，包括关窗、Dock 重开与完整退出重启后审批仍可处理；通知请求/点击处理路径已
-  程序化验证（macOS 横幅本身仍需现场查看）；未打开 Bot 的审批已经由 watcher 发现并通过通知点击直达。
-  仍未关闭：双 viewer 租约争用（需 M0c 原子认领）。
-- VoiceOver 走查、硬件中文输入法与 macOS 显示缩放/分屏只有自动或合成覆盖，人工验收待做。
-- 流式回复的尾块以纯文本显示，块结束或回合终态后才切换为完整 Markdown（长回复的取舍）。
-- 群聊与语音输入属于 M6，不在本构建范围。
+- **内部 ad-hoc 签名**：没有 Developer ID 证书与公证；Gatekeeper 拒绝，第二台 Mac 需右键“打开”。仅提供 ZIP，没有 DMG。
+- **已测环境**：macOS 15.8.2 + Apple Silicon arm64。Intel x64 与更早 macOS 未构建、未测试，本候选不声明支持。
+- **电脑非抢占租约**：移出首版范围。后来者可抢占；客户端正确显示“他人控制”，被踢后回到只读。
+- **产物来源字段**：`/api/files` 没有来源消息字段，资料库无法显示产物来自哪条消息。
+- **插件禁用状态**与**未配置模型环境**未在目标部署验证。
+- **通知点击**：横幅与点击处理已验证；修复后尚未再次做真实鼠标点击，但同一 IPC 路径由 `scripts/gui-pending-open.mjs` 覆盖。
+- **剩余验收**：第二台 Mac/新用户干净安装与连续 7 天日用仍未完成；见
+  [`docs/evidence/final-checklist-zh.md`](docs/evidence/final-checklist-zh.md)。
+- **流式尾块**：块或回合结束前以纯文本显示，结束后切换为完整 Markdown（长回复的取舍）。
+- **群聊与语音**属于 M6，不在本构建内。部署已暴露群聊协议（`groups.*`）与 2 个 hosted rooms；该无头部署语音唤醒不可用。
+  见 [`docs/evidence/m6-capability-probe-zh.md`](docs/evidence/m6-capability-probe-zh.md)。

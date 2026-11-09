@@ -44,7 +44,7 @@ exists yet. See
 
 ## Requirements
 
-- macOS 13 or newer on Apple Silicon or Intel
+- Tested: macOS 15.8.2 on Apple Silicon (arm64); Intel and earlier macOS versions are not declared for this release candidate
 - Node.js 24+ (the repo is developed on Node 26)
 - pnpm 11.28.5 — installed here as a project devDependency, so `npx pnpm@11.28.5`
   works without a global install; Electron Forge reads it during packaging
@@ -160,13 +160,22 @@ project](https://github.com/orgs/MosBot-AI/projects/4) and its
 - Release notes (0.1.0): [`docs/evidence/release-notes-0.1.0.md`](docs/evidence/release-notes-0.1.0.md)
 - Changelog: [`CHANGELOG.md`](CHANGELOG.md)
 
-## Known limitations (M0a)
+## Known limitations (release candidate)
 
-- Chat replies and computer wake-ups are fixture pacing, not inference or a remote
-  session.
-- Attachments, artifact preview/save/open and the computer viewer window arrive in
-  M4; those buttons are disabled with an explanation instead of faking success.
-- Real Chinese IME, VoiceOver order, window scaling and split screen have not been
-  exercised yet.
-- The build is unsigned and unpackaged for distribution; signing and the 7-day
-  dogfood arrive with M5.
+- **Internal ad-hoc signing**: no Developer ID certificate or notarization. Gatekeeper rejects the build, so a second Mac needs
+  right-click → Open. Distribution is a ZIP only; there is no DMG.
+- **Tested environment**: macOS 15.8.2 on Apple Silicon arm64. Intel x64 and earlier macOS versions are not built or tested, so
+  this candidate does not declare support for them.
+- **Computer non-preemptive lease**: out of first-release scope. A later viewer can take over; the client correctly shows
+  "someone else is controlling" and returns to read-only when kicked.
+- **Artifact source field**: `/api/files` has no source-message field, so the library cannot show which message produced an artifact.
+- **Plugin-disabled state** and **unconfigured-model environment** are not verified on the target deployment.
+- **Notification click**: the banner and click handler are verified; a real pointer click after the click fix has not been repeated,
+  but the exact IPC handler is covered by `scripts/gui-pending-open.mjs`.
+- **Remaining acceptance**: clean install on a second Mac/new user and seven consecutive days of daily use are still open; see
+  [`docs/evidence/final-checklist.md`](docs/evidence/final-checklist.md).
+- **Streaming tail**: the last block renders as plain text until the block or turn ends, then switches to full Markdown (a deliberate
+  long-reply tradeoff).
+- **Group chat and voice** are M6 scope and are not in this build. The deployment exposes the group-chat protocol (`groups.*`) and two
+  hosted rooms; voice wake is unavailable on the headless deployment. See
+  [`docs/evidence/m6-capability-probe.md`](docs/evidence/m6-capability-probe.md).
