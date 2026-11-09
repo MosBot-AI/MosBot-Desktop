@@ -57,3 +57,22 @@
 - 补充诊断：在 B 上直接调用 `window.mosbot.dashboard.chatAnswer(requestId, {choice:'deny'})` 返回 `{ok:true}`（响应帧已发出），但 A 的 `session.resume` 仍报告该请求打开。这说明问题在服务端对响应的归属/路由，而不是客户端没有发送回答。
 - 工作假设：通知点击后 B 的拒绝响应可能落到不拥有该请求的 gateway 进程/transport（部署为 `gateway_mode=multiplex`，且可能有多进程负载均衡），或 gateway 不会跨客户端结算共享请求。需要服务端排查；客户端无法对 gateway 仍报告为打开的请求做回执折叠。
 - 报告：`docs/evidence/tmp/unopened-approval-2026-11-09T16-28-28-115Z.json`、`...16-31-23-687Z.json`、`...16-35-42-435Z.json`、`...16-42-51-197Z.json`、`...16-52-04-913Z.json`。
+
+## 服务端分析（Issue #19）
+
+部署源码位于 `~/.hermes/hermes-agent`（`bf0203a794`）；相关文件为 `tui_gateway/server_requests.py` 与 `tui_gateway/methods_session.py`。
+
+- `resolve_response()` 把请求从进程内的 `_open` 注册表移除，并设置等待者的 result/event；它**不会**向同一会话的其它客户端广播 `request.cancel`。
+- 客户端 `src/main/dashboard/chat.ts` 的注释已描述这一点：“gateway 不会在另一个客户端回答时推送；它只是把请求从 `session.resume` 的 `open_requests` 里去掉。”
+- 这只有在回答响应到达拥有 `_open` 的同一 gateway 进程时才成立。若响应被另一个进程/transport 处理（multiplex / 多 gateway 进程），拥有者的 `_open` 不会变化，之后每次 `session.resume` 都会继续报告请求打开。
+- 客户端轮询无法修复：A 的轮询在运行、`session.resume` 成功，但 gateway 仍把请求放在 `open_requests` 中。
+
+### 可能的服务端修复
+
+1. 把响应路由到拥有该请求的 gateway 进程/会话（粘性会话或共享请求注册表）。
+2. 结算时向同会话的其它客户端广播 `request.cancel {id, method, reason: "resolved-elsewhere"}`。渲染层已把这个 reason 映射为「已由另一端处理」回执。
+3. 若无法广播，提供会话级的已结算请求列表/事件，让客户端不依赖 `open_requests` 也能对账。
+
+### 服务端改动后的复验
+
+- 重新运行 `node scripts/gui-unopened-approval.mjs`；A 必须在一个 5 秒轮询周期内折成回执，脚本最后一步必须通过。

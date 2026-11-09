@@ -51,3 +51,22 @@ Report: `docs/evidence/tmp/unopened-approval-2026-11-04T10-07-50-369Z.json`.
 - Additional diagnostic: calling `window.mosbot.dashboard.chatAnswer(requestId, {choice:'deny'})` directly on B returns `{ok:true}` (the response frame is sent), yet A's `session.resume` still reports the request as open. This points to server-side ownership/routing of the response rather than a client-side answer failure.
 - Working hypothesis: after the notification click, B's denial response may be handled by a gateway process/transport that does not own the request (the deployment runs `gateway_mode=multiplex`, and multiple gateway processes may be load-balanced), or the gateway does not settle a shared request across clients. This needs server-side investigation; the client cannot reconcile a request the gateway still reports as open.
 - Reports: `docs/evidence/tmp/unopened-approval-2026-11-09T16-28-28-115Z.json`, `...16-31-23-687Z.json`, `...16-35-42-435Z.json`, `...16-42-51-197Z.json`, `...16-52-04-913Z.json`.
+
+## Server-side analysis (Issue #19)
+
+The deployment source is `~/.hermes/hermes-agent` at `bf0203a794`; relevant files are `tui_gateway/server_requests.py` and `tui_gateway/methods_session.py`.
+
+- `resolve_response()` pops the request from the process-local `_open` registry and sets the waiter's result/event. It does **not** emit `request.cancel` to the other clients attached to the session.
+- The client comment in `src/main/dashboard/chat.ts` already describes this: "The gateway does not push when another client answers a shared request; it only leaves it out of `session.resume`'s `open_requests`."
+- That works only while the answering response reaches the same gateway process that owns `_open`. If the response is handled by a different process/transport (multiplex / multiple gateway processes), the owner's `_open` never changes and every later `session.resume` keeps reporting the request as open.
+- Client-side reconciliation cannot fix this: A's poll is running, `session.resume` succeeds, and the gateway still returns the request in `open_requests`.
+
+### Possible server fixes
+
+1. Route a response to the gateway process/session that owns the request (sticky session or shared request registry).
+2. On settlement, broadcast `request.cancel {id, method, reason: "resolved-elsewhere"}` to the other clients attached to the session. The renderer already maps this reason to the "Handled in another window" receipt.
+3. If broadcast is not possible, expose a session-scoped resolved-request list/event so clients can reconcile without relying on `open_requests`.
+
+### Verification after a server change
+
+- Re-run `node scripts/gui-unopened-approval.mjs`; A must fold the card within one 5 s poll interval and the script's final step must pass.
