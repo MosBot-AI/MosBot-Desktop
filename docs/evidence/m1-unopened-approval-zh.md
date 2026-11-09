@@ -54,5 +54,6 @@
   - A、B 使用同一存储会话 `20261109_165353_027a2b` / runtime `eb4fc695`，请求 id 也相同（`srq-...`）。
   - A 的 chat manager 连接正常、请求轮询在运行、`session.resume` 成功且无错误，但 A 的 `openRequestIds` 仍包含该请求。
   - B 拒绝后本地请求列表为空，但 gateway 给 A 的 `session.resume` 仍报告该请求打开。
-- 工作假设：通知点击后 B 的拒绝响应可能落到不拥有该请求的 gateway worker/transport（部署为 `gateway_mode=multiplex`），或 gateway 不会跨客户端结算共享请求。需要服务端排查；客户端无法对 gateway 仍报告为打开的请求做回执折叠。
+- 补充诊断：在 B 上直接调用 `window.mosbot.dashboard.chatAnswer(requestId, {choice:'deny'})` 返回 `{ok:true}`（响应帧已发出），但 A 的 `session.resume` 仍报告该请求打开。这说明问题在服务端对响应的归属/路由，而不是客户端没有发送回答。
+- 工作假设：通知点击后 B 的拒绝响应可能落到不拥有该请求的 gateway 进程/transport（部署为 `gateway_mode=multiplex`，且可能有多进程负载均衡），或 gateway 不会跨客户端结算共享请求。需要服务端排查；客户端无法对 gateway 仍报告为打开的请求做回执折叠。
 - 报告：`docs/evidence/tmp/unopened-approval-2026-11-09T16-28-28-115Z.json`、`...16-31-23-687Z.json`、`...16-35-42-435Z.json`、`...16-42-51-197Z.json`、`...16-52-04-913Z.json`。
