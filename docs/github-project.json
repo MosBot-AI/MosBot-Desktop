@@ -1,0 +1,199 @@
+{
+  "owner": "MosBot-AI",
+  "repository": "MosBot-AI/MosBot-Desktop",
+  "projectNumber": 4,
+  "projectId": "PVT_kwDOFIcP2s4BqyP2",
+  "url": "https://github.com/orgs/MosBot-AI/projects/4",
+  "fields": {
+    "Status": {
+      "id": "PVTSSF_lADOFIcP2s4BqyP2zhpHxOQ",
+      "options": {
+        "Todo": "c9cd397c",
+        "In progress": "076f7027",
+        "Blocked": "941cff7c",
+        "In review": "c43bcb4a",
+        "Done": "050cbfa2"
+      }
+    },
+    "Priority": {
+      "id": "PVTSSF_lADOFIcP2s4BqyP2zhpHxVU",
+      "options": {
+        "P0 Launch blocker": "63f6d06b",
+        "P1 Launch should-have": "be5a77d0",
+        "P2 Later": "4308d298"
+      }
+    },
+    "Verification": {
+      "id": "PVTSSF_lADOFIcP2s4BqyP2zhpHxWY",
+      "options": {
+        "Verified": "256b9262",
+        "Partially verified": "1fb16040",
+        "Pending": "51d28e0f",
+        "Blocked": "491751ab"
+      }
+    },
+    "Phase": {
+      "id": "PVTSSF_lADOFIcP2s4BqyP2zhpHyZA",
+      "options": {
+        "M0a": "36fdc8ba",
+        "M0b": "1c5fb08f",
+        "M0c": "234ebc9b",
+        "M1": "ef68f966",
+        "M2": "cd97b7d4",
+        "M3": "b0fd7f81",
+        "M4": "a892300b",
+        "M5": "28b513b6",
+        "M6": "28442f57"
+      }
+    },
+    "Item type": {
+      "id": "PVTSSF_lADOFIcP2s4BqyP2zhpHxWk",
+      "options": {
+        "Plan card": "194ba2ef",
+        "Blocker": "db325ccd",
+        "Acceptance": "48782d17"
+      }
+    },
+    "Evidence": {
+      "id": "PVTF_lADOFIcP2s4BqyP2zhpHyZE"
+    }
+  },
+  "issues": {
+    "1": {
+      "title": "M0a · Design slice: runnable window and visual baseline",
+      "state": "open",
+      "milestone": "M0a · Design slice",
+      "labels": ["type:plan", "phase:m0a", "priority:p0", "needs:user"],
+      "itemId": "PVTI_lADOFIcP2s4BqyP2zhHFpU4",
+      "url": "https://github.com/MosBot-AI/MosBot-Desktop/issues/1"
+    },
+    "2": {
+      "title": "M0b · Protocol and deployment probes: real-service capability matrix",
+      "state": "closed",
+      "milestone": "M0b · Protocol and deployment probes",
+      "labels": ["type:plan", "phase:m0b", "priority:p0"],
+      "itemId": "PVTI_lADOFIcP2s4BqyP2zhHFpXI",
+      "url": "https://github.com/MosBot-AI/MosBot-Desktop/issues/2"
+    },
+    "3": {
+      "title": "M0c · Backend dependency closure",
+      "state": "open",
+      "milestone": "M0c · Backend dependency closure",
+      "labels": ["type:plan", "phase:m0c", "priority:p1", "needs:server"],
+      "itemId": "PVTI_lADOFIcP2s4BqyP2zhHFpYs",
+      "url": "https://github.com/MosBot-AI/MosBot-Desktop/issues/3"
+    },
+    "4": {
+      "title": "M1 · Chat vertical slice",
+      "state": "open",
+      "milestone": "M1 · Chat vertical slice",
+      "labels": ["type:plan", "phase:m1", "priority:p0"],
+      "itemId": "PVTI_lADOFIcP2s4BqyP2zhHFpaY",
+      "url": "https://github.com/MosBot-AI/MosBot-Desktop/issues/4"
+    },
+    "5": {
+      "title": "M2 · Bot creation and organizing",
+      "state": "open",
+      "milestone": "M2 · Bot creation and organizing",
+      "labels": ["type:plan", "phase:m2", "priority:p0"],
+      "itemId": "PVTI_lADOFIcP2s4BqyP2zhHFpc8",
+      "url": "https://github.com/MosBot-AI/MosBot-Desktop/issues/5"
+    },
+    "6": {
+      "title": "M3 · Hermes workbench",
+      "state": "open",
+      "milestone": "M3 · Hermes workbench",
+      "labels": ["type:plan", "phase:m3", "priority:p0"],
+      "itemId": "PVTI_lADOFIcP2s4BqyP2zhHFpfE",
+      "url": "https://github.com/MosBot-AI/MosBot-Desktop/issues/6"
+    },
+    "7": {
+      "title": "M4 · Artifacts and computer",
+      "state": "open",
+      "milestone": "M4 · Artifacts and computer",
+      "labels": ["type:plan", "phase:m4", "priority:p0", "needs:server"],
+      "itemId": "PVTI_lADOFIcP2s4BqyP2zhHFphE",
+      "url": "https://github.com/MosBot-AI/MosBot-Desktop/issues/7"
+    },
+    "8": {
+      "title": "M5 · Release and daily-use acceptance",
+      "state": "open",
+      "milestone": "M5 · Release and daily-use acceptance",
+      "labels": ["type:plan", "phase:m5", "priority:p0", "needs:user"],
+      "itemId": "PVTI_lADOFIcP2s4BqyP2zhHFpjk",
+      "url": "https://github.com/MosBot-AI/MosBot-Desktop/issues/8"
+    },
+    "9": {
+      "title": "M6 · Capability expansion",
+      "state": "open",
+      "milestone": "M6 · Capability expansion",
+      "labels": ["type:plan", "phase:m6", "priority:p2"],
+      "itemId": "PVTI_lADOFIcP2s4BqyP2zhHFplo",
+      "url": "https://github.com/MosBot-AI/MosBot-Desktop/issues/9"
+    },
+    "10": {
+      "title": "Blocker · macOS notification banner visual and real click need user confirmation",
+      "state": "open",
+      "milestone": "M1 · Chat vertical slice",
+      "labels": ["type:acceptance", "phase:m1", "priority:p0", "needs:user"],
+      "itemId": "PVTI_lADOFIcP2s4BqyP2zhHFpoE",
+      "url": "https://github.com/MosBot-AI/MosBot-Desktop/issues/10"
+    },
+    "11": {
+      "title": "Decision · First-release signing: internal signing; Developer ID/notarization deferred",
+      "state": "closed",
+      "milestone": "M5 · Release and daily-use acceptance",
+      "labels": ["type:blocker", "phase:m5", "priority:p1", "needs:certificate"],
+      "itemId": "PVTI_lADOFIcP2s4BqyP2zhHFppc",
+      "url": "https://github.com/MosBot-AI/MosBot-Desktop/issues/11"
+    },
+    "12": {
+      "title": "Acceptance · Clean install on a second Mac or a new user",
+      "state": "open",
+      "milestone": "M5 · Release and daily-use acceptance",
+      "labels": ["type:acceptance", "phase:m5", "priority:p0", "needs:user"],
+      "itemId": "PVTI_lADOFIcP2s4BqyP2zhHFpq0",
+      "url": "https://github.com/MosBot-AI/MosBot-Desktop/issues/12"
+    },
+    "13": {
+      "title": "Acceptance · Seven consecutive days of dogfooding",
+      "state": "open",
+      "milestone": "M5 · Release and daily-use acceptance",
+      "labels": ["type:acceptance", "phase:m5", "priority:p0", "needs:user"],
+      "itemId": "PVTI_lADOFIcP2s4BqyP2zhHFps0",
+      "url": "https://github.com/MosBot-AI/MosBot-Desktop/issues/13"
+    },
+    "14": {
+      "title": "Blocker · Computer non-preemptive lease: server patch deployment and re-verification",
+      "state": "open",
+      "milestone": "M0c · Backend dependency closure",
+      "labels": ["type:blocker", "phase:m0c", "priority:p2", "needs:server"],
+      "itemId": "PVTI_lADOFIcP2s4BqyP2zhHFpu4",
+      "url": "https://github.com/MosBot-AI/MosBot-Desktop/issues/14"
+    },
+    "15": {
+      "title": "Blocker · /api/files lacks the artifact source-message field",
+      "state": "open",
+      "milestone": "M4 · Artifacts and computer",
+      "labels": ["type:blocker", "phase:m4", "priority:p1", "needs:server"],
+      "itemId": "PVTI_lADOFIcP2s4BqyP2zhHFpxw",
+      "url": "https://github.com/MosBot-AI/MosBot-Desktop/issues/15"
+    },
+    "16": {
+      "title": "Blocker · Unconfigured-model environment: verify the real configuration path",
+      "state": "open",
+      "milestone": "M2 · Bot creation and organizing",
+      "labels": ["type:blocker", "phase:m2", "priority:p1", "needs:server"],
+      "itemId": "PVTI_lADOFIcP2s4BqyP2zhHFpz0",
+      "url": "https://github.com/MosBot-AI/MosBot-Desktop/issues/16"
+    },
+    "17": {
+      "title": "Blocker · Plugin-disabled state needs real deployment verification",
+      "state": "open",
+      "milestone": "M3 · Hermes workbench",
+      "labels": ["type:blocker", "phase:m3", "priority:p1", "needs:server"],
+      "itemId": "PVTI_lADOFIcP2s4BqyP2zhHFp18",
+      "url": "https://github.com/MosBot-AI/MosBot-Desktop/issues/17"
+    }
+  }
+}
