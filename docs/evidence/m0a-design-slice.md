@@ -3,7 +3,7 @@
 [简体中文](m0a-design-slice-zh.md)
 
 - Card: M0a (see `docs/plans/03-agent-handoff.md`)
-- Status: **UI slice is runnable; awaiting the user's hands-on acceptance before the visual baseline is frozen**; M0a is not yet closed
+- Status: **User confirmed the visual baseline on 2026-11-09; the baseline is frozen and M0a is closed**
 - Recorded: 2026-11-03
 - Data source: **fixture** (deterministic, redacted design samples); contains no real Dashboard data
 
@@ -71,17 +71,11 @@ Screenshots contain only content rendered inside the window; the native macOS ti
 4. Launching Electron in this session requires `--no-sandbox --disable-gpu --user-data-dir=.tmp/...` (the DSH file sandbox does not allow Chromium to write `~/Library` or initialize its own sandbox); running `pnpm dev` in the user's own terminal does not need these flags, and the E2E scripts only append them in the test environment.
 5. Packaged as an unsigned directory build; signing/notarization/install-upgrade happen only in M5.
 
-## Awaiting User Acceptance
+## User Acceptance (2026-11-09)
 
-Please run in a real window (this machine has no global pnpm; dependencies are already installed and `npm run` uses the repo's `node_modules/.bin`):
+The user operated the current packaged build in a real window and **confirmed the visual baseline on 2026-11-09**. Layout, density, Bot switching and right-panel feel were accepted; the visual baseline is frozen and M0a is closed.
 
-```bash
-npm run dev        # or npx pnpm@11.28.5 dev
-```
-
-To reinstall dependencies: `npx pnpm@11.28.5 install` (`pnpm` is also pinned as a devDependency; Electron Forge relies on it for packaging checks).
-
-Check against `docs/plans/01-bot-experience.md`: left-column proportion and density, three pinned columns, section collapse, long Chinese name truncation, bubble width and line height, nameplate click, right-panel drag feel, search and create sheets, light/dark and zh/en switching. Record conclusions and pending adjustments for "layout / density / Bot switching / right-panel feel"; after approval, freeze the visual baseline and move on to the M1 real link.
+Manual follow-ups that do not block the baseline stay tracked by M5: hardware Chinese IME composition, VoiceOver reading order, 4K/split-screen scaling and native window traffic lights. See `m5-gui-a11y.md`.
 
 ## Not Verified / Blocked
 
