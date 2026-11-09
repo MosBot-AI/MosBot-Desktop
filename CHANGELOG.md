@@ -445,6 +445,8 @@ comparison links stay local anchors until the first signed tag exists.
 
 ### Fixed
 
+- A duplicate `resolved-elsewhere` cancellation no longer overwrites the local approval receipt when the
+  server broadcasts a settlement to every client.
 - A system-notification click now refreshes the Bot roster and opens the matching
   Bot even when that Bot was created by another client after the roster was loaded;
   previously only the window came to the front.

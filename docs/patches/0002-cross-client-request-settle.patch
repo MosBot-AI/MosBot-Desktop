@@ -1,0 +1,33 @@
+--- a/tui_gateway/server.py
++++ b/tui_gateway/server.py
+@@ -709,8 +709,16 @@
+         # die at stdio below.
+         project_room_member_activity(obj, _sessions)
+         sid = ((params or {}).get("session_id")) if isinstance(params, dict) else ""
+-        if sid and (t := (_sessions.get(sid) or {}).get("transport")) is not None:
+-            return t.write(obj)
++        if sid:
++            # Multi-client sessions: every attached answering client needs the event.
++            clients = _session_answering_clients(sid)
++            if clients:
++                ok = True
++                for client in clients:
++                    ok = client.write(obj) and ok
++                return ok
++            if (t := (_sessions.get(sid) or {}).get("transport")) is not None:
++                return t.write(obj)
+     return (current_transport() or _stdio_transport).write(obj)
+ 
+ 
+--- a/tui_gateway/server_requests.py
++++ b/tui_gateway/server_requests.py
+@@ -275,6 +275,9 @@
+     if req.on_result is not None:
+         req.on_result(req.result)
+     req.event.set()
++    # Other clients attached to the session still hold this card; tell them it was
++    # settled elsewhere instead of relying on a later session.resume snapshot.
++    _emit_cancel(req, "resolved-elsewhere")
+     return True
+ 
+ 

@@ -1097,8 +1097,11 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
       };
     case 'live-request-cancel': {
       // Another client settled the shared request: keep a receipt so this window
-      // does not silently lose the card.
-      const handledElsewhere = action.reason === 'resolved-elsewhere';
+      // does not silently lose the card. A server-side broadcast may also reach
+      // the client that answered; never overwrite its local receipt with "remote".
+      const handledElsewhere =
+        action.reason === 'resolved-elsewhere' &&
+        state.live.receipts[action.requestId] === undefined;
       return {
         ...state,
         live: {

@@ -603,3 +603,24 @@ describe('local state persistence', () => {
     expect(hydrated.remoteOrg.sections[0]?.title).toBe('产品');
   });
 });
+
+describe('live request cancellation', () => {
+  it('keeps the local receipt when a duplicate resolved-elsewhere cancel arrives', () => {
+    let state = build();
+    state = reduceAppState(state, {
+      type: 'live-request',
+      request: { id: 'srq-1', method: 'approval', payload: {} },
+    });
+    state = reduceAppState(state, {
+      type: 'live-request-resolved',
+      requestId: 'srq-1',
+      receipt: 'deny',
+    });
+    state = reduceAppState(state, {
+      type: 'live-request-cancel',
+      requestId: 'srq-1',
+      reason: 'resolved-elsewhere',
+    });
+    expect(state.live.receipts['srq-1']).toBe('deny');
+  });
+});

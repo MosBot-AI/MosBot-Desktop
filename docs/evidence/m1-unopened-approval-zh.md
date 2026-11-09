@@ -76,3 +76,10 @@
 ### 服务端改动后的复验
 
 - 重新运行 `node scripts/gui-unopened-approval.mjs`；A 必须在一个 5 秒轮询周期内折成回执，脚本最后一步必须通过。
+
+### 参考服务端补丁
+
+- `docs/patches/0002-cross-client-request-settle.patch` 可干净应用到部署源码（`bf0203a794` 上 `git apply --check` 通过）。
+- 它让会话事件帧到达所有已附着的可应答客户端（不再只发给会话的单一 transport），并在响应结算请求时发出 `request.cancel {reason: "resolved-elsewhere"}`。
+- 客户端现在在已有本地回执时忽略重复的 `resolved-elsewhere` 取消，避免回答方自己的回执被覆盖。
+- 补丁**未部署**；#19 仍阻塞，直到服务端应用并让 `scripts/gui-unopened-approval.mjs` 端到端通过。

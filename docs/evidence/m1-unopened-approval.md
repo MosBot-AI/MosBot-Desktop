@@ -70,3 +70,10 @@ The deployment source is `~/.hermes/hermes-agent` at `bf0203a794`; relevant file
 ### Verification after a server change
 
 - Re-run `node scripts/gui-unopened-approval.mjs`; A must fold the card within one 5 s poll interval and the script's final step must pass.
+
+### Reference server patch
+
+- `docs/patches/0002-cross-client-request-settle.patch` applies cleanly to the deployment source (`git apply --check` passes at `bf0203a794`).
+- It makes session event frames reach every attached answering client (not just the session's single transport) and emits `request.cancel {reason: "resolved-elsewhere"}` when a response settles a request.
+- The client now ignores a duplicate `resolved-elsewhere` cancel when it already holds a local receipt, so the answering client's own receipt is not overwritten.
+- The patch is **not deployed**; #19 remains blocked until the server applies it and `scripts/gui-unopened-approval.mjs` passes end to end.
