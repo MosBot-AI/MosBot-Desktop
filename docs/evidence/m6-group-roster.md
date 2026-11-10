@@ -13,7 +13,7 @@
   `chatListGroups()` bridge/preload/IPC method.
 - Renderer stores the read-only room list in `remote.groups` and fetches it once a Bot Chat connection is live.
 - Sidebar renders a "Groups" section with one row per room (group avatar cluster, name, member count).
-- Clicking a group opens a conversation: member messages show an avatar, display name and bubble; user messages are right-aligned; date separators and per-message times; internal events are centered pills; pending approvals/retries are inline cards. The composer is wired to `groups.send` with a derived `thread_id` and a client event id.
+- Clicking a group opens a conversation with a centered group nameplate (avatar cluster, name, member count), member messages with avatar/display name/bubble, right-aligned user bubbles, date separators, centered system notices and inline approval/retry cards. The composer is wired to `groups.send` with a derived `thread_id` and a client event id.
 - The sidebar Groups section has a create button and a small create dialog (name + 2–6 local profiles); on success the roster refreshes and the new room opens.
 - The group view can disband a room after an explicit confirmation; the roster refreshes and the selection clears.
 - The message list is an ARIA log (`aria-live=polite`) for polled additions.

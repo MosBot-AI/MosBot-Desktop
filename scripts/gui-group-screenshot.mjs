@@ -54,20 +54,17 @@ async function main() {
   try {
     await page.getByRole('button', { name: '新建群聊' }).click();
     await page.getByLabel('群名称').fill(name);
-    const probeNames = await page.evaluate(() => {
+    const probeIndexes = await page.evaluate(() => {
       const bots = window.__mosbotDiag?.state?.()?.remote?.bots ?? [];
       return bots
-        .map((bot) => bot.displayName)
-        .filter((display) => /mosbot|probe|qa|accept/i.test(display))
-        .slice(0, 2);
+        .map((bot, index) => ({ display: bot.displayName, index }))
+        .filter((entry) => /mosbot|probe|qa|accept/i.test(entry.display))
+        .slice(0, 2)
+        .map((entry) => entry.index);
     });
-    if (probeNames.length === 2) {
-      for (const display of probeNames) {
-        await page
-          .locator('label')
-          .filter({ hasText: display })
-          .locator('input[type=checkbox]')
-          .check();
+    if (probeIndexes.length === 2) {
+      for (const index of probeIndexes) {
+        await page.getByRole('checkbox').nth(index).check();
       }
     } else {
       await page.getByRole('checkbox').nth(0).check();
@@ -75,12 +72,20 @@ async function main() {
     }
     await page.getByRole('button', { name: '创建', exact: true }).click();
     await page.waitForFunction(
-      (expected) => (document.querySelector('h2')?.textContent ?? '') === expected,
+      (expected) =>
+        (window.__mosbotDiag?.state?.()?.remote?.groups ?? []).some(
+          (group) => group.name === expected,
+        ),
       name,
       { timeout: 30_000 },
     );
     roomId = await page.evaluate(
       () => window.__mosbotDiag?.state?.()?.remote?.selectedGroupId ?? null,
+    );
+    await page.waitForFunction(
+      (expected) => (document.querySelector('h2')?.textContent ?? '') === expected,
+      name,
+      { timeout: 30_000 },
     );
     await page.getByRole('textbox').fill('大家好，请每位成员用一句话打个招呼，然后结束。');
     await page.getByRole('button', { name: '发送', exact: true }).click();

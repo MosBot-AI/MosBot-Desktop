@@ -8,18 +8,20 @@
 }
 
 .header {
+  position: relative;
   display: flex;
   flex: none;
   align-items: center;
-  gap: var(--space-3);
-  min-height: 60px;
-  padding: var(--space-2) var(--space-4);
+  justify-content: center;
+  height: 52px;
+  padding: 0 var(--space-4);
   border-bottom: 1px solid var(--border-subtle);
   -webkit-app-region: drag;
 }
 
 .back {
-  flex: none;
+  position: absolute;
+  left: var(--space-3);
   width: 28px;
   height: 28px;
   border: 0;
@@ -37,69 +39,50 @@
   color: var(--text-primary);
 }
 
-.headerText {
+.nameplate {
   display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: min(52%, 380px);
+  height: 32px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-nameplate);
+  color: var(--text-primary);
+  font: inherit;
+  cursor: default;
+  -webkit-app-region: no-drag;
+}
+
+.nameplate:hover {
+  background: var(--surface-hover);
 }
 
 .name {
   margin: 0;
   overflow: hidden;
-  color: var(--text-primary);
-  font-size: var(--text-md);
+  font-size: var(--text-sm);
   font-weight: 600;
-  line-height: var(--leading-tight);
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
-.subtitle {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
+.nameplateStatus {
+  flex: none;
   color: var(--text-tertiary);
   font-size: var(--text-xs);
   white-space: nowrap;
 }
 
 .headerActions {
+  position: absolute;
+  right: var(--space-3);
   display: flex;
-  flex: none;
   align-items: center;
   gap: var(--space-2);
   -webkit-app-region: no-drag;
-}
-
-.headerButton,
-.headerDanger {
-  height: 26px;
-  padding: 0 var(--space-2);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-pill);
-  background: var(--surface-raised);
-  color: var(--text-secondary);
-  font: inherit;
-  font-size: var(--text-xs);
-  cursor: pointer;
-}
-
-.headerButton:hover:not(:disabled) {
-  background: var(--surface-hover);
-  color: var(--text-primary);
-}
-
-.headerDanger {
-  color: var(--accent-danger);
-}
-
-.headerButton:disabled,
-.headerDanger:disabled {
-  opacity: 0.5;
-  cursor: default;
 }
 
 .confirmBar {
@@ -231,13 +214,6 @@
   line-height: var(--leading-normal);
   overflow-wrap: anywhere;
   user-select: text;
-}
-
-.time {
-  margin: 3px var(--space-1) 0;
-  color: var(--text-tertiary);
-  font-size: 10px;
-  font-variant-numeric: tabular-nums;
 }
 
 .systemRow {

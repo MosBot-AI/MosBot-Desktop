@@ -168,24 +168,25 @@ export function GroupView(): ReactElement {
         >
           ←
         </button>
-        <GroupAvatar
-          seed={roomId ?? detail?.name ?? 'group'}
-          count={detail?.memberCount ?? 0}
-          members={detail?.members ?? []}
-          size={42}
-          label={detail?.name ?? t('group.title')}
-        />
-        <div className={styles.headerText}>
+        <div
+          className={styles.nameplate}
+          title={
+            driverLabel === null
+              ? (detail?.name ?? t('group.title'))
+              : `${detail?.name ?? t('group.title')} · ${t('group.driver', { status: driverLabel })}`
+          }
+        >
+          <GroupAvatar
+            seed={roomId ?? detail?.name ?? 'group'}
+            count={detail?.memberCount ?? 0}
+            members={detail?.members ?? []}
+            size={24}
+            label={detail?.name ?? t('group.title')}
+          />
           <h2 className={styles.name}>{detail?.name ?? t('group.title')}</h2>
-          <div className={styles.subtitle}>
-            <span>{t('sidebar.groupMembers', { count: detail?.memberCount ?? 0 })}</span>
-            {driverLabel === null ? null : (
-              <span>{t('group.driver', { status: driverLabel })}</span>
-            )}
-            {detail?.working === true ? <span>{t('group.working')}</span> : null}
-            {detail?.blocked === true ? <span>{t('group.blocked')}</span> : null}
-            {stopNotice === null ? null : <span>{stopNotice}</span>}
-          </div>
+          <span className={styles.nameplateStatus}>
+            {t('sidebar.groupMembers', { count: detail?.memberCount ?? 0 })}
+          </span>
         </div>
         <div className={styles.headerActions}>
           <button
@@ -257,6 +258,7 @@ export function GroupView(): ReactElement {
             {historyError}
           </p>
         )}
+        {stopNotice === null ? null : <p className={styles.notice}>{stopNotice}</p>}
         {loading ? <p className={styles.notice}>{t('group.loading')}</p> : null}
         {error === null ? null : (
           <p className={styles.error} role="alert">
@@ -294,7 +296,6 @@ export function GroupView(): ReactElement {
                     <div className={styles.userBubble}>
                       <RichText text={eventText(event)} />
                     </div>
-                    <time className={styles.time}>{timeLabel(event.createdAt)}</time>
                   </li>
                 </Fragment>
               );
@@ -325,7 +326,6 @@ export function GroupView(): ReactElement {
                       <div className={styles.memberBubble}>
                         <RichText text={eventText(event)} />
                       </div>
-                      <time className={styles.time}>{timeLabel(event.createdAt)}</time>
                     </div>
                   </li>
                 </Fragment>
