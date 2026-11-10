@@ -162,4 +162,22 @@ export const clientCapabilitiesSchema = z
 /** `{error: "session_expired"}` body of a rejected native refresh. */
 export const sessionExpiredSchema = z.object({ error: z.string() });
 
+const groupRowSchema = z
+  .object({
+    room_id: z.string(),
+    name: z.string(),
+    members: z.array(z.unknown()).optional(),
+    updated_at: z.number().optional(),
+    latest_seq: z.number().optional(),
+  })
+  .catchall(z.unknown());
+
+/** `groups.list` response; the hosted-room plugin may be absent on older deployments. */
+export const groupListSchema = z
+  .object({
+    rooms: z.array(groupRowSchema),
+    next_offset: z.number().nullish(),
+  })
+  .catchall(z.unknown());
+
 export const emptySchema = z.unknown();

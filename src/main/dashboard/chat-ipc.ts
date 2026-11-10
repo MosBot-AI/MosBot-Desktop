@@ -4,6 +4,7 @@ import {
   protocolError,
   type ChatOpenResult,
   type DashboardChatEvent,
+  type RemoteGroup,
   type Result,
 } from '../../shared/protocol';
 import type { ChatManager } from './chat';
@@ -76,6 +77,8 @@ export function registerChatIpc(options: {
   });
 
   handle<void>(DASHBOARD_CHANNELS.chatStop, () => chat.stop());
+
+  handle<readonly RemoteGroup[]>(DASHBOARD_CHANNELS.chatListGroups, () => chat.listGroups());
 
   handle<void>(DASHBOARD_CHANNELS.chatAnswer, (requestId, result) => {
     if (!isBoundedString(requestId, MAX_STORED_ID_LENGTH)) {

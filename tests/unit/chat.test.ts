@@ -69,6 +69,20 @@ function createFakeGateway(options: GatewayOptions, replay?: FakeReplay): FakeGa
     if (method === 'session.list') {
       return { sessions: [] };
     }
+    if (method === 'groups.list') {
+      return {
+        rooms: [
+          {
+            room_id: 'room-1',
+            name: 'Design room',
+            members: [{ id: 'member-1' }, { id: 'member-2' }],
+            updated_at: 123,
+            latest_seq: 9,
+          },
+        ],
+        next_offset: null,
+      };
+    }
     if (method === 'session.events.since' && replay !== undefined) {
       return {
         events: replay.events,
@@ -817,5 +831,36 @@ describe('live transcript', () => {
       phase: 'start',
       name: 'shell',
     });
+  });
+});
+
+describe('chat manager groups', () => {
+  it('lists hosted groups through the live gateway', async () => {
+    const manager = createChatManager({
+      auth: fakeAuth,
+      fetchImpl: async () => ({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        text: async () => '{"ticket":"t","ttl_seconds":30}',
+      }),
+      connect: async (options) => ({ ok: true, data: createFakeGateway(options).client }),
+    });
+    const opened = await manager.open('bot-1', null);
+    expect(opened.ok).toBe(true);
+    const groups = await manager.listGroups();
+    expect(groups).toEqual({
+      ok: true,
+      data: [
+        {
+          roomId: 'room-1',
+          name: 'Design room',
+          memberCount: 2,
+          updatedAt: 123,
+          latestSeq: 9,
+        },
+      ],
+    });
+    manager.close();
   });
 });

@@ -28,6 +28,7 @@ import type {
   ProbeReport,
   RemoteBot,
   RemoteChat,
+  RemoteGroup,
   Result,
 } from './protocol';
 
@@ -199,6 +200,8 @@ export interface MosBotDashboardBridge {
   chatStop(): Promise<Result<void>>;
   /** Answers a server→client approval/clarify request. */
   chatAnswer(requestId: string, result: Readonly<Record<string, unknown>>): Promise<Result<void>>;
+  /** Read-only hosted-room list for the M6 group roster. */
+  chatListGroups(): Promise<Result<readonly RemoteGroup[]>>;
   /** Picks a file with the system dialog, stages it in the live session and returns its reference. */
   attachFile(): Promise<Result<{ name: string; refText: string }>>;
   /** Subscribes to live turn events; returns an unsubscribe function. */
@@ -273,6 +276,7 @@ export const DASHBOARD_CHANNELS = {
   chatSend: 'mosbot:dashboard:chatSend',
   chatStop: 'mosbot:dashboard:chatStop',
   chatAnswer: 'mosbot:dashboard:chatAnswer',
+  chatListGroups: 'mosbot:dashboard:chatListGroups',
   chatAttachFile: 'mosbot:dashboard:chatAttachFile',
   chatEvent: 'mosbot:dashboard:chatEvent',
   pendingEvent: 'mosbot:dashboard:pendingEvent',

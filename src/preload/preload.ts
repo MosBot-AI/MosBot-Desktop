@@ -36,6 +36,7 @@ import type {
   ProbeReport,
   RemoteBot,
   RemoteChat,
+  RemoteGroup,
   Result,
 } from '../shared/protocol';
 
@@ -280,6 +281,11 @@ const bridge: Omit<MosBotBridge, 'openExternal' | 'menu' | 'local' | 'computer'>
     ): Promise<Result<void>> {
       return ipcRenderer.invoke(DASHBOARD_CHANNELS.chatAnswer, requestId, result) as Promise<
         Result<void>
+      >;
+    },
+    chatListGroups(): Promise<Result<readonly RemoteGroup[]>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.chatListGroups) as Promise<
+        Result<readonly RemoteGroup[]>
       >;
     },
     onPendingEvent(listener: (event: DashboardPendingEvent) => void): () => void {

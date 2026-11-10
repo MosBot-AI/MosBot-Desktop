@@ -15,6 +15,8 @@ comparison links stay local anchors until the first signed tag exists.
 
 ### Added
 
+- Group roster groundwork: the main-process chat manager can read the gateway's hosted-room list
+  (`groups.list`) and expose it through a narrow bridge method; the first UI slice is still pending.
 - Artifact library: the workspace listing now understands the deployment's
   `mtime` (epoch seconds) instead of only `modified_at`, so files sort by real
   modification time; dangling symlinks (`broken_link`) show a "resource deleted"

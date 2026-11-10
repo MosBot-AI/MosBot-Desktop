@@ -244,6 +244,14 @@ export interface RemoteBot {
   readonly messageCount: number;
 }
 
+export interface RemoteGroup {
+  readonly roomId: string;
+  readonly name: string;
+  readonly memberCount: number;
+  readonly updatedAt: number;
+  readonly latestSeq: number;
+}
+
 export interface WorkbenchSession {
   readonly id: string;
   readonly title: string;

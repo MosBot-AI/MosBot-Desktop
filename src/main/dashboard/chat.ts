@@ -3,6 +3,7 @@ import type {
   ChatServerRequest,
   ChatTurnStatus,
   DashboardChatEvent,
+  RemoteGroup,
   Result,
 } from '../../shared/protocol';
 import { protocolError } from '../../shared/protocol';
@@ -14,7 +15,7 @@ import {
   type RpcClient,
 } from './rpc';
 import { createStreamBatcher } from '../../shared/stream-batch';
-import { emptySchema } from './schemas';
+import { emptySchema, groupListSchema } from './schemas';
 import type { TransportFetch } from './transport';
 
 export interface ChatManagerDeps {
@@ -44,6 +45,8 @@ export interface ChatManager {
   attachFile(name: string, dataUrl: string): Promise<Result<{ name: string; refText: string }>>;
   stop(): Promise<Result<void>>;
   answer(requestId: string, result: Readonly<Record<string, unknown>>): Promise<Result<void>>;
+  /** Read-only hosted-room list for the M6 group roster. */
+  listGroups(): Promise<Result<readonly RemoteGroup[]>>;
   close(): void;
   state(): ChatState;
 }
@@ -665,6 +668,29 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
         emptySchema,
       );
       return result.ok ? { ok: true, data: undefined } : result;
+    },
+
+    async listGroups() {
+      if (client === null) {
+        return {
+          ok: false,
+          error: protocolError('unauthorized', 'The chat session is not connected.'),
+        };
+      }
+      const result = await client.call('groups.list', { limit: 50 }, groupListSchema);
+      if (!result.ok) {
+        return result;
+      }
+      return {
+        ok: true,
+        data: result.data.rooms.map((room) => ({
+          roomId: room.room_id,
+          name: room.name,
+          memberCount: room.members?.length ?? 0,
+          updatedAt: room.updated_at ?? 0,
+          latestSeq: room.latest_seq ?? 0,
+        })),
+      };
     },
 
     async answer(requestId, result) {
