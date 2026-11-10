@@ -3,7 +3,7 @@
 [English](m6-group-roster.md)
 
 - 卡片：M6（群聊自 2026-11-10 进入首版范围）
-- 状态：**只读名单、带成员标签与 Markdown 消息的状态/日志视图、创建弹层、输入框、发送、3 秒日志/状态轮询、停止、审批、错误呈现与模拟 socket 断开恢复已在真实服务验证；语音与附件在该部署不可用**
+- 状态：**只读名单、带成员标签与 Markdown 消息的状态/日志视图、创建弹层、输入框、发送、3 秒日志/状态轮询、停止、审批（拒绝与允许一次）、错误呈现与模拟 socket 断开恢复已在真实服务验证；语音与附件在该部署不可用**
 - 记录时间：2026-11-10
 - 目标服务：`192.168.2.171:9119`（v0.22.5 / `bf0203a794`）
 
@@ -26,7 +26,7 @@
   - `Mosbot Ui 041400、devbot` · 2 位成员
 - 点击第一个房间渲染视图：标题 `Group Chat`、50 条日志事件、最新序号 86、驱动 `running`、输入框与发送按钮存在。
 - 专用群验证：`node scripts/gui-group-send.mjs` 用两个本地 profile 创建临时群，发送一条消息，在群日志中找到该消息后解散群。
-- 群审批验证：`node scripts/gui-group-approval.mjs` 触发真实待审批、拒绝并确认清除；`node scripts/gui-group-approval-ui.mjs` 从弹层创建群、看到审批横幅、点击拒绝并确认清除（`created=true`、`approvalSeen=true`、`denied=true`、`cleared=true`、`disbanded=true`）。
+- 群审批验证：`node scripts/gui-group-approval.mjs` 触发真实待审批、拒绝并确认清除；`node scripts/gui-group-approval-ui.mjs` 从弹层创建群、看到审批横幅、点击拒绝并确认清除（`created=true`、`approvalSeen=true`、`denied=true`、`cleared=true`、`disbanded=true`）；`node scripts/gui-group-approval-allow.mjs` 用 UI 路径验证允许一次（`allowed=true`、`cleared=true`）。
 - 部署公布 18 个 `groups.*` 方法，不包含 `groups.attachment.*`；群附件属于部署能力缺口，不是客户端缺口。
 - 端到端 UI 验证：`node scripts/gui-group-create-send.mjs` 从弹层创建群、在输入框发送消息、由 3 秒轮询渲染出来、点击停止（`stopped=true`）并解散房间（`created=true`、`sent=true`、`rendered=true`、`disbanded=true`）。
 - 重连验证：`node scripts/gui-group-reconnect.mjs` 在群视图打开时断开 gateway socket；房间保持选中、detail/log 恢复、轮询错误清除（`recovered=true`）。重连状态太快未观察到（`sawReconnect=false`），因此这是模拟 socket 断开，不是真实断网。
