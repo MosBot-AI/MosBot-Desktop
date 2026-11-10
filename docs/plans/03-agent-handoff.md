@@ -2,7 +2,7 @@
 
 [简体中文](03-agent-handoff-zh.md)
 
-This document is for task handoff in a new chat or implementation branch. Deliver M0a/M0b first, establish M0c from the probe results, then advance M1–M5. Card status is not started, in progress, blocked, or accepted; stating a blocker is not the same as completing it. M6 is scheduled independently.
+This document is for task handoff in a new chat or implementation branch. Deliver M0a/M0b first, establish M0c from the probe results, then advance M1–M5. Card status is not started, in progress, blocked, or accepted; stating a blocker is not the same as completing it. M6 group chat is in first-release scope (user decision 2026-11-10); voice and attachments remain independent.
 
 ## Ready to Hand to the Main Agent
 
@@ -53,7 +53,7 @@ Each item keeps the missing evidence, patch location, minimum compatible version
 | M3 · Hermes workbench | The three subpages use real REST directly, and Kanban uses real WS cursor reconnects. Demonstrate configuration or state writes and read-back with isolated test objects, and verify the main UI restores the original chat. A disabled plugin shows a dedicated empty state while other pages still work |
 | M4 · Details and computer | File upload/artifact index → preview/save/open → computer status/wake/view → non-preemptive takeover/return. Delivering the read-only window first can count as progress, but closing M4 requires the complete real path and M0c closing evidence |
 | M5 · Release and daily use | Performance and bilingual/appearance/keyboard regression → signing and notarization → clean-install full flow → in-place upgrade from the previous beta and migration-failure recovery → 7 consecutive days of real daily use → final user acceptance. Record results for each item separately |
-| M6 · Group chat and voice | Schedule, implement, and accept separately based on their own M0b capability proof. Group chat and recording keep their original entry hierarchy per the reference recording |
+| M6 · Group chat and voice | Group chat core is implemented and in first-release scope; voice/attachments are scheduled and accepted separately when the deployment capability exists. Group chat keeps its own entry hierarchy per the reference recording |
 
 **Parallelization** is visuals and protocol first, with the Main Agent unifying interfaces. After M0a passes, expand the full UI; M1 and M2 collaborate on the frozen contract; M3 reuses M2's configuration logic; M4 waits for the corresponding capabilities; M5 closes only after M1–M4 are all accepted. Real login, service writes, GUI recording, and signing are serial. Blockers must record the owner, next action, and re-verification condition while independent work continues.
 

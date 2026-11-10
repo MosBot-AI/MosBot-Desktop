@@ -138,8 +138,7 @@ docs           方案（中文）、品牌来源、证据
 - **产物来源字段**：`/api/files` 没有来源消息字段，资料库无法显示产物来自哪条消息。
 - **插件禁用状态**与**未配置模型环境**未在目标部署验证。
 - **通知点击**：横幅与点击处理已验证；修复后尚未再次做真实鼠标点击，但同一 IPC 路径由 `scripts/gui-pending-open.mjs` 覆盖。
-- **剩余验收**：第二台 Mac/新用户干净安装与连续 7 天日用仍未完成；见
+- **剩余验收**：第二台 Mac/新用户干净安装与连续 7 天日用已由用户 2026-11-10 决定移出首版范围。剩余阻塞：服务端缺口 #15/#16/#17 与跨端回执 #19；见
   [`docs/evidence/final-checklist-zh.md`](docs/evidence/final-checklist-zh.md)。
 - **流式尾块**：块或回合结束前以纯文本显示，结束后切换为完整 Markdown（长回复的取舍）。
-- **群聊与语音**属于 M6，不在本构建内。部署已暴露群聊协议（`groups.*`）与 2 个 hosted rooms；该无头部署语音唤醒不可用。
-  见 [`docs/evidence/m6-capability-probe-zh.md`](docs/evidence/m6-capability-probe-zh.md)。
+- **群聊**已包含在本构建内：只读名单、创建群、状态/日志视图、发送、停止、审批与轮询。语音录音/转写与群附件仍受部署能力限制（`wake.status available=false`；部署未公布 `groups.attachment.*`），跟踪于 Issue #20。见 [`docs/evidence/m6-group-roster-zh.md`](docs/evidence/m6-group-roster-zh.md)。

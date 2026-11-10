@@ -172,10 +172,11 @@ project](https://github.com/orgs/MosBot-AI/projects/4) and its
 - **Plugin-disabled state** and **unconfigured-model environment** are not verified on the target deployment.
 - **Notification click**: the banner and click handler are verified; a real pointer click after the click fix has not been repeated,
   but the exact IPC handler is covered by `scripts/gui-pending-open.mjs`.
-- **Remaining acceptance**: clean install on a second Mac/new user and seven consecutive days of daily use are still open; see
+- **Remaining acceptance**: clean install on a second Mac/new user and seven consecutive days of daily use were moved out of
+  first-release scope by user decision (2026-11-10). Remaining blockers: server gaps #15/#16/#17 and the cross-client receipt #19; see
   [`docs/evidence/final-checklist.md`](docs/evidence/final-checklist.md).
 - **Streaming tail**: the last block renders as plain text until the block or turn ends, then switches to full Markdown (a deliberate
   long-reply tradeoff).
-- **Group chat and voice** are M6 scope and are not in this build. The deployment exposes the group-chat protocol (`groups.*`) and two
-  hosted rooms; voice wake is unavailable on the headless deployment. See
-  [`docs/evidence/m6-capability-probe.md`](docs/evidence/m6-capability-probe.md).
+- **Group chat** is in this build: read-only roster, group creation, state/log view, send, stop, approvals and polling. Voice
+  recording/transcription and group attachments remain deployment-bound (`wake.status available=false`; the deployment does not
+  advertise `groups.attachment.*`), tracked in Issue #20. See [`docs/evidence/m6-group-roster.md`](docs/evidence/m6-group-roster.md).
