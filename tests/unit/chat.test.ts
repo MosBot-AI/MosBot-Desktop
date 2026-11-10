@@ -121,6 +121,9 @@ function createFakeGateway(options: GatewayOptions, replay?: FakeReplay): FakeGa
     if (method === 'groups.disband') {
       return { tombstone: { room_id: 'new-room', disbanded_at: 2 } };
     }
+    if (method === 'groups.stop') {
+      return { cancelled: 0 };
+    }
     if (method === 'session.events.since' && replay !== undefined) {
       return {
         events: replay.events,
@@ -935,6 +938,8 @@ describe('chat manager groups', () => {
     }
     const disbanded = await manager.groupDisband('new-room');
     expect(disbanded.ok).toBe(true);
+    const stopped = await manager.groupStop('new-room');
+    expect(stopped.ok).toBe(true);
     manager.close();
   });
 });

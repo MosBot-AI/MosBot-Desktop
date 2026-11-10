@@ -147,6 +147,13 @@ export function registerChatIpc(options: {
     return chat.groupDisband(roomId);
   });
 
+  handle<void>(DASHBOARD_CHANNELS.chatGroupStop, (roomId) => {
+    if (!isBoundedString(roomId, MAX_STORED_ID_LENGTH)) {
+      return { ok: false, error: protocolError('invalid_url', 'A room id is required.') };
+    }
+    return chat.groupStop(roomId);
+  });
+
   handle<RemoteGroupLogPage>(DASHBOARD_CHANNELS.chatGroupLog, (roomId, sinceSeq, limit) => {
     if (!isBoundedString(roomId, MAX_STORED_ID_LENGTH)) {
       return { ok: false, error: protocolError('invalid_url', 'A room id is required.') };

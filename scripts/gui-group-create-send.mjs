@@ -57,6 +57,7 @@ async function main() {
   let created = false;
   let sent = false;
   let rendered = false;
+  let stopped = false;
   let disbanded = false;
   try {
     await page.getByRole('button', { name: '新建群聊' }).click();
@@ -85,6 +86,13 @@ async function main() {
       { timeout: 45_000 },
     );
     rendered = true;
+    await page.getByRole('button', { name: '停止', exact: true }).click();
+    await page.waitForFunction(
+      () => (document.body.textContent ?? '').includes('已停止'),
+      undefined,
+      { timeout: 30_000 },
+    );
+    stopped = true;
   } finally {
     if (roomId !== null) {
       disbanded = await page.evaluate(async (id) => {
@@ -103,12 +111,13 @@ async function main() {
     created,
     sent,
     rendered,
+    stopped,
     disbanded,
   };
   const reportPath = path.join(OUT_DIR, `group-create-send-${stamp}.json`);
   writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`);
   console.log(JSON.stringify(report));
-  if (!created || !sent || !rendered || !disbanded) {
+  if (!created || !sent || !rendered || !stopped || !disbanded) {
     process.exit(1);
   }
 }

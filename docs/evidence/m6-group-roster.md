@@ -3,7 +3,7 @@
 [简体中文](m6-group-roster-zh.md)
 
 - Card: M6 (group chat in first-release scope since 2026-11-10)
-- Status: **read-only roster, state/log view, create dialog, composer, send and 3 s log polling are verified end-to-end against the real service; stop/continue and approvals/attachments are next**
+- Status: **read-only roster, state/log view, create dialog, composer, send, 3 s log polling and stop are verified end-to-end against the real service; approvals/attachments are next**
 - Recorded: 2026-11-10
 - Target service: `192.168.2.171:9119` (v0.22.5 / `bf0203a794`)
 
@@ -25,12 +25,12 @@
   - `Mosbot Ui 041400、devbot` · 2 members
 - Clicking the first room rendered the view: heading `Group Chat`, 50 log events, latest seq 86, driver `running`, composer and send button present.
 - Dedicated-group verification: `node scripts/gui-group-send.mjs` created a temporary hosted room from two local profiles, sent one message, found it in the room log and disbanded the room.
-- End-to-end UI verification: `node scripts/gui-group-create-send.mjs` created a group from the dialog, sent a message from the composer, saw it rendered by the 3 s poll, and disbanded the room (`created=true`, `sent=true`, `rendered=true`, `disbanded=true`).
+- End-to-end UI verification: `node scripts/gui-group-create-send.mjs` created a group from the dialog, sent a message from the composer, saw it rendered by the 3 s poll, clicked Stop (`stopped=true`) and disbanded the room (`created=true`, `sent=true`, `rendered=true`, `disbanded=true`).
 - `vitest` 176 passed; typecheck/lint/format green.
 - Report (ignored working data): `docs/evidence/tmp/groups-roster-*.json`.
 
 ## Next
 
-1. Group stop/continue and error/reconnect states.
+1. Error/reconnect states and live-driver status in the group view.
 2. Group approvals and attachments.
 3. Voice recording/transcription stays separate until a capable deployment/device is available.

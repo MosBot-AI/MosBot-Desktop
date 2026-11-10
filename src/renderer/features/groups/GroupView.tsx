@@ -52,6 +52,8 @@ export function GroupView(): ReactElement {
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const [stopping, setStopping] = useState(false);
+  const [stopNotice, setStopNotice] = useState<string | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const threadId = threadIdFor(events);
 
@@ -85,6 +87,17 @@ export function GroupView(): ReactElement {
             {detail.driverStatus === null ? null : (
               <span>{t('group.driver', { status: detail.driverStatus })}</span>
             )}
+            <button
+              type="button"
+              className={styles.stop}
+              disabled={stopping}
+              onClick={() => {
+                void stop();
+              }}
+            >
+              {stopping ? t('group.stopping') : t('group.stop')}
+            </button>
+            {stopNotice === null ? null : <span>{stopNotice}</span>}
           </div>
         )}
       </header>
@@ -150,6 +163,33 @@ export function GroupView(): ReactElement {
       </footer>
     </div>
   );
+
+  async function stop(): Promise<void> {
+    const dashboard = window.mosbot?.dashboard;
+    if (dashboard === undefined || roomId === null) {
+      return;
+    }
+    setStopping(true);
+    setStopNotice(null);
+    const result = await dashboard.chatGroupStop(roomId);
+    if (!result.ok) {
+      setStopping(false);
+      setStopNotice(t('group.stopError'));
+      return;
+    }
+    setStopNotice(t('group.stopped'));
+    const [detail, log] = await Promise.all([
+      dashboard.chatGroupState(roomId),
+      dashboard.chatGroupLog(roomId, 0, 50),
+    ]);
+    if (detail.ok) {
+      dispatch({ type: 'group-detail', detail: detail.data });
+    }
+    if (log.ok) {
+      dispatch({ type: 'group-log', events: [...log.data.events] });
+    }
+    setStopping(false);
+  }
 
   async function send(): Promise<void> {
     const dashboard = window.mosbot?.dashboard;

@@ -227,6 +227,8 @@ export interface MosBotDashboardBridge {
   ): Promise<Result<RemoteGroup>>;
   /** Disbands a hosted room created by this gateway. */
   chatGroupDisband(roomId: string): Promise<Result<void>>;
+  /** Cancels queued or running work in a hosted room. */
+  chatGroupStop(roomId: string): Promise<Result<void>>;
   /** Picks a file with the system dialog, stages it in the live session and returns its reference. */
   attachFile(): Promise<Result<{ name: string; refText: string }>>;
   /** Subscribes to live turn events; returns an unsubscribe function. */
@@ -307,6 +309,7 @@ export const DASHBOARD_CHANNELS = {
   chatGroupSend: 'mosbot:dashboard:chatGroupSend',
   chatGroupCreate: 'mosbot:dashboard:chatGroupCreate',
   chatGroupDisband: 'mosbot:dashboard:chatGroupDisband',
+  chatGroupStop: 'mosbot:dashboard:chatGroupStop',
   chatAttachFile: 'mosbot:dashboard:chatAttachFile',
   chatEvent: 'mosbot:dashboard:chatEvent',
   pendingEvent: 'mosbot:dashboard:pendingEvent',

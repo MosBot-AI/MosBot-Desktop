@@ -134,3 +134,19 @@
   opacity: 0.5;
   cursor: default;
 }
+
+.stop {
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 2px 10px;
+  background: none;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.stop:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

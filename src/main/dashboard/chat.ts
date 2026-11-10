@@ -64,6 +64,8 @@ export interface ChatManager {
   ): Promise<Result<RemoteGroup>>;
   /** Disbands a hosted room created by this gateway. */
   groupDisband(roomId: string): Promise<Result<void>>;
+  /** Cancels queued or running work in a hosted room. */
+  groupStop(roomId: string): Promise<Result<void>>;
   close(): void;
   state(): ChatState;
 }
@@ -722,6 +724,21 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
           latestSeq: room.latest_seq ?? 0,
         },
       };
+    },
+
+    async groupStop(roomId) {
+      if (client === null) {
+        return {
+          ok: false,
+          error: protocolError('unauthorized', 'The chat session is not connected.'),
+        };
+      }
+      const result = await client.call(
+        'groups.stop',
+        { room_id: roomId, cancel_id: `desktop-${randomUUID()}` },
+        emptySchema,
+      );
+      return result.ok ? { ok: true, data: undefined } : result;
     },
 
     async groupDisband(roomId) {
