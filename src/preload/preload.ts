@@ -339,6 +339,11 @@ const bridge: Omit<MosBotBridge, 'openExternal' | 'menu' | 'local' | 'computer'>
     chatGroupStop(roomId: string): Promise<Result<void>> {
       return ipcRenderer.invoke(DASHBOARD_CHANNELS.chatGroupStop, roomId) as Promise<Result<void>>;
     },
+    chatGroupRetry(roomId: string, taskId: string): Promise<Result<void>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.chatGroupRetry, roomId, taskId) as Promise<
+        Result<void>
+      >;
+    },
     chatGroupApprove(
       roomId: string,
       action: RemoteGroupPendingAction,

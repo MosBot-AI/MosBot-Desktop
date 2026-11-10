@@ -230,6 +230,8 @@ export interface MosBotDashboardBridge {
   chatGroupDisband(roomId: string): Promise<Result<void>>;
   /** Cancels queued or running work in a hosted room. */
   chatGroupStop(roomId: string): Promise<Result<void>>;
+  /** Retries one indeterminate group task. */
+  chatGroupRetry(roomId: string, taskId: string): Promise<Result<void>>;
   /** Resolves one pending group approval. */
   chatGroupApprove(
     roomId: string,
@@ -317,6 +319,7 @@ export const DASHBOARD_CHANNELS = {
   chatGroupCreate: 'mosbot:dashboard:chatGroupCreate',
   chatGroupDisband: 'mosbot:dashboard:chatGroupDisband',
   chatGroupStop: 'mosbot:dashboard:chatGroupStop',
+  chatGroupRetry: 'mosbot:dashboard:chatGroupRetry',
   chatGroupApprove: 'mosbot:dashboard:chatGroupApprove',
   chatAttachFile: 'mosbot:dashboard:chatAttachFile',
   chatEvent: 'mosbot:dashboard:chatEvent',

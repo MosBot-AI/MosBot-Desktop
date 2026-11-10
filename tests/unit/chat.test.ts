@@ -136,6 +136,9 @@ function createFakeGateway(options: GatewayOptions, replay?: FakeReplay): FakeGa
     if (method === 'groups.approve') {
       return { approved: true, result: { status: 'denied' } };
     }
+    if (method === 'groups.retry') {
+      return { retried: true, task: { status: 'queued' } };
+    }
     if (method === 'session.events.since' && replay !== undefined) {
       return {
         events: replay.events,
@@ -971,6 +974,8 @@ describe('chat manager groups', () => {
       'deny',
     );
     expect(approved.ok).toBe(true);
+    const retried = await manager.groupRetry('new-room', 'task-1');
+    expect(retried.ok).toBe(true);
     manager.close();
   });
 });

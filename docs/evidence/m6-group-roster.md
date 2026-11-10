@@ -19,7 +19,7 @@
 - The message list is an ARIA log (`aria-live=polite`) for polled additions.
 - The group view opens on the latest 50-event page (derived from the room's latest sequence), polls forward, and offers "Load earlier messages" while the first visible sequence is above 1. Member replies show their display name; internal `turn.settled` rows are hidden and driver status is localized. After send/stop/approval it appends new events from the last seen sequence instead of replacing the window, so history and the new message stay visible.
 - The Groups section and its create button stay visible when the roster is empty; it shows loading/error states with retry/refresh actions; selecting the already-open room is a no-op; the open room is marked in the sidebar.
-- Pending group approvals (`kind=approval`) appear as a banner with Allow once / Deny; resolving one calls `groups.approve` and appends the new state/log. Other pending action kinds are not shown as approvals.
+- Pending group approvals (`kind=approval`) appear as a banner with Allow once / Deny; resolving one calls `groups.approve` and appends the new state/log. `kind=retry` actions get a Retry button wired to `groups.retry`; other pending kinds render as informational rows without actions.
 - While the group view is open, the renderer polls `groups.log` and `groups.state` every 3 s from the last seen seq, de-duplicates by seq, updates the latest sequence, refreshes working/blocked driver state, auto-scrolls and surfaces poll errors (a later successful poll clears them); reducer coverage is in `tests/unit/store.test.ts`.
 
 ## Real-window screenshot

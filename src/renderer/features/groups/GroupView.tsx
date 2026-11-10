@@ -73,12 +73,18 @@ export function GroupView(): ReactElement {
   const [disbandConfirm, setDisbandConfirm] = useState(false);
   const [disbanding, setDisbanding] = useState(false);
   const [disbandError, setDisbandError] = useState<string | null>(null);
+  const [retryBusy, setRetryBusy] = useState<string | null>(null);
+  const [retryError, setRetryError] = useState<string | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const threadId = threadIdFor(events);
   const isCurrentRoom = (): boolean => appStore.getState().remote.selectedGroupId === roomId;
   const firstSeq = events.length === 0 ? 0 : (events[0]?.seq ?? 0);
   const canLoadEarlier = firstSeq > 1;
   const approvals = (detail?.pendingActions ?? []).filter((action) => action.kind === 'approval');
+  const retries = (detail?.pendingActions ?? []).filter((action) => action.kind === 'retry');
+  const otherActions = (detail?.pendingActions ?? []).filter(
+    (action) => action.kind !== 'approval' && action.kind !== 'retry',
+  );
   const visibleEvents = events.filter((event) => event.kind !== 'turn.settled');
   const lastSeq = events.length === 0 ? 0 : (events[events.length - 1]?.seq ?? 0);
   const driverLabel =
@@ -211,6 +217,29 @@ export function GroupView(): ReactElement {
         );
       })}
 
+      {retries.map((action) => (
+        <div key={`retry-${action.taskId}`} className={styles.approval}>
+          <span>{t('group.retryPending')}</span>
+          <button
+            type="button"
+            className={styles.approvalAllow}
+            disabled={retryBusy !== null}
+            onClick={() => {
+              void retry(action);
+            }}
+          >
+            {retryBusy === action.taskId ? t('group.retrying') : t('group.retry')}
+          </button>
+          {retryError === null ? null : <span className={styles.error}>{retryError}</span>}
+        </div>
+      ))}
+
+      {otherActions.map((action) => (
+        <div key={`action-${action.taskId}`} className={styles.approval}>
+          <span>{t('group.pendingAction', { kind: action.kind })}</span>
+        </div>
+      ))}
+
       <div className={styles.body} ref={bodyRef}>
         {canLoadEarlier ? (
           <button
@@ -337,6 +366,25 @@ export function GroupView(): ReactElement {
     }
     dispatch({ type: 'group-clear' });
     setDisbanding(false);
+  }
+
+  async function retry(
+    action: NonNullable<NonNullable<typeof detail>['pendingActions']>[number],
+  ): Promise<void> {
+    const dashboard = window.mosbot?.dashboard;
+    if (dashboard === undefined || roomId === null) {
+      return;
+    }
+    setRetryBusy(action.taskId);
+    setRetryError(null);
+    const result = await dashboard.chatGroupRetry(roomId, action.taskId);
+    if (!result.ok) {
+      setRetryBusy(null);
+      setRetryError(t('group.retryError'));
+      return;
+    }
+    await refreshAfterAction();
+    setRetryBusy(null);
   }
 
   async function refreshAfterAction(): Promise<void> {

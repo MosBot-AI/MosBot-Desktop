@@ -67,6 +67,8 @@ export interface ChatManager {
   groupDisband(roomId: string): Promise<Result<void>>;
   /** Cancels queued or running work in a hosted room. */
   groupStop(roomId: string): Promise<Result<void>>;
+  /** Retries one indeterminate group task. */
+  groupRetry(roomId: string, taskId: string): Promise<Result<void>>;
   /** Resolves one pending group approval. */
   groupApprove(
     roomId: string,
@@ -731,6 +733,21 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
           latestSeq: room.latest_seq ?? 0,
         },
       };
+    },
+
+    async groupRetry(roomId, taskId) {
+      if (client === null) {
+        return {
+          ok: false,
+          error: protocolError('unauthorized', 'The chat session is not connected.'),
+        };
+      }
+      const result = await client.call(
+        'groups.retry',
+        { room_id: roomId, task_id: taskId },
+        emptySchema,
+      );
+      return result.ok ? { ok: true, data: undefined } : result;
     },
 
     async groupApprove(roomId, action, choice) {

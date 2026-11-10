@@ -173,6 +173,16 @@ export function registerChatIpc(options: {
     return chat.groupStop(roomId);
   });
 
+  handle<void>(DASHBOARD_CHANNELS.chatGroupRetry, (roomId, taskId) => {
+    if (!isBoundedString(roomId, MAX_STORED_ID_LENGTH)) {
+      return { ok: false, error: protocolError('invalid_url', 'A room id is required.') };
+    }
+    if (!isBoundedString(taskId, MAX_STORED_ID_LENGTH)) {
+      return { ok: false, error: protocolError('invalid_url', 'A task id is required.') };
+    }
+    return chat.groupRetry(roomId, taskId);
+  });
+
   handle<void>(DASHBOARD_CHANNELS.chatGroupApprove, (roomId, action, choice) => {
     if (!isBoundedString(roomId, MAX_STORED_ID_LENGTH)) {
       return { ok: false, error: protocolError('invalid_url', 'A room id is required.') };

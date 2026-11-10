@@ -19,7 +19,7 @@
 - 消息列表为 ARIA log（`aria-live=polite`），用于播报轮询新增消息。
 - 群视图打开时定位到最新 50 条事件窗口（由房间最新序号推导），随后向前轮询；当首条可见序号大于 1 时提供「加载更早消息」。成员回复显示显示名；隐藏内部 `turn.settled` 行并本地化 driver 状态。发送/停止/审批后从最后已见序号追加新事件，不再替换窗口，历史与新消息都保留。
 - 群名单为空时「群聊」分区与创建按钮仍显示；显示加载/错误状态并提供重试/刷新；重复选择当前房间不重置；侧栏标记当前打开的房间。
-- 待处理群审批（`kind=approval`）以横幅显示，提供「允许一次 / 拒绝」；处理时调用 `groups.approve` 并追加房间状态/日志。其他 pending action 类型不会显示为审批。
+- 待处理群审批（`kind=approval`）以横幅显示，提供「允许一次 / 拒绝」；处理时调用 `groups.approve` 并追加房间状态/日志。`kind=retry` 动作显示重试按钮并接 `groups.retry`；其他 pending 类型只显示为信息行，不提供操作。
 - 群视图打开时每 3 秒轮询 `groups.log` 与 `groups.state`：按 seq 去重、更新最新序号、刷新 working/blocked driver 状态、自动滚动并呈现轮询错误（后续成功轮询会清除）；reducer 覆盖在 `tests/unit/store.test.ts`。
 
 ## 真实窗口截图
