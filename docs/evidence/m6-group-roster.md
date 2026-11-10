@@ -12,7 +12,7 @@
 - `RemoteGroup` shared type, validated `groups.list` schema, `ChatManager.listGroups()` and the
   `chatListGroups()` bridge/preload/IPC method.
 - Renderer stores the read-only room list in `remote.groups` and fetches it once a Bot Chat connection is live.
-- Sidebar renders a "Groups" section with one row per room (group avatar cluster, name, member count).
+- Sidebar renders a "Groups" section with the same pinned-style avatar tiles as Bot entries: overlapping group faces, name, selected state.
 - Clicking a group opens a conversation with a centered group nameplate (avatar cluster, name, member count), member messages with avatar/display name/bubble, right-aligned user bubbles, date separators, centered system notices and inline approval/retry cards. The composer is wired to `groups.send` with a derived `thread_id` and a client event id.
 - The sidebar Groups section has a create button and a small create dialog (name + 2–6 local profiles); on success the roster refreshes and the new room opens.
 - The group view can disband a room after an explicit confirmation; the roster refreshes and the selection clears.

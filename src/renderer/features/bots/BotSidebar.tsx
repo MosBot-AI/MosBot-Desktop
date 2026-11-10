@@ -25,9 +25,10 @@ import {
   IconWarning,
 } from '../../components/icons';
 import { BotRow } from './BotRow';
-import { GroupRow } from './GroupRow';
+import { GroupAvatar } from '../groups/GroupAvatar';
 import { GroupCreateDialog } from '../groups/GroupCreateDialog';
 import { PinnedGrid } from './PinnedGrid';
+import rosterStyles from './BotRoster.module.css';
 import styles from './BotSidebar.module.css';
 
 const THEMES: readonly ThemePreference[] = ['system', 'light', 'dark'];
@@ -250,16 +251,35 @@ export function BotSidebar(): ReactElement {
               ) : groups.length === 0 ? (
                 <p className={styles.sectionEmpty}>{t('sidebar.groupsEmpty')}</p>
               ) : (
-                groups.map((group) => (
-                  <GroupRow
-                    key={group.roomId}
-                    group={group}
-                    selected={group.roomId === state.remote.selectedGroupId}
-                    onSelect={(group) => {
-                      dispatch({ type: 'select-group', group });
-                    }}
-                  />
-                ))
+                <div className={rosterStyles.pinnedGrid}>
+                  {groups.map((group) => {
+                    const selected = group.roomId === state.remote.selectedGroupId;
+                    return (
+                      <button
+                        key={group.roomId}
+                        type="button"
+                        className={rosterStyles.pinTile}
+                        data-selected={selected ? 'true' : 'false'}
+                        aria-current={selected ? 'true' : undefined}
+                        aria-label={`${group.name} · ${t('sidebar.groupMembers', { count: group.memberCount })}`}
+                        title={group.name}
+                        onClick={() => {
+                          dispatch({ type: 'select-group', group });
+                        }}
+                      >
+                        <span className={rosterStyles.pinFace}>
+                          <GroupAvatar
+                            seed={group.roomId}
+                            count={group.memberCount}
+                            size={52}
+                            label={group.name}
+                          />
+                        </span>
+                        <span className={rosterStyles.pinName}>{group.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               )}
             </div>
           </section>
