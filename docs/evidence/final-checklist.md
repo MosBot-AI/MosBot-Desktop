@@ -40,8 +40,8 @@ M6 group-chat implementation.
   the remaining M1 blocker (#19).
 - M2 creation/appearance/organizing; M3 workbench reads/writes and stale-response isolation; M4 attachments/artifacts and computer
   viewer/control.
-- M5 performance/soak/accessibility, local install/upgrade, ad-hoc signed ZIP (328,802,141 B, SHA-256
-  `56a19b77aabb5e66cd5f1efd503511e49349d2aa47e2aa3b96cfcb8b444d26f9`), release notes and support matrix.
+- M5 performance/soak/accessibility, local install/upgrade, ad-hoc signed ZIP (329,655,212 B, SHA-256
+  `7dbecfea52e1e4d92928d9c36805afea3477caa51d2c78ac9cb722e50adabbbc`), release notes and support matrix.
 - M6 capability probe: `groups.capabilities` and `groups.list` pass; voice wake is unavailable on this headless deployment.
 - Automated checks: `vitest` 175 passed, `test:e2e` 21 passed, typecheck/lint/format green.
 

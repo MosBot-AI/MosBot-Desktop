@@ -2,8 +2,8 @@
 
 [简体中文](m5-package-zh.md)
 
-- Status: **The current ad-hoc signed ZIP (2026-11-09, includes the notification-click fix) is built and passes the clean-install check on this machine** (`codesign --verify --deep --strict` passes); Developer ID signing/notarization is still blocked on a certificate; DMG not done
-- Recorded: 2026-11-09 (history: 2026-11-04)
+- Status: **The current ad-hoc signed ZIP (2026-11-10, includes the notification-click fix and the M6 group-chat core) is built and passes the clean-install check on this machine** (`codesign --verify --deep --strict` passes); Developer ID signing/notarization is still blocked on a certificate; DMG not done
+- Recorded: 2026-11-10 (history: 2026-11-04)
 - Reference machine: Apple M4, macOS 15.8.2, Node v26.13.0, pnpm 11.28.5
 - Release notes: [`release-notes-0.1.0.md`](release-notes-0.1.0.md)
 
@@ -26,8 +26,8 @@ pnpm make` makes `postPackage` run `codesign --force --deep --sign -`), while ro
 | Check                                                           | Result                                                                                  |
 | --------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | `pnpm make`                                                     | ✅ passed                                                                               |
-| Artifact                                                        | `out/make/zip/darwin/arm64/MosBot-darwin-arm64-0.1.0.zip`, 328,802,141 B (about 314 MB) |
-| SHA-256                                                         | `56a19b77aabb5e66cd5f1efd503511e49349d2aa47e2aa3b96cfcb8b444d26f9`                      |
+| Artifact                                                        | `out/make/zip/darwin/arm64/MosBot-darwin-arm64-0.1.0.zip`, 329,655,212 B (about 314 MB) |
+| SHA-256                                                         | `7dbecfea52e1e4d92928d9c36805afea3477caa51d2c78ac9cb722e50adabbbc`                      |
 | Signature                                                       | ad-hoc, rejected by `spctl` (no Developer ID certificate configured)                    |
 | Clean install (extract + fresh userData)                        | ✅ see `m5-install-upgrade.md`                                                          |
 | In-place upgrade and data recovery (v1→v2, corruption fallback) | ✅ see `m5-install-upgrade.md`                                                          |
@@ -61,11 +61,11 @@ credentials in old userData (`vault_unavailable`), so it is only a release-build
 packages are unsigned by default. `spctl` still rejects it (no Developer ID); a second Mac needs
 right-click → Open.
 
-## 2026-11-09 Rebuild
+## 2026-11-10 Rebuild
 
-- Command: `MOSBOT_ADHOC_SIGN=1 npm run make` (main `f2b86d6`, after the notification-click fix).
-- Artifact: `out/make/zip/darwin/arm64/MosBot-darwin-arm64-0.1.0.zip`, 328,802,141 B.
-- SHA-256: `56a19b77aabb5e66cd5f1efd503511e49349d2aa47e2aa3b96cfcb8b444d26f9`.
+- Command: `MOSBOT_ADHOC_SIGN=1 npm run make` (main `82282f6`, with the M6 group-chat core).
+- Artifact: `out/make/zip/darwin/arm64/MosBot-darwin-arm64-0.1.0.zip`, 329,655,212 B.
+- SHA-256: `7dbecfea52e1e4d92928d9c36805afea3477caa51d2c78ac9cb722e50adabbbc`.
 - Signature: ad-hoc; `codesign --verify --deep --strict` exit 0; `spctl` still rejects it (no Developer ID).
-- Clean-install verification: `node scripts/verify-install.mjs` — all offline first-run checks pass; the only expected failure is the Developer ID/Gatekeeper check. Report: `docs/evidence/tmp/install-verify-2026-11-09T15-53-19-054Z.json`.
+- Clean-install verification: `node scripts/verify-install.mjs` — all offline first-run checks pass; the only expected failure is the Developer ID/Gatekeeper check. Report: `docs/evidence/tmp/install-verify-2026-11-10T02-52-43-157Z.json`.
 - Regression on main: `vitest run` 173 passed, `npm run test:e2e` 21 passed, typecheck/lint/format green.

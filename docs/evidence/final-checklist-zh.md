@@ -33,8 +33,8 @@
 - M0a 视觉基线（用户 2026-11-09 确认）、M0b 协议/能力矩阵。
 - M1 登录、名单/历史、流式聊天、审批、通知横幅、窗口生命周期、草稿；跨端回执是 M1 剩余阻塞（#19）。
 - M2 创建/外观/整理；M3 工作台读写与旧响应隔离；M4 附件/产物与电脑观看/控制。
-- M5 性能/soak/可访问性、本机安装/升级、ad-hoc 签名 ZIP（328,802,141 B，SHA-256
-  `56a19b77aabb5e66cd5f1efd503511e49349d2aa47e2aa3b96cfcb8b444d26f9`）、发布说明与支持矩阵。
+- M5 性能/soak/可访问性、本机安装/升级、ad-hoc 签名 ZIP（329,655,212 B，SHA-256
+  `7dbecfea52e1e4d92928d9c36805afea3477caa51d2c78ac9cb722e50adabbbc`）、发布说明与支持矩阵。
 - M6 能力探测：`groups.capabilities` 与 `groups.list` 通过；该无头部署语音唤醒不可用。
 - 自动检查：`vitest` 175 passed、`test:e2e` 21 passed、typecheck/lint/format 全绿。
 

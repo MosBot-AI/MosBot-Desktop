@@ -5,7 +5,7 @@
 - Card: M5 (signing and notarization, clean install, in-place upgrade and data recovery; README release-candidate acceptance items 9 and 10)
 - Status: **Clean install of the current ad-hoc ZIP (2026-11-09) passed on this machine; v1→v2 in-place upgrade and corruption fallback passed**;
   Developer ID signing/notarization configuration is ready but **not verified without a certificate**; a real clean system / another Mac has not been tested
-- Recorded: 2026-11-09 (history: 2026-11-04)
+- Recorded: 2026-11-10 (history: 2026-11-04)
 - Data nature: packaged artifact (ZIP extraction + fresh userData) + E2E (local state migration)
 
 ## Environment
@@ -113,10 +113,10 @@ remains an atomic write plus a previous-version `.bak` backup.
 - **Size**: the ZIP is about 313 MB (the Electron runtime accounts for most of it); dependency trimming
   inside asar still needs evaluation.
 
-## 2026-11-09 Clean-install Re-verification
+## 2026-11-10 Clean-install Re-verification
 
-- Artifact: `out/make/zip/darwin/arm64/MosBot-darwin-arm64-0.1.0.zip` (328,802,141 B), SHA-256 `56a19b77aabb5e66cd5f1efd503511e49349d2aa47e2aa3b96cfcb8b444d26f9`.
+- Artifact: `out/make/zip/darwin/arm64/MosBot-darwin-arm64-0.1.0.zip` (329,655,212 B), SHA-256 `7dbecfea52e1e4d92928d9c36805afea3477caa51d2c78ac9cb722e50adabbbc`.
 - Extracted into a temporary directory and launched with a brand-new userData directory: window title, version, bundle id, fixture roster, footer and offline connection dialog all pass; no credentials exist before sign-in.
 - Signature: ad-hoc, `codesign --verify --deep --strict` exit 0; `spctl` rejects it because no Developer ID certificate is configured (expected).
 - E2E regression: 21 passed, including the v1→v2 upgrade and corruption-fallback specs.
-- Report: `docs/evidence/tmp/install-verify-2026-11-09T15-53-19-054Z.json`.
+- Report: `docs/evidence/tmp/install-verify-2026-11-10T02-52-43-157Z.json`.

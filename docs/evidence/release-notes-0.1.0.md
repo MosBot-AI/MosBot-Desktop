@@ -2,21 +2,21 @@
 
 [简体中文](release-notes-0.1.0-zh.md)
 
-- Version: 0.1.0 · source commit `f2b86d6`
+- Version: 0.1.0 · source commit `82282f6`
 - Status: **release candidate, not a final release.** On 2026-11-10 the user moved the M5 user acceptance items (second-Mac clean install, seven-day dogfooding) out of first-release scope. Remaining: the server-side gaps #15/#16/#17 and M1 #19; M6 group chat is now in first-release scope and implementation has started.
-- Date: 2026-11-09
+- Date: 2026-11-10
 
 ## Artifact
 
 | Item       | Value                                                                |
 | ---------- | -------------------------------------------------------------------- |
 | File       | `out/make/zip/darwin/arm64/MosBot-darwin-arm64-0.1.0.zip`            |
-| Size       | 328,802,141 B (about 314 MB)                                         |
-| SHA-256    | `56a19b77aabb5e66cd5f1efd503511e49349d2aa47e2aa3b96cfcb8b444d26f9`   |
+| Size       | 329,655,212 B (about 314 MB)                                         |
+| SHA-256    | `7dbecfea52e1e4d92928d9c36805afea3477caa51d2c78ac9cb722e50adabbbc`   |
 | Signature  | ad-hoc (`codesign --verify --deep --strict` passes; `spctl` rejects) |
 | Built from | `f2b86d6` on macOS 15.8.2, Apple Silicon arm64                       |
 
-The source after this commit includes probe-only diagnostics (`88415d0`); they do not change the shipped UI and are not part of the ZIP above.
+The artifact now includes the M6 group-chat core (roster, create, state/log view, send, stop, polling, reconnect). Group voice/attachments/approvals remain deployment-bound (Issue #20).
 
 ## Tested environment and support matrix
 
