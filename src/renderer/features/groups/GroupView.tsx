@@ -59,6 +59,9 @@ export function GroupView(): ReactElement {
   const [approvalError, setApprovalError] = useState<string | null>(null);
   const [loadingEarlier, setLoadingEarlier] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  const [disbandConfirm, setDisbandConfirm] = useState(false);
+  const [disbanding, setDisbanding] = useState(false);
+  const [disbandError, setDisbandError] = useState<string | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const threadId = threadIdFor(events);
   const isCurrentRoom = (): boolean => appStore.getState().remote.selectedGroupId === roomId;
@@ -116,10 +119,48 @@ export function GroupView(): ReactElement {
             >
               {stopping ? t('group.stopping') : t('group.stop')}
             </button>
+            <button
+              type="button"
+              className={styles.disband}
+              disabled={disbanding}
+              onClick={() => {
+                setDisbandConfirm(true);
+                setDisbandError(null);
+              }}
+            >
+              {t('group.disband')}
+            </button>
             {stopNotice === null ? null : <span>{stopNotice}</span>}
           </div>
         )}
       </header>
+
+      {disbandConfirm ? (
+        <div className={styles.approval}>
+          <span>{t('group.disbandConfirm')}</span>
+          <button
+            type="button"
+            className={styles.approvalDeny}
+            disabled={disbanding}
+            onClick={() => {
+              void disband();
+            }}
+          >
+            {disbanding ? t('group.disbanding') : t('group.disbandConfirmAction')}
+          </button>
+          <button
+            type="button"
+            className={styles.approvalAllow}
+            disabled={disbanding}
+            onClick={() => {
+              setDisbandConfirm(false);
+            }}
+          >
+            {t('group.disbandCancel')}
+          </button>
+          {disbandError === null ? null : <span className={styles.error}>{disbandError}</span>}
+        </div>
+      ) : null}
 
       {approvals.map((action) => {
         const member = (detail?.members ?? []).find((entry) => entry.memberId === action.memberId);
@@ -235,6 +276,31 @@ export function GroupView(): ReactElement {
       </footer>
     </div>
   );
+
+  async function disband(): Promise<void> {
+    const dashboard = window.mosbot?.dashboard;
+    if (dashboard === undefined || roomId === null) {
+      return;
+    }
+    setDisbanding(true);
+    setDisbandError(null);
+    const result = await dashboard.chatGroupDisband(roomId);
+    if (!result.ok) {
+      setDisbanding(false);
+      setDisbandError(t('group.disbandError'));
+      return;
+    }
+    if (!isCurrentRoom()) {
+      setDisbanding(false);
+      return;
+    }
+    const refreshed = await dashboard.chatListGroups();
+    if (refreshed.ok) {
+      dispatch({ type: 'remote-groups', groups: [...refreshed.data] });
+    }
+    dispatch({ type: 'group-clear' });
+    setDisbanding(false);
+  }
 
   async function refreshAfterAction(): Promise<void> {
     const dashboard = window.mosbot?.dashboard;

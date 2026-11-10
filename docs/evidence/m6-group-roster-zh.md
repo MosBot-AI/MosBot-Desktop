@@ -15,6 +15,7 @@
 - 侧栏新增「群聊」分区，每个房间一行（头像、名称、成员数）。
 - 点击群聊打开视图：房间元数据（成员数、成员标签、最新序号、驱动状态）、最近 50 条日志事件（有文本时按 Markdown 渲染）与输入框。输入框已接 `groups.send`，使用推导的 `thread_id` 与客户端事件 id。
 - 侧栏「群聊」分区新增创建按钮与小型创建弹层（名称 + 2–6 个本地 profile）；创建成功后刷新名单并打开新群。
+- 群视图可在二次确认后解散房间；解散后刷新名单并清除选择。
 - 群视图打开时定位到最新 50 条事件窗口（由房间最新序号推导），随后向前轮询；当首条可见序号大于 1 时提供「加载更早消息」。发送/停止/审批后从最后已见序号追加新事件，不再替换窗口，历史与新消息都保留。
 - 群名单为空时「群聊」分区与创建按钮仍显示；重复选择当前房间不重置；侧栏标记当前打开的房间。
 - 待处理群审批（`kind=approval`）以横幅显示，提供「允许一次 / 拒绝」；处理时调用 `groups.approve` 并追加房间状态/日志。其他 pending action 类型不会显示为审批。
@@ -36,6 +37,7 @@
 - 专用群验证：`node scripts/gui-group-send.mjs` 用两个本地 profile 创建临时群，发送一条消息，在群日志中找到该消息后解散群。
 - 群审批验证：`node scripts/gui-group-approval.mjs` 触发真实待审批、拒绝并确认清除；`node scripts/gui-group-approval-ui.mjs` 从弹层创建群、看到审批横幅、点击拒绝并确认清除（`created=true`、`approvalSeen=true`、`denied=true`、`cleared=true`、`disbanded=true`）；`node scripts/gui-group-approval-allow.mjs` 用 UI 路径验证允许一次（`allowed=true`、`cleared=true`）。
 - 部署公布 18 个 `groups.*` 方法，不包含 `groups.attachment.*`；群附件属于部署能力缺口，不是客户端缺口。
+- 解散 UI 验证：`node scripts/gui-group-disband-ui.mjs` 创建群、确认解散并确认从名单消失（`created=true`、`confirmed=true`、`removed=true`）。
 - 端到端 UI 验证：`node scripts/gui-group-create-send.mjs` 从弹层创建群、在输入框发送消息、由 3 秒轮询渲染出来、点击停止（`stopped=true`）并解散房间（`created=true`、`sent=true`、`rendered=true`、`disbanded=true`）。
 - 历史验证：`node scripts/gui-groups-roster.mjs` 加载更早一页，可见日志从 50 条增长到 86 条（`loadedEarlier=true`）。
 - 重连验证：`node scripts/gui-group-reconnect.mjs` 在群视图打开时断开 gateway socket；房间保持选中、detail/log 恢复、轮询错误清除（`recovered=true`）。重连状态太快未观察到（`sawReconnect=false`），因此这是模拟 socket 断开，不是真实断网。
