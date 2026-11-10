@@ -1,4 +1,4 @@
-import { useState, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useMessages } from '../../app/i18n';
 import { useAppState, useDispatch } from '../../app/store';
 import type { RemoteGroupEvent } from '../../../shared/protocol';
@@ -52,7 +52,15 @@ export function GroupView(): ReactElement {
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
+  const bodyRef = useRef<HTMLDivElement | null>(null);
   const threadId = threadIdFor(events);
+
+  useEffect(() => {
+    const body = bodyRef.current;
+    if (body !== null) {
+      body.scrollTop = body.scrollHeight;
+    }
+  }, [events.length]);
 
   return (
     <div className={styles.group}>
@@ -81,7 +89,7 @@ export function GroupView(): ReactElement {
         )}
       </header>
 
-      <div className={styles.body}>
+      <div className={styles.body} ref={bodyRef}>
         {loading ? <p className={styles.notice}>{t('group.loading')}</p> : null}
         {error === null ? null : (
           <p className={styles.error} role="alert">

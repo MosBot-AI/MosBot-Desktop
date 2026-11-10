@@ -12,7 +12,7 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
 
 ### 新增
 
-- 群聊名单基础：主进程 chat manager 读取 gateway 的 hosted-room 列表（`groups.list`），侧栏渲染只读「群聊」分区（房间名与成员数）；点击房间打开状态/日志视图（`groups.state` + `groups.log`），输入框已接 `groups.send`；专用测试群已验证创建 → 发送 → 日志 → 解散。
+- 群聊名单基础：主进程 chat manager 读取 gateway 的 hosted-room 列表（`groups.list`），侧栏渲染只读「群聊」分区（房间名与成员数）；点击房间打开状态/日志视图（`groups.state` + `groups.log`），输入框已接 `groups.send`；专用测试群已验证创建 → 发送 → 日志 → 解散。群视图打开时每 3 秒轮询 `groups.log`，按 seq 去重并自动滚动。
 - 资料库：工作区列表现在识别部署返回的 `mtime`（epoch 秒）而不只读 `modified_at`，文件按真实
   修改时间排序；悬空符号链接（`broken_link`）显示「资源已删除」并禁用打开；读取失败按
   已删除/无权限/过大/登录过期给出专门文案与「重试」。部署文件 API 没有来源消息字段，登记为

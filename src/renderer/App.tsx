@@ -306,6 +306,48 @@ export function App(): ReactElement {
     };
   }, [chatConnection, connected, selectedGroupId, dispatch]);
 
+  // M6 group log polling while the read-only group view is open.
+  useEffect(() => {
+    const dashboard = window.mosbot?.dashboard;
+    if (
+      dashboard === undefined ||
+      !connected ||
+      chatConnection !== 'connected' ||
+      selectedGroupId === null
+    ) {
+      return;
+    }
+    let cancelled = false;
+    let running = false;
+    const poll = async (): Promise<void> => {
+      if (running || cancelled) {
+        return;
+      }
+      running = true;
+      try {
+        const events = appStore.getState().remote.groupEvents;
+        const since = events.length === 0 ? 0 : (events[events.length - 1]?.seq ?? 0);
+        const result = await dashboard.chatGroupLog(selectedGroupId, since, 100);
+        if (cancelled || !result.ok) {
+          return;
+        }
+        if (result.data.events.length > 0) {
+          dispatch({ type: 'group-log-append', events: [...result.data.events] });
+        }
+        dispatch({ type: 'group-latest', latestSeq: result.data.latestSeq });
+      } finally {
+        running = false;
+      }
+    };
+    const timer = window.setInterval(() => {
+      void poll();
+    }, 3_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [chatConnection, connected, selectedGroupId, dispatch]);
+
   // Pending requests discovered for Bots that are not open: badge + notification click.
   useEffect(() => {
     const dashboard = window.mosbot?.dashboard;

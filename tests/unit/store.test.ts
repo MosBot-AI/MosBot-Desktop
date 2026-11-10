@@ -651,3 +651,35 @@ describe('remote group roster', () => {
     ]);
   });
 });
+
+describe('group log polling', () => {
+  it('appends new group events without duplicates and updates the latest sequence', () => {
+    let state = build();
+    state = reduceAppState(state, {
+      type: 'group-detail',
+      detail: {
+        roomId: 'room-1',
+        name: 'Design room',
+        memberCount: 2,
+        latestSeq: 1,
+        authorityEpoch: 1,
+        updatedAt: 1,
+        driverStatus: 'running',
+      },
+    });
+    state = reduceAppState(state, {
+      type: 'group-log',
+      events: [{ seq: 1, kind: 'message.user', createdAt: 1, payload: { text: 'one' } }],
+    });
+    state = reduceAppState(state, {
+      type: 'group-log-append',
+      events: [
+        { seq: 1, kind: 'message.user', createdAt: 1, payload: { text: 'one' } },
+        { seq: 2, kind: 'message.member', createdAt: 2, payload: { text: 'two' } },
+      ],
+    });
+    state = reduceAppState(state, { type: 'group-latest', latestSeq: 2 });
+    expect(state.remote.groupEvents.map((event) => event.seq)).toEqual([1, 2]);
+    expect(state.remote.groupDetail?.latestSeq).toBe(2);
+  });
+});
