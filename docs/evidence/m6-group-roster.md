@@ -3,7 +3,7 @@
 [简体中文](m6-group-roster-zh.md)
 
 - Card: M6 (group chat in first-release scope since 2026-11-10)
-- Status: **read-only roster, state/log view, create dialog, composer, send, 3 s log polling and stop are verified end-to-end against the real service; approvals/attachments are next**
+- Status: **read-only roster, state/log view, create dialog, composer, send, 3 s log/state polling, stop and error surfacing are verified end-to-end against the real service; approvals/attachments are next**
 - Recorded: 2026-11-10
 - Target service: `192.168.2.171:9119` (v0.22.5 / `bf0203a794`)
 
@@ -15,7 +15,7 @@
 - Sidebar renders a "Groups" section with one row per room (face, name, member count).
 - Clicking a group opens a view with room metadata (member count, latest seq, driver status), the latest 50 log events (message text where present) and a composer. The composer is wired to `groups.send` with a derived `thread_id` and a client event id.
 - The sidebar Groups section has a create button and a small create dialog (name + 2–6 local profiles); on success the roster refreshes and the new room opens.
-- While the group view is open, the renderer polls `groups.log` every 3 s from the last seen seq, de-duplicates by seq, updates the latest sequence and auto-scrolls; reducer coverage is in `tests/unit/store.test.ts`.
+- While the group view is open, the renderer polls `groups.log` and `groups.state` every 3 s from the last seen seq, de-duplicates by seq, updates the latest sequence, refreshes working/blocked driver state, auto-scrolls and surfaces poll errors (a later successful poll clears them); reducer coverage is in `tests/unit/store.test.ts`.
 
 ## Verification
 
@@ -31,6 +31,6 @@
 
 ## Next
 
-1. Error/reconnect states and live-driver status in the group view.
-2. Group approvals and attachments.
+1. Group approvals and attachments.
+2. Error/reconnect hardening with a forced network drop.
 3. Voice recording/transcription stays separate until a capable deployment/device is available.

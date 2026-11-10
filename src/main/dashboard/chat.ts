@@ -798,6 +798,18 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
             }
             return null;
           })(),
+          working:
+            typeof result.data.driver_status === 'object' &&
+            result.data.driver_status !== null &&
+            'working' in result.data.driver_status
+              ? (result.data.driver_status as { working?: unknown }).working === true
+              : false,
+          blocked:
+            typeof result.data.driver_status === 'object' &&
+            result.data.driver_status !== null &&
+            'blocked' in result.data.driver_status
+              ? (result.data.driver_status as { blocked?: unknown }).blocked === true
+              : false,
         },
       };
     },

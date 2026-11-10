@@ -87,6 +87,8 @@ export function GroupView(): ReactElement {
             {detail.driverStatus === null ? null : (
               <span>{t('group.driver', { status: detail.driverStatus })}</span>
             )}
+            {detail.working === true ? <span>{t('group.working')}</span> : null}
+            {detail.blocked === true ? <span>{t('group.blocked')}</span> : null}
             <button
               type="button"
               className={styles.stop}

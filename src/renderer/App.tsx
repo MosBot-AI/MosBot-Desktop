@@ -327,14 +327,26 @@ export function App(): ReactElement {
       try {
         const events = appStore.getState().remote.groupEvents;
         const since = events.length === 0 ? 0 : (events[events.length - 1]?.seq ?? 0);
-        const result = await dashboard.chatGroupLog(selectedGroupId, since, 100);
-        if (cancelled || !result.ok) {
+        const [log, state] = await Promise.all([
+          dashboard.chatGroupLog(selectedGroupId, since, 100),
+          dashboard.chatGroupState(selectedGroupId),
+        ]);
+        if (cancelled) {
           return;
         }
-        if (result.data.events.length > 0) {
-          dispatch({ type: 'group-log-append', events: [...result.data.events] });
+        if (log.ok) {
+          if (log.data.events.length > 0) {
+            dispatch({ type: 'group-log-append', events: [...log.data.events] });
+          }
+          dispatch({ type: 'group-latest', latestSeq: log.data.latestSeq });
+        } else {
+          dispatch({ type: 'group-error', message: log.error.message });
         }
-        dispatch({ type: 'group-latest', latestSeq: result.data.latestSeq });
+        if (state.ok) {
+          dispatch({ type: 'group-detail', detail: state.data });
+        } else {
+          dispatch({ type: 'group-error', message: state.error.message });
+        }
       } finally {
         running = false;
       }

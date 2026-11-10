@@ -913,6 +913,8 @@ describe('chat manager groups', () => {
         authorityEpoch: 3,
         updatedAt: 123,
         driverStatus: 'running',
+        working: false,
+        blocked: false,
       },
     });
     const log = await manager.groupLog('room-1', 0, 50);

@@ -267,6 +267,8 @@ export interface RemoteGroupState {
   readonly authorityEpoch: number;
   readonly updatedAt: number;
   readonly driverStatus: string | null;
+  readonly working?: boolean;
+  readonly blocked?: boolean;
 }
 
 export interface RemoteGroupEvent {
