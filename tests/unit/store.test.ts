@@ -720,3 +720,17 @@ describe('group selection', () => {
     expect(state).toBe(before);
   });
 });
+
+describe('group roster loading state', () => {
+  it('tracks loading/error and clears them when the roster arrives', () => {
+    let state = build();
+    state = reduceAppState(state, { type: 'group-roster-loading' });
+    expect(state.remote.groupRosterLoading).toBe(true);
+    state = reduceAppState(state, { type: 'group-roster-error', message: 'offline' });
+    expect(state.remote.groupRosterLoading).toBe(false);
+    expect(state.remote.groupRosterError).toBe('offline');
+    state = reduceAppState(state, { type: 'remote-groups', groups: [] });
+    expect(state.remote.groupRosterLoading).toBe(false);
+    expect(state.remote.groupRosterError).toBeNull();
+  });
+});

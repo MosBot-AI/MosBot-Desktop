@@ -433,3 +433,10 @@
   overflow-x: hidden;
   overflow-y: auto;
 }
+
+.groupRosterError {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}

@@ -48,6 +48,8 @@ export function BotSidebar(): ReactElement {
   const state = useAppState((value) => value);
   const pinned = selectPinnedBots(state);
   const groups = state.remote.groups;
+  const groupsLoading = state.remote.groupRosterLoading;
+  const groupsError = state.remote.groupRosterError;
   const sections = selectRosterSections(state);
   const roster = selectRosterBots(state);
   const remote = isRemoteRoster(state);
@@ -85,6 +87,20 @@ export function BotSidebar(): ReactElement {
 
   const selectBot = (botId: string): void => {
     dispatch({ type: 'select-bot', botId });
+  };
+
+  const refreshGroups = async (): Promise<void> => {
+    const dashboard = window.mosbot?.dashboard;
+    if (dashboard === undefined) {
+      return;
+    }
+    dispatch({ type: 'group-roster-loading' });
+    const result = await dashboard.chatListGroups();
+    if (result.ok) {
+      dispatch({ type: 'remote-groups', groups: [...result.data] });
+    } else {
+      dispatch({ type: 'group-roster-error', message: result.error.message });
+    }
   };
 
   // Menu commands and the footer toggle both land here: move focus into the
@@ -204,7 +220,22 @@ export function BotSidebar(): ReactElement {
               </button>
             </div>
             <div className={styles.sectionBots}>
-              {groups.length === 0 ? (
+              {groupsLoading ? (
+                <p className={styles.sectionEmpty}>{t('sidebar.groupsLoading')}</p>
+              ) : groupsError !== null ? (
+                <div className={styles.groupRosterError}>
+                  <p className={styles.sectionEmpty}>{t('sidebar.groupsError')}</p>
+                  <button
+                    type="button"
+                    className={styles.sectionMenuButton}
+                    onClick={() => {
+                      void refreshGroups();
+                    }}
+                  >
+                    {t('sidebar.groupsRetry')}
+                  </button>
+                </div>
+              ) : groups.length === 0 ? (
                 <p className={styles.sectionEmpty}>{t('sidebar.groupsEmpty')}</p>
               ) : (
                 groups.map((group) => (

@@ -87,6 +87,8 @@ export interface RemoteState {
   readonly workspaces: Readonly<Record<string, string | null>>;
   /** Read-only hosted-room roster (M6). */
   readonly groups: readonly RemoteGroup[];
+  readonly groupRosterLoading: boolean;
+  readonly groupRosterError: string | null;
   /** Selected hosted room and its read-only detail/log. */
   readonly selectedGroupId: string | null;
   readonly groupDetail: RemoteGroupState | null;
@@ -252,6 +254,8 @@ export type AppAction =
   | { type: 'remote-loading' }
   | { type: 'remote-ready'; bots: readonly RemoteBot[] }
   | { type: 'remote-groups'; groups: readonly RemoteGroup[] }
+  | { type: 'group-roster-loading' }
+  | { type: 'group-roster-error'; message: string }
   | { type: 'select-group'; group: RemoteGroup }
   | { type: 'group-loading' }
   | { type: 'group-detail'; detail: RemoteGroupState }
@@ -490,6 +494,8 @@ export function createInitialState(seed: FixtureSeed, bootstrap: Bootstrap): App
       modelReady: {},
       workspaces: {},
       groups: [],
+      groupRosterLoading: false,
+      groupRosterError: null,
       selectedGroupId: null,
       groupDetail: null,
       groupEvents: [],
@@ -928,7 +934,22 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
     case 'remote-groups':
       return {
         ...state,
-        remote: { ...state.remote, groups: action.groups },
+        remote: {
+          ...state.remote,
+          groups: action.groups,
+          groupRosterLoading: false,
+          groupRosterError: null,
+        },
+      };
+    case 'group-roster-loading':
+      return {
+        ...state,
+        remote: { ...state.remote, groupRosterLoading: true, groupRosterError: null },
+      };
+    case 'group-roster-error':
+      return {
+        ...state,
+        remote: { ...state.remote, groupRosterLoading: false, groupRosterError: action.message },
       };
 
     case 'select-group':
@@ -1070,6 +1091,8 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
           modelReady: {},
           workspaces: {},
           groups: [],
+          groupRosterLoading: false,
+          groupRosterError: null,
           selectedGroupId: null,
           groupDetail: null,
           groupEvents: [],

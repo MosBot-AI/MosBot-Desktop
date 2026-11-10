@@ -476,7 +476,7 @@ comparison links stay local anchors until the first signed tag exists.
 ### Fixed
 
 - The group view now ignores late send/stop/approval/load-earlier responses after switching to another room.
-- Group actions append new log events instead of resetting to the first page; the group view can disband a room after confirmation; the Groups section stays visible when empty,
+- Group actions append new log events instead of resetting to the first page; the group view can disband a room after confirmation; the Groups section stays visible when empty with loading/error/retry states,
   reselecting the open room is a no-op, and only approval-kind pending actions render approval buttons.
 
 ## [0.1.0] - 2026-11-03

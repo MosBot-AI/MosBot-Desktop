@@ -17,7 +17,7 @@
 - The sidebar Groups section has a create button and a small create dialog (name + 2–6 local profiles); on success the roster refreshes and the new room opens.
 - The group view can disband a room after an explicit confirmation; the roster refreshes and the selection clears.
 - The group view opens on the latest 50-event page (derived from the room's latest sequence), polls forward, and offers "Load earlier messages" while the first visible sequence is above 1. After send/stop/approval it appends new events from the last seen sequence instead of replacing the window, so history and the new message stay visible.
-- The Groups section and its create button stay visible when the roster is empty; selecting the already-open room is a no-op; the open room is marked in the sidebar.
+- The Groups section and its create button stay visible when the roster is empty; it shows loading/error states with a retry action; selecting the already-open room is a no-op; the open room is marked in the sidebar.
 - Pending group approvals (`kind=approval`) appear as a banner with Allow once / Deny; resolving one calls `groups.approve` and appends the new state/log. Other pending action kinds are not shown as approvals.
 - While the group view is open, the renderer polls `groups.log` and `groups.state` every 3 s from the last seen seq, de-duplicates by seq, updates the latest sequence, refreshes working/blocked driver state, auto-scrolls and surfaces poll errors (a later successful poll clears them); reducer coverage is in `tests/unit/store.test.ts`.
 

@@ -258,10 +258,16 @@ export function App(): ReactElement {
       return;
     }
     let cancelled = false;
+    dispatch({ type: 'group-roster-loading' });
     void (async () => {
       const result = await dashboard.chatListGroups();
-      if (!cancelled && result.ok) {
+      if (cancelled) {
+        return;
+      }
+      if (result.ok) {
         dispatch({ type: 'remote-groups', groups: [...result.data] });
+      } else {
+        dispatch({ type: 'group-roster-error', message: result.error.message });
       }
     })();
     return () => {
