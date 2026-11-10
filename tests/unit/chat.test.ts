@@ -107,6 +107,20 @@ function createFakeGateway(options: GatewayOptions, replay?: FakeReplay): FakeGa
     if (method === 'groups.send') {
       return { accepted: true, driver_started: true };
     }
+    if (method === 'groups.create') {
+      return {
+        room: {
+          room_id: 'new-room',
+          name: 'Probe group',
+          members: [{ id: 'probe-a' }, { id: 'probe-b' }],
+          updated_at: 1,
+          latest_seq: 0,
+        },
+      };
+    }
+    if (method === 'groups.disband') {
+      return { tombstone: { room_id: 'new-room', disbanded_at: 2 } };
+    }
     if (method === 'session.events.since' && replay !== undefined) {
       return {
         events: replay.events,
@@ -910,6 +924,17 @@ describe('chat manager groups', () => {
     });
     const sent = await manager.groupSend('room-1', 'thread-1', 'hello', 'event-1');
     expect(sent.ok).toBe(true);
+    const created = await manager.groupCreate('Probe group', [
+      { memberId: 'probe-a', profile: 'bot-1', handle: 'probe-a' },
+      { memberId: 'probe-b', profile: 'bot-2', handle: 'probe-b' },
+    ]);
+    expect(created.ok).toBe(true);
+    if (created.ok) {
+      expect(created.data.name).toBe('Probe group');
+      expect(created.data.memberCount).toBe(2);
+    }
+    const disbanded = await manager.groupDisband('new-room');
+    expect(disbanded.ok).toBe(true);
     manager.close();
   });
 });

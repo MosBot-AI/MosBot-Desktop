@@ -38,6 +38,7 @@ import type {
   RemoteChat,
   RemoteGroup,
   RemoteGroupLogPage,
+  RemoteGroupMemberInput,
   RemoteGroupState,
   Result,
 } from '../shared/protocol';
@@ -320,6 +321,19 @@ const bridge: Omit<MosBotBridge, 'openExternal' | 'menu' | 'local' | 'computer'>
         text,
         eventId,
       ) as Promise<Result<void>>;
+    },
+    chatGroupCreate(
+      name: string,
+      members: readonly RemoteGroupMemberInput[],
+    ): Promise<Result<RemoteGroup>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.chatGroupCreate, name, members) as Promise<
+        Result<RemoteGroup>
+      >;
+    },
+    chatGroupDisband(roomId: string): Promise<Result<void>> {
+      return ipcRenderer.invoke(DASHBOARD_CHANNELS.chatGroupDisband, roomId) as Promise<
+        Result<void>
+      >;
     },
     onPendingEvent(listener: (event: DashboardPendingEvent) => void): () => void {
       const wrapped = (_event: Electron.IpcRendererEvent, payload: DashboardPendingEvent): void => {

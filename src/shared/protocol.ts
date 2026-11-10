@@ -252,6 +252,13 @@ export interface RemoteGroup {
   readonly latestSeq: number;
 }
 
+export interface RemoteGroupMemberInput {
+  readonly memberId: string;
+  readonly profile: string;
+  readonly handle: string;
+  readonly displayName?: string;
+}
+
 export interface RemoteGroupState {
   readonly roomId: string;
   readonly name: string;

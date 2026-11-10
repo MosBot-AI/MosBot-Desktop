@@ -6,6 +6,7 @@ import {
   type DashboardChatEvent,
   type RemoteGroup,
   type RemoteGroupLogPage,
+  type RemoteGroupMemberInput,
   type RemoteGroupState,
   type Result,
 } from '../../shared/protocol';
@@ -103,6 +104,47 @@ export function registerChatIpc(options: {
       return { ok: false, error: protocolError('invalid_url', 'The event id is not valid.') };
     }
     return chat.groupSend(roomId, threadId, text, eventId);
+  });
+
+  handle<RemoteGroup>(DASHBOARD_CHANNELS.chatGroupCreate, (name, members) => {
+    if (!isBoundedString(name, 120)) {
+      return { ok: false, error: protocolError('invalid_url', 'A group name is required.') };
+    }
+    if (!Array.isArray(members) || members.length < 2 || members.length > 6) {
+      return { ok: false, error: protocolError('invalid_url', 'A group needs 2-6 members.') };
+    }
+    const normalized: RemoteGroupMemberInput[] = [];
+    for (const member of members) {
+      if (!isPlainObject(member)) {
+        return { ok: false, error: protocolError('invalid_url', 'A group member is not valid.') };
+      }
+      const memberId = member['memberId'];
+      const profile = member['profile'];
+      const handle = member['handle'];
+      const displayName = member['displayName'];
+      if (
+        !isBoundedString(memberId, MAX_STORED_ID_LENGTH) ||
+        !isBoundedString(profile, MAX_PROFILE_LENGTH) ||
+        !isBoundedString(handle, 64) ||
+        (displayName !== undefined && typeof displayName !== 'string')
+      ) {
+        return { ok: false, error: protocolError('invalid_url', 'A group member is not valid.') };
+      }
+      normalized.push({
+        memberId,
+        profile,
+        handle,
+        ...(displayName === undefined ? {} : { displayName }),
+      });
+    }
+    return chat.groupCreate(name, normalized);
+  });
+
+  handle<void>(DASHBOARD_CHANNELS.chatGroupDisband, (roomId) => {
+    if (!isBoundedString(roomId, MAX_STORED_ID_LENGTH)) {
+      return { ok: false, error: protocolError('invalid_url', 'A room id is required.') };
+    }
+    return chat.groupDisband(roomId);
   });
 
   handle<RemoteGroupLogPage>(DASHBOARD_CHANNELS.chatGroupLog, (roomId, sinceSeq, limit) => {

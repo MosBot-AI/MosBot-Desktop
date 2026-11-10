@@ -5,10 +5,12 @@ import type {
   DashboardChatEvent,
   RemoteGroup,
   RemoteGroupLogPage,
+  RemoteGroupMemberInput,
   RemoteGroupState,
   Result,
 } from '../../shared/protocol';
 import { protocolError } from '../../shared/protocol';
+import { randomUUID } from 'node:crypto';
 import type { AuthManager } from './auth';
 import {
   connectGateway,
@@ -55,6 +57,13 @@ export interface ChatManager {
   groupLog(roomId: string, sinceSeq: number, limit: number): Promise<Result<RemoteGroupLogPage>>;
   /** Appends one user message to a hosted room. */
   groupSend(roomId: string, threadId: string, text: string, eventId: string): Promise<Result<void>>;
+  /** Creates a hosted room with a frozen local roster. */
+  groupCreate(
+    name: string,
+    members: readonly RemoteGroupMemberInput[],
+  ): Promise<Result<RemoteGroup>>;
+  /** Disbands a hosted room created by this gateway. */
+  groupDisband(roomId: string): Promise<Result<void>>;
   close(): void;
   state(): ChatState;
 }
@@ -675,6 +684,54 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
         { session_id: runtimeSessionId },
         emptySchema,
       );
+      return result.ok ? { ok: true, data: undefined } : result;
+    },
+
+    async groupCreate(name, members) {
+      if (client === null) {
+        return {
+          ok: false,
+          error: protocolError('unauthorized', 'The chat session is not connected.'),
+        };
+      }
+      const result = await client.call(
+        'groups.create',
+        {
+          room_id: randomUUID(),
+          name,
+          members: members.map((member) => ({
+            member_id: member.memberId,
+            profile: member.profile,
+            handle: member.handle,
+            ...(member.displayName === undefined ? {} : { display_name: member.displayName }),
+          })),
+        },
+        groupStateSchema,
+      );
+      if (!result.ok) {
+        return result;
+      }
+      const room = result.data.room;
+      return {
+        ok: true,
+        data: {
+          roomId: room.room_id,
+          name: room.name,
+          memberCount: room.members?.length ?? 0,
+          updatedAt: room.updated_at ?? 0,
+          latestSeq: room.latest_seq ?? 0,
+        },
+      };
+    },
+
+    async groupDisband(roomId) {
+      if (client === null) {
+        return {
+          ok: false,
+          error: protocolError('unauthorized', 'The chat session is not connected.'),
+        };
+      }
+      const result = await client.call('groups.disband', { room_id: roomId }, emptySchema);
       return result.ok ? { ok: true, data: undefined } : result;
     },
 

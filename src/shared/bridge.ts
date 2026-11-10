@@ -30,6 +30,7 @@ import type {
   RemoteChat,
   RemoteGroup,
   RemoteGroupLogPage,
+  RemoteGroupMemberInput,
   RemoteGroupState,
   Result,
 } from './protocol';
@@ -219,6 +220,13 @@ export interface MosBotDashboardBridge {
     text: string,
     eventId: string,
   ): Promise<Result<void>>;
+  /** Creates a hosted room with a frozen local roster. */
+  chatGroupCreate(
+    name: string,
+    members: readonly RemoteGroupMemberInput[],
+  ): Promise<Result<RemoteGroup>>;
+  /** Disbands a hosted room created by this gateway. */
+  chatGroupDisband(roomId: string): Promise<Result<void>>;
   /** Picks a file with the system dialog, stages it in the live session and returns its reference. */
   attachFile(): Promise<Result<{ name: string; refText: string }>>;
   /** Subscribes to live turn events; returns an unsubscribe function. */
@@ -297,6 +305,8 @@ export const DASHBOARD_CHANNELS = {
   chatGroupState: 'mosbot:dashboard:chatGroupState',
   chatGroupLog: 'mosbot:dashboard:chatGroupLog',
   chatGroupSend: 'mosbot:dashboard:chatGroupSend',
+  chatGroupCreate: 'mosbot:dashboard:chatGroupCreate',
+  chatGroupDisband: 'mosbot:dashboard:chatGroupDisband',
   chatAttachFile: 'mosbot:dashboard:chatAttachFile',
   chatEvent: 'mosbot:dashboard:chatEvent',
   pendingEvent: 'mosbot:dashboard:pendingEvent',
