@@ -212,6 +212,13 @@ export interface MosBotDashboardBridge {
     sinceSeq: number,
     limit: number,
   ): Promise<Result<RemoteGroupLogPage>>;
+  /** Appends one user message to a hosted room. */
+  chatGroupSend(
+    roomId: string,
+    threadId: string,
+    text: string,
+    eventId: string,
+  ): Promise<Result<void>>;
   /** Picks a file with the system dialog, stages it in the live session and returns its reference. */
   attachFile(): Promise<Result<{ name: string; refText: string }>>;
   /** Subscribes to live turn events; returns an unsubscribe function. */
@@ -289,6 +296,7 @@ export const DASHBOARD_CHANNELS = {
   chatListGroups: 'mosbot:dashboard:chatListGroups',
   chatGroupState: 'mosbot:dashboard:chatGroupState',
   chatGroupLog: 'mosbot:dashboard:chatGroupLog',
+  chatGroupSend: 'mosbot:dashboard:chatGroupSend',
   chatAttachFile: 'mosbot:dashboard:chatAttachFile',
   chatEvent: 'mosbot:dashboard:chatEvent',
   pendingEvent: 'mosbot:dashboard:pendingEvent',

@@ -17,7 +17,8 @@ comparison links stay local anchors until the first signed tag exists.
 
 - Group roster groundwork: the main-process chat manager reads the gateway's hosted-room list
   (`groups.list`) and the sidebar renders a read-only Groups section with room names and member counts;
-  clicking a room opens a read-only state/log view (`groups.state` + `groups.log`); sending is the next slice.
+  clicking a room opens a state/log view (`groups.state` + `groups.log`) with a message composer wired to
+  `groups.send`; real sending awaits a dedicated test group.
 - Artifact library: the workspace listing now understands the deployment's
   `mtime` (epoch seconds) instead of only `modified_at`, so files sort by real
   modification time; dangling symlinks (`broken_link`) show a "resource deleted"

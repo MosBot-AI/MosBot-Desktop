@@ -196,6 +196,7 @@ const groupEventSchema = z
     seq: z.number(),
     kind: z.string(),
     created_at: z.number().optional(),
+    payload: z.unknown().optional(),
   })
   .catchall(z.unknown());
 

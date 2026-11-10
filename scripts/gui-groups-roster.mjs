@@ -85,6 +85,10 @@ async function main() {
       detail: state?.remote?.groupDetail ?? null,
       error: state?.remote?.groupError ?? null,
       readOnly: (document.body.textContent ?? '').includes('只读'),
+      composer: document.querySelector('textarea') !== null,
+      sendButton: [...document.querySelectorAll('button')].some((button) =>
+        (button.textContent ?? '').includes('发送'),
+      ),
     };
   });
   if (groupView.heading === null || !groupView.readOnly) {

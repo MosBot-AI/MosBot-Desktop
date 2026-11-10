@@ -104,6 +104,9 @@ function createFakeGateway(options: GatewayOptions, replay?: FakeReplay): FakeGa
         has_more: true,
       };
     }
+    if (method === 'groups.send') {
+      return { accepted: true, driver_started: true };
+    }
     if (method === 'session.events.since' && replay !== undefined) {
       return {
         events: replay.events,
@@ -905,6 +908,8 @@ describe('chat manager groups', () => {
         hasMore: true,
       },
     });
+    const sent = await manager.groupSend('room-1', 'thread-1', 'hello', 'event-1');
+    expect(sent.ok).toBe(true);
     manager.close();
   });
 });

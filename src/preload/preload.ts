@@ -307,6 +307,20 @@ const bridge: Omit<MosBotBridge, 'openExternal' | 'menu' | 'local' | 'computer'>
         limit,
       ) as Promise<Result<RemoteGroupLogPage>>;
     },
+    chatGroupSend(
+      roomId: string,
+      threadId: string,
+      text: string,
+      eventId: string,
+    ): Promise<Result<void>> {
+      return ipcRenderer.invoke(
+        DASHBOARD_CHANNELS.chatGroupSend,
+        roomId,
+        threadId,
+        text,
+        eventId,
+      ) as Promise<Result<void>>;
+    },
     onPendingEvent(listener: (event: DashboardPendingEvent) => void): () => void {
       const wrapped = (_event: Electron.IpcRendererEvent, payload: DashboardPendingEvent): void => {
         listener(payload);

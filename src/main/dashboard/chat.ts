@@ -53,6 +53,8 @@ export interface ChatManager {
   groupState(roomId: string): Promise<Result<RemoteGroupState>>;
   /** Read-only monotonic room log delta. */
   groupLog(roomId: string, sinceSeq: number, limit: number): Promise<Result<RemoteGroupLogPage>>;
+  /** Appends one user message to a hosted room. */
+  groupSend(roomId: string, threadId: string, text: string, eventId: string): Promise<Result<void>>;
   close(): void;
   state(): ChatState;
 }
@@ -676,6 +678,21 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
       return result.ok ? { ok: true, data: undefined } : result;
     },
 
+    async groupSend(roomId, threadId, text, eventId) {
+      if (client === null) {
+        return {
+          ok: false,
+          error: protocolError('unauthorized', 'The chat session is not connected.'),
+        };
+      }
+      const result = await client.call(
+        'groups.send',
+        { room_id: roomId, event_id: eventId, payload: { thread_id: threadId, text } },
+        emptySchema,
+      );
+      return result.ok ? { ok: true, data: undefined } : result;
+    },
+
     async groupState(roomId) {
       if (client === null) {
         return {
@@ -733,6 +750,7 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
             seq: event.seq,
             kind: event.kind,
             createdAt: event.created_at ?? 0,
+            payload: event.payload,
           })),
           cursor: result.data.cursor ?? sinceSeq,
           latestSeq: result.data.latest_seq ?? sinceSeq,

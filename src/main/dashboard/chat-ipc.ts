@@ -89,6 +89,22 @@ export function registerChatIpc(options: {
     return chat.groupState(roomId);
   });
 
+  handle<void>(DASHBOARD_CHANNELS.chatGroupSend, (roomId, threadId, text, eventId) => {
+    if (!isBoundedString(roomId, MAX_STORED_ID_LENGTH)) {
+      return { ok: false, error: protocolError('invalid_url', 'A room id is required.') };
+    }
+    if (!isBoundedString(threadId, MAX_STORED_ID_LENGTH)) {
+      return { ok: false, error: protocolError('invalid_url', 'A thread id is required.') };
+    }
+    if (!isBoundedString(text, MAX_TEXT_LENGTH)) {
+      return { ok: false, error: protocolError('invalid_url', 'Enter a message first.') };
+    }
+    if (!isBoundedString(eventId, MAX_STORED_ID_LENGTH)) {
+      return { ok: false, error: protocolError('invalid_url', 'The event id is not valid.') };
+    }
+    return chat.groupSend(roomId, threadId, text, eventId);
+  });
+
   handle<RemoteGroupLogPage>(DASHBOARD_CHANNELS.chatGroupLog, (roomId, sinceSeq, limit) => {
     if (!isBoundedString(roomId, MAX_STORED_ID_LENGTH)) {
       return { ok: false, error: protocolError('invalid_url', 'A room id is required.') };

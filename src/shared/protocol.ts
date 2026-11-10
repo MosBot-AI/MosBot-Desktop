@@ -266,6 +266,8 @@ export interface RemoteGroupEvent {
   readonly seq: number;
   readonly kind: string;
   readonly createdAt: number;
+  /** Raw event payload; rendering interprets only the fields it needs. */
+  readonly payload?: unknown;
 }
 
 export interface RemoteGroupLogPage {
