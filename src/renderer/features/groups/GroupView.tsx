@@ -113,41 +113,35 @@ export function GroupView(): ReactElement {
       </div>
 
       <footer className={styles.composer}>
-        {threadId === null ? (
-          <p className={styles.notice}>{t('group.noThread')}</p>
-        ) : (
-          <>
-            <textarea
-              className={styles.input}
-              value={draft}
-              placeholder={t('group.composerPlaceholder')}
-              aria-label={t('group.composerPlaceholder')}
-              rows={2}
-              disabled={sending}
-              onChange={(event) => {
-                setDraft(event.target.value);
-                setSendError(null);
-              }}
-              onKeyDown={(event) => {
-                if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) {
-                  return;
-                }
-                event.preventDefault();
-                void send();
-              }}
-            />
-            <button
-              type="button"
-              className={styles.send}
-              disabled={sending || draft.trim() === '' || roomId === null}
-              onClick={() => {
-                void send();
-              }}
-            >
-              {sending ? t('group.sending') : t('group.send')}
-            </button>
-          </>
-        )}
+        <textarea
+          className={styles.input}
+          value={draft}
+          placeholder={t('group.composerPlaceholder')}
+          aria-label={t('group.composerPlaceholder')}
+          rows={2}
+          disabled={sending}
+          onChange={(event) => {
+            setDraft(event.target.value);
+            setSendError(null);
+          }}
+          onKeyDown={(event) => {
+            if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) {
+              return;
+            }
+            event.preventDefault();
+            void send();
+          }}
+        />
+        <button
+          type="button"
+          className={styles.send}
+          disabled={sending || draft.trim() === '' || roomId === null}
+          onClick={() => {
+            void send();
+          }}
+        >
+          {sending ? t('group.sending') : t('group.send')}
+        </button>
         {sendError === null ? null : (
           <p className={styles.error} role="alert">
             {sendError}
@@ -160,13 +154,18 @@ export function GroupView(): ReactElement {
   async function send(): Promise<void> {
     const dashboard = window.mosbot?.dashboard;
     const text = draft.trim();
-    if (dashboard === undefined || roomId === null || threadId === null || text === '') {
+    if (dashboard === undefined || roomId === null || text === '') {
       return;
     }
     setSending(true);
     setSendError(null);
     const eventId = `group-${crypto.randomUUID()}`;
-    const sent = await dashboard.chatGroupSend(roomId, threadId, text, eventId);
+    const sent = await dashboard.chatGroupSend(
+      roomId,
+      threadId ?? crypto.randomUUID(),
+      text,
+      eventId,
+    );
     if (!sent.ok) {
       setSending(false);
       setSendError(t('group.sendError'));

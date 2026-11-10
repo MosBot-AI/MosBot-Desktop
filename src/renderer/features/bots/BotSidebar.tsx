@@ -26,6 +26,7 @@ import {
 } from '../../components/icons';
 import { BotRow } from './BotRow';
 import { GroupRow } from './GroupRow';
+import { GroupCreateDialog } from '../groups/GroupCreateDialog';
 import { PinnedGrid } from './PinnedGrid';
 import styles from './BotSidebar.module.css';
 
@@ -63,6 +64,7 @@ export function BotSidebar(): ReactElement {
   const footerWasOpen = useRef(false);
   const [sectionMenuId, setSectionMenuId] = useState<string | null>(null);
   const [renaming, setRenaming] = useState<{ id: string; title: string } | null>(null);
+  const [groupCreateOpen, setGroupCreateOpen] = useState(false);
 
   useEffect(() => {
     if (sectionMenuId === null) {
@@ -184,9 +186,22 @@ export function BotSidebar(): ReactElement {
 
         {remote && groups.length > 0 ? (
           <section className={styles.section}>
-            <div className={styles.sectionHeader} aria-hidden="true">
-              <span className={styles.sectionName}>{t('sidebar.groups')}</span>
-              <span className={styles.sectionCount}>{groups.length}</span>
+            <div className={styles.sectionHeaderRow}>
+              <div className={styles.sectionHeader} aria-hidden="true">
+                <span className={styles.sectionName}>{t('sidebar.groups')}</span>
+                <span className={styles.sectionCount}>{groups.length}</span>
+              </div>
+              <button
+                type="button"
+                className={styles.sectionMenuButton}
+                aria-label={t('sidebar.groupCreate')}
+                title={t('sidebar.groupCreate')}
+                onClick={() => {
+                  setGroupCreateOpen(true);
+                }}
+              >
+                <IconPlus size={12} />
+              </button>
             </div>
             <div className={styles.sectionBots}>
               {groups.map((group) => (
@@ -504,6 +519,12 @@ export function BotSidebar(): ReactElement {
           </span>
         </button>
       </footer>
+      <GroupCreateDialog
+        open={groupCreateOpen}
+        onClose={() => {
+          setGroupCreateOpen(false);
+        }}
+      />
     </aside>
   );
 }
