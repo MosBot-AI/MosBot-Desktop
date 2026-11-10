@@ -1,9 +1,9 @@
-# M6 · Read-only Group Roster · Evidence
+# M6 · Group Chat · Evidence
 
 [简体中文](m6-group-roster-zh.md)
 
 - Card: M6 (group chat in first-release scope since 2026-11-10)
-- Status: **read-only roster, state/log view with member chips and Markdown messages, create dialog, composer, send, 3 s log/state polling, stop, approvals (deny and allow once), error surfacing and simulated socket-drop recovery are verified against the real service; voice and attachments are unavailable on this deployment**
+- Status: **group conversation UI (member avatars/names, bubbles, date separators, inline request cards), roster/create/disband, send, 3 s polling, history, stop, approvals (deny and allow once) and simulated reconnect are verified against the real service; voice and attachments are unavailable on this deployment**
 - Recorded: 2026-11-10
 - Target service: `192.168.2.171:9119` (v0.22.5 / `bf0203a794`)
 
@@ -12,14 +12,14 @@
 - `RemoteGroup` shared type, validated `groups.list` schema, `ChatManager.listGroups()` and the
   `chatListGroups()` bridge/preload/IPC method.
 - Renderer stores the read-only room list in `remote.groups` and fetches it once a Bot Chat connection is live.
-- Sidebar renders a "Groups" section with one row per room (face, name, member count).
-- Clicking a group opens a view with room metadata (member count, member chips, latest seq, driver status), the latest 50 log events (message text rendered as Markdown where present) and a composer. The composer is wired to `groups.send` with a derived `thread_id` and a client event id.
+- Sidebar renders a "Groups" section with one row per room (group avatar cluster, name, member count).
+- Clicking a group opens a conversation: member messages show an avatar, display name and bubble; user messages are right-aligned; date separators and per-message times; internal events are centered pills; pending approvals/retries are inline cards. The composer is wired to `groups.send` with a derived `thread_id` and a client event id.
 - The sidebar Groups section has a create button and a small create dialog (name + 2–6 local profiles); on success the roster refreshes and the new room opens.
 - The group view can disband a room after an explicit confirmation; the roster refreshes and the selection clears.
 - The message list is an ARIA log (`aria-live=polite`) for polled additions.
 - The group view opens on the latest 50-event page (derived from the room's latest sequence), polls forward, and offers "Load earlier messages" while the first visible sequence is above 1. Member replies show their display name; internal `turn.settled` rows are hidden and driver status is localized. After send/stop/approval it appends new events from the last seen sequence instead of replacing the window, so history and the new message stay visible.
 - The Groups section and its create button stay visible when the roster is empty; it shows loading/error states with retry/refresh actions; selecting the already-open room is a no-op; the open room is marked in the sidebar.
-- Pending group approvals (`kind=approval`) appear as a banner with Allow once / Deny; resolving one calls `groups.approve` and appends the new state/log. `kind=retry` actions get a Retry button wired to `groups.retry`; other pending kinds render as informational rows without actions.
+- Pending group approvals (`kind=approval`) appear as an inline card with Allow once / Deny; resolving one calls `groups.approve` and appends the new state/log. `kind=retry` actions get a Retry button wired to `groups.retry`; other pending kinds render as informational rows without actions.
 - While the group view is open, the renderer polls `groups.log` and `groups.state` every 3 s from the last seen seq, de-duplicates by seq, updates the latest sequence, refreshes working/blocked driver state, auto-scrolls and surfaces poll errors (a later successful poll clears them); reducer coverage is in `tests/unit/store.test.ts`.
 
 ## Real-window screenshot
@@ -34,7 +34,7 @@ The screenshot is clipped to the group surface (sidebar excluded) and uses a ded
 - Result: 2 hosted rooms rendered with matching member counts:
   - `Group Chat` · 4 members
   - `Mosbot Ui 041400、devbot` · 2 members
-- Clicking the first room rendered the view: heading `Group Chat`, 50 log events, latest seq 86, driver `running`, composer and send button present.
+- Clicking the first room rendered the conversation: heading `Group Chat`, 30 visible message rows (86 raw events), latest seq 86, driver `running`, composer and send button present.
 - Dedicated-group verification: `node scripts/gui-group-send.mjs` created a temporary hosted room from two local profiles, sent one message, found it in the room log and disbanded the room.
 - Group approval verification: `node scripts/gui-group-approval.mjs` triggered a real pending approval, denied it and saw it clear; `node scripts/gui-group-approval-ui.mjs` created a group from the dialog, saw the approval banner, clicked Deny and saw it clear (`created=true`, `approvalSeen=true`, `denied=true`, `cleared=true`, `disbanded=true`). `node scripts/gui-group-approval-allow.mjs` repeated the UI path with Allow once (`allowed=true`, `cleared=true`).
 - The deployment advertises 18 `groups.*` methods and does not include `groups.attachment.*`; group attachments are therefore a deployment capability gap, not a client gap.
@@ -42,7 +42,7 @@ The screenshot is clipped to the group surface (sidebar excluded) and uses a ded
 - End-to-end UI verification: `node scripts/gui-group-create-send.mjs` created a group from the dialog, sent a message from the composer, saw it rendered by the 3 s poll, clicked Stop (`stopped=true`) and disbanded the room (`created=true`, `sent=true`, `rendered=true`, `disbanded=true`).
 - History verification: `node scripts/gui-groups-roster.mjs` loaded the earlier page and grew the raw log from 50 to 86 events (visible message rows 30 → 46 because `turn.settled` is hidden); `loadedEarlier=true`.
 - Reconnect verification: `node scripts/gui-group-reconnect.mjs` dropped the gateway socket while a group view was open; the room stayed selected, detail/log recovered and the poll error cleared (`recovered=true`). The reconnecting state was too fast to observe (`sawReconnect=false`), so this is a simulated socket drop, not a real network outage.
-- `vitest` 176 passed; typecheck/lint/format green.
+- `vitest` 179 passed; typecheck/lint/format green.
 - Report (ignored working data): `docs/evidence/tmp/groups-roster-*.json`.
 
 ## Deployment capability limits

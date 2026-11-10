@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import type { RemoteGroup } from '../../../shared/protocol';
 import { useMessages } from '../../app/i18n';
-import { BotFace } from './face/BotFace';
+import { GroupAvatar } from '../groups/GroupAvatar';
 import styles from './BotRoster.module.css';
 
 export interface GroupRowProps {
@@ -23,14 +23,7 @@ export function GroupRow({ group, selected, onSelect }: GroupRowProps): ReactEle
       }}
       aria-label={`${group.name} · ${t('sidebar.groupMembers', { count: group.memberCount })}`}
     >
-      <BotFace
-        shape="circle"
-        color="#6E7781"
-        seed={group.roomId}
-        mood="idle"
-        size={34}
-        label={group.name}
-      />
+      <GroupAvatar seed={group.roomId} count={group.memberCount} size={34} label={group.name} />
       <span className={styles.rowText}>
         <span className={styles.rowTop}>
           <span className={styles.rowName} title={group.name}>

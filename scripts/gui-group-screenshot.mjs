@@ -82,15 +82,21 @@ async function main() {
     roomId = await page.evaluate(
       () => window.__mosbotDiag?.state?.()?.remote?.selectedGroupId ?? null,
     );
-    await page.getByRole('textbox').fill('M6 group view review · probe message');
+    await page.getByRole('textbox').fill('大家好，请每位成员用一句话打个招呼，然后结束。');
     await page.getByRole('button', { name: '发送', exact: true }).click();
-    await page.waitForFunction(
-      () =>
-        document.querySelectorAll('ol li').length > 0 &&
-        !(document.body.textContent ?? '').includes('发送中'),
-      undefined,
-      { timeout: 45_000 },
-    );
+    await page.waitForFunction(() => document.querySelectorAll('ol li').length > 0, undefined, {
+      timeout: 45_000,
+    });
+    await page
+      .waitForFunction(
+        () =>
+          (window.__mosbotDiag?.state?.()?.remote?.groupEvents ?? []).some(
+            (event) => event.kind === 'message.member',
+          ),
+        undefined,
+        { timeout: 60_000 },
+      )
+      .catch(() => undefined);
     const size = await page.evaluate(() => ({
       width: window.innerWidth,
       height: window.innerHeight,

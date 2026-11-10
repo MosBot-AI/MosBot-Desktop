@@ -88,8 +88,10 @@ async function main() {
       detail: state?.remote?.groupDetail ?? null,
       error: state?.remote?.groupError ?? null,
       composer: document.querySelector('textarea') !== null,
-      sendButton: [...document.querySelectorAll('button')].some((button) =>
-        (button.textContent ?? '').includes('发送'),
+      sendButton: [...document.querySelectorAll('button')].some(
+        (button) =>
+          (button.textContent ?? '').includes('发送') ||
+          (button.getAttribute('aria-label') ?? '') === '发送',
       ),
     };
   });

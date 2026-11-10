@@ -1,0 +1,17 @@
+.avatar {
+  position: relative;
+  flex: none;
+  display: inline-block;
+  border-radius: 999px;
+  background: var(--surface-raised);
+  box-shadow: 0 0 0 1px var(--border-subtle);
+}
+
+.face {
+  position: absolute;
+  display: block;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface-raised);
+  box-shadow: 0 0 0 2px var(--surface-raised);
+}
