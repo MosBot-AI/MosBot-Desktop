@@ -15,7 +15,7 @@
 - Sidebar renders a "Groups" section with one row per room (face, name, member count).
 - Clicking a group opens a view with room metadata (member count, member chips, latest seq, driver status), the latest 50 log events (message text rendered as Markdown where present) and a composer. The composer is wired to `groups.send` with a derived `thread_id` and a client event id.
 - The sidebar Groups section has a create button and a small create dialog (name + 2–6 local profiles); on success the roster refreshes and the new room opens.
-- The group view opens on the latest 50-event page (derived from the room's latest sequence) and then polls forward.
+- The group view opens on the latest 50-event page (derived from the room's latest sequence), polls forward, and offers "Load earlier messages" while the first visible sequence is above 1.
 - Pending group approvals appear as a banner with Allow once / Deny; resolving one calls `groups.approve` and refreshes the room state/log.
 - While the group view is open, the renderer polls `groups.log` and `groups.state` every 3 s from the last seen seq, de-duplicates by seq, updates the latest sequence, refreshes working/blocked driver state, auto-scrolls and surfaces poll errors (a later successful poll clears them); reducer coverage is in `tests/unit/store.test.ts`.
 
@@ -30,6 +30,7 @@
 - Group approval verification: `node scripts/gui-group-approval.mjs` triggered a real pending approval, denied it and saw it clear; `node scripts/gui-group-approval-ui.mjs` created a group from the dialog, saw the approval banner, clicked Deny and saw it clear (`created=true`, `approvalSeen=true`, `denied=true`, `cleared=true`, `disbanded=true`). `node scripts/gui-group-approval-allow.mjs` repeated the UI path with Allow once (`allowed=true`, `cleared=true`).
 - The deployment advertises 18 `groups.*` methods and does not include `groups.attachment.*`; group attachments are therefore a deployment capability gap, not a client gap.
 - End-to-end UI verification: `node scripts/gui-group-create-send.mjs` created a group from the dialog, sent a message from the composer, saw it rendered by the 3 s poll, clicked Stop (`stopped=true`) and disbanded the room (`created=true`, `sent=true`, `rendered=true`, `disbanded=true`).
+- History verification: `node scripts/gui-groups-roster.mjs` loaded the earlier page and grew the visible log from 50 to 86 events (`loadedEarlier=true`).
 - Reconnect verification: `node scripts/gui-group-reconnect.mjs` dropped the gateway socket while a group view was open; the room stayed selected, detail/log recovered and the poll error cleared (`recovered=true`). The reconnecting state was too fast to observe (`sawReconnect=false`), so this is a simulated socket drop, not a real network outage.
 - `vitest` 176 passed; typecheck/lint/format green.
 - Report (ignored working data): `docs/evidence/tmp/groups-roster-*.json`.

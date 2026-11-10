@@ -681,5 +681,13 @@ describe('group log polling', () => {
     state = reduceAppState(state, { type: 'group-latest', latestSeq: 2 });
     expect(state.remote.groupEvents.map((event) => event.seq)).toEqual([1, 2]);
     expect(state.remote.groupDetail?.latestSeq).toBe(2);
+    state = reduceAppState(state, {
+      type: 'group-log-prepend',
+      events: [
+        { seq: 0, kind: 'room.created', createdAt: 0 },
+        { seq: 1, kind: 'message.user', createdAt: 1, payload: { text: 'one' } },
+      ],
+    });
+    expect(state.remote.groupEvents.map((event) => event.seq)).toEqual([0, 1, 2]);
   });
 });

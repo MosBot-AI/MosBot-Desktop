@@ -257,6 +257,7 @@ export type AppAction =
   | { type: 'group-detail'; detail: RemoteGroupState }
   | { type: 'group-log'; events: readonly RemoteGroupEvent[] }
   | { type: 'group-log-append'; events: readonly RemoteGroupEvent[] }
+  | { type: 'group-log-prepend'; events: readonly RemoteGroupEvent[] }
   | { type: 'group-latest'; latestSeq: number }
   | { type: 'group-error'; message: string }
   | { type: 'group-clear' }
@@ -970,6 +971,18 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
         ...state,
         remote: { ...state.remote, groupEvents: merged.slice(-200) },
       };
+    }
+    case 'group-log-prepend': {
+      const seen = new Set(state.remote.groupEvents.map((event) => event.seq));
+      const merged = [...state.remote.groupEvents];
+      for (const event of action.events) {
+        if (!seen.has(event.seq)) {
+          seen.add(event.seq);
+          merged.push(event);
+        }
+      }
+      merged.sort((left, right) => left.seq - right.seq);
+      return { ...state, remote: { ...state.remote, groupEvents: merged } };
     }
     case 'group-latest':
       return {

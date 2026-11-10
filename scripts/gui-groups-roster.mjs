@@ -97,6 +97,22 @@ async function main() {
   if (groupView.heading === null || !groupView.readOnly) {
     throw new Error(`group view did not render: ${JSON.stringify(groupView)}`);
   }
+  const eventsBefore = groupView.events;
+  const earlier = page.getByRole('button', { name: '加载更早消息' });
+  let loadedEarlier = false;
+  let eventsAfter = eventsBefore;
+  if ((await earlier.count()) > 0) {
+    await earlier.click();
+    await page.waitForFunction(
+      (before) => (window.__mosbotDiag?.state?.()?.remote?.groupEvents ?? []).length > before,
+      eventsBefore,
+      { timeout: 30_000 },
+    );
+    loadedEarlier = true;
+    eventsAfter = await page.evaluate(
+      () => window.__mosbotDiag?.state?.()?.remote?.groupEvents?.length ?? 0,
+    );
+  }
   await application.close();
 
   const report = {
@@ -104,6 +120,8 @@ async function main() {
     generatedAt: new Date().toISOString(),
     ...result,
     groupView,
+    loadedEarlier,
+    eventsAfter,
   };
   const reportPath = path.join(
     OUT_DIR,

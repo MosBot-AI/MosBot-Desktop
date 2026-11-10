@@ -57,8 +57,11 @@ export function GroupView(): ReactElement {
   const [stopNotice, setStopNotice] = useState<string | null>(null);
   const [approvalBusy, setApprovalBusy] = useState<string | null>(null);
   const [approvalError, setApprovalError] = useState<string | null>(null);
+  const [loadingEarlier, setLoadingEarlier] = useState(false);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const threadId = threadIdFor(events);
+  const firstSeq = events.length === 0 ? 0 : (events[0]?.seq ?? 0);
+  const canLoadEarlier = firstSeq > 1;
 
   useEffect(() => {
     const body = bodyRef.current;
@@ -140,6 +143,18 @@ export function GroupView(): ReactElement {
       ))}
 
       <div className={styles.body} ref={bodyRef}>
+        {canLoadEarlier ? (
+          <button
+            type="button"
+            className={styles.loadEarlier}
+            disabled={loadingEarlier}
+            onClick={() => {
+              void loadEarlier();
+            }}
+          >
+            {loadingEarlier ? t('group.loadingEarlier') : t('group.loadEarlier')}
+          </button>
+        ) : null}
         {loading ? <p className={styles.notice}>{t('group.loading')}</p> : null}
         {error === null ? null : (
           <p className={styles.error} role="alert">
@@ -206,6 +221,22 @@ export function GroupView(): ReactElement {
       </footer>
     </div>
   );
+
+  async function loadEarlier(): Promise<void> {
+    const dashboard = window.mosbot?.dashboard;
+    if (dashboard === undefined || roomId === null || firstSeq <= 1) {
+      return;
+    }
+    setLoadingEarlier(true);
+    const result = await dashboard.chatGroupLog(roomId, Math.max(0, firstSeq - 50), 50);
+    if (result.ok) {
+      dispatch({
+        type: 'group-log-prepend',
+        events: [...result.data.events].filter((event) => event.seq < firstSeq),
+      });
+    }
+    setLoadingEarlier(false);
+  }
 
   async function decide(
     action: NonNullable<NonNullable<typeof detail>['pendingActions']>[number],
