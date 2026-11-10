@@ -19,6 +19,12 @@
 - 待处理群审批以横幅显示，提供「允许一次 / 拒绝」；处理时调用 `groups.approve` 并刷新房间状态/日志。
 - 群视图打开时每 3 秒轮询 `groups.log` 与 `groups.state`：按 seq 去重、更新最新序号、刷新 working/blocked driver 状态、自动滚动并呈现轮询错误（后续成功轮询会清除）；reducer 覆盖在 `tests/unit/store.test.ts`。
 
+## 真实窗口截图
+
+![M6 群视图（专用探针群）](assets/m6-group-view.png)
+
+截图裁切为群聊主区域（不含侧栏），使用专用探针群，截图后已解散。
+
 ## 验证
 
 - 命令：`node scripts/gui-groups-roster.mjs`（真实 Dashboard + 专用探针 userData）。

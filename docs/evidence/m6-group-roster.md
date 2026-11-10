@@ -19,6 +19,12 @@
 - Pending group approvals appear as a banner with Allow once / Deny; resolving one calls `groups.approve` and refreshes the room state/log.
 - While the group view is open, the renderer polls `groups.log` and `groups.state` every 3 s from the last seen seq, de-duplicates by seq, updates the latest sequence, refreshes working/blocked driver state, auto-scrolls and surfaces poll errors (a later successful poll clears them); reducer coverage is in `tests/unit/store.test.ts`.
 
+## Real-window screenshot
+
+![M6 group view with a dedicated probe room](assets/m6-group-view.png)
+
+The screenshot is clipped to the group surface (sidebar excluded) and uses a dedicated probe room that was disbanded afterwards.
+
 ## Verification
 
 - Command: `node scripts/gui-groups-roster.mjs` (real Dashboard, dedicated probe userData).
