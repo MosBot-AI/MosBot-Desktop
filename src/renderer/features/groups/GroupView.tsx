@@ -120,6 +120,7 @@ export function GroupView(): ReactElement {
   const [retryError, setRetryError] = useState<string | null>(null);
   const [atBottom, setAtBottom] = useState(true);
   const [hasNew, setHasNew] = useState(false);
+  const [copiedSeq, setCopiedSeq] = useState<number | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const threadId = threadIdFor(events);
   const isCurrentRoom = (): boolean => appStore.getState().remote.selectedGroupId === roomId;
@@ -322,6 +323,17 @@ export function GroupView(): ReactElement {
                     <div className={styles.userBubble}>
                       <RichText text={eventText(event)} />
                     </div>
+                    <div className={styles.messageActions}>
+                      <button
+                        type="button"
+                        className={styles.messageAction}
+                        onClick={() => {
+                          void copy(event);
+                        }}
+                      >
+                        {copiedSeq === event.seq ? t('group.copied') : t('group.copy')}
+                      </button>
+                    </div>
                   </li>
                 </Fragment>
               );
@@ -351,6 +363,17 @@ export function GroupView(): ReactElement {
                       </span>
                       <div className={styles.memberBubble}>
                         <RichText text={eventText(event)} />
+                      </div>
+                      <div className={styles.messageActions}>
+                        <button
+                          type="button"
+                          className={styles.messageAction}
+                          onClick={() => {
+                            void copy(event);
+                          }}
+                        >
+                          {copiedSeq === event.seq ? t('group.copied') : t('group.copy')}
+                        </button>
                       </div>
                     </div>
                   </li>
@@ -519,6 +542,18 @@ export function GroupView(): ReactElement {
       }
     } finally {
       setLoadingEarlier(false);
+    }
+  }
+
+  async function copy(event: RemoteGroupEvent): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(eventText(event));
+      setCopiedSeq(event.seq);
+      window.setTimeout(() => {
+        setCopiedSeq((current) => (current === event.seq ? null : current));
+      }, 1_500);
+    } catch {
+      // Clipboard access can be denied; keep the message selectable instead.
     }
   }
 

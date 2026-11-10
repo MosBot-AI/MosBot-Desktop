@@ -404,3 +404,34 @@
   transform: translateX(-50%);
   cursor: pointer;
 }
+
+.messageActions {
+  display: flex;
+  gap: var(--space-1);
+  margin: 2px var(--space-1) 0;
+  opacity: 0;
+  transition: opacity var(--duration-press) var(--easing-standard);
+}
+
+.memberRow:hover .messageActions,
+.memberRow:focus-within .messageActions,
+.userRow:hover .messageActions,
+.userRow:focus-within .messageActions {
+  opacity: 1;
+}
+
+.messageAction {
+  padding: 1px 6px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: none;
+  color: var(--text-tertiary);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.messageAction:hover {
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+}
