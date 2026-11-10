@@ -210,6 +210,18 @@ export function BotSidebar(): ReactElement {
               <button
                 type="button"
                 className={styles.sectionMenuButton}
+                aria-label={t('sidebar.groupsRefresh')}
+                title={t('sidebar.groupsRefresh')}
+                disabled={groupsLoading}
+                onClick={() => {
+                  void refreshGroups();
+                }}
+              >
+                ↻
+              </button>
+              <button
+                type="button"
+                className={styles.sectionMenuButton}
                 aria-label={t('sidebar.groupCreate')}
                 title={t('sidebar.groupCreate')}
                 onClick={() => {

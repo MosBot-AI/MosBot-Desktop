@@ -239,7 +239,13 @@ export function GroupView(): ReactElement {
           <p className={styles.notice}>{t('group.eventsEmpty')}</p>
         ) : null}
         {visibleEvents.length === 0 ? null : (
-          <ol className={styles.events}>
+          <ol
+            className={styles.events}
+            role="log"
+            aria-live="polite"
+            aria-relevant="additions"
+            aria-label={t('group.eventsLabel')}
+          >
             {visibleEvents.map((event) => {
               const author = eventAuthor(event, detail?.members ?? []);
               return (
