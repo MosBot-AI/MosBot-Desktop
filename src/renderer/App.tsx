@@ -212,6 +212,7 @@ export function App(): ReactElement {
 
   // Once connected, replace the fixture roster with the real profiles.
   const connected = useAppState((state) => state.connectionUi.snapshot?.connected === true);
+  const chatConnection = useAppState((state) => state.live.connection);
   useEffect(() => {
     const dashboard = window.mosbot?.dashboard;
     if (dashboard === undefined) {
@@ -246,6 +247,25 @@ export function App(): ReactElement {
       cancelled = true;
     };
   }, [connected, dispatch]);
+
+  // M6 group roster: fetch the read-only hosted-room list once a Bot Chat
+  // connection is live (the gateway RPC client is owned by the chat manager).
+  useEffect(() => {
+    const dashboard = window.mosbot?.dashboard;
+    if (dashboard === undefined || !connected || chatConnection !== 'connected') {
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const result = await dashboard.chatListGroups();
+      if (!cancelled && result.ok) {
+        dispatch({ type: 'remote-groups', groups: [...result.data] });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [chatConnection, connected, dispatch]);
 
   // Pending requests discovered for Bots that are not open: badge + notification click.
   useEffect(() => {

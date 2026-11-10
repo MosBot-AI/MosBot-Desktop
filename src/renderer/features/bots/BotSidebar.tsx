@@ -25,6 +25,7 @@ import {
   IconWarning,
 } from '../../components/icons';
 import { BotRow } from './BotRow';
+import { GroupRow } from './GroupRow';
 import { PinnedGrid } from './PinnedGrid';
 import styles from './BotSidebar.module.css';
 
@@ -45,6 +46,7 @@ export function BotSidebar(): ReactElement {
   const dispatch = useDispatch();
   const state = useAppState((value) => value);
   const pinned = selectPinnedBots(state);
+  const groups = state.remote.groups;
   const sections = selectRosterSections(state);
   const roster = selectRosterBots(state);
   const remote = isRemoteRoster(state);
@@ -179,6 +181,26 @@ export function BotSidebar(): ReactElement {
             dispatch({ type: 'set-pinned-menu', open: !state.pinnedMenuOpen });
           }}
         />
+
+        {remote && groups.length > 0 ? (
+          <section className={styles.section}>
+            <div className={styles.sectionHeader} aria-hidden="true">
+              <span className={styles.sectionName}>{t('sidebar.groups')}</span>
+              <span className={styles.sectionCount}>{groups.length}</span>
+            </div>
+            <div className={styles.sectionBots}>
+              {groups.map((group) => (
+                <GroupRow
+                  key={group.roomId}
+                  group={group}
+                  onSelect={() => {
+                    dispatch({ type: 'set-notice', notice: t('sidebar.groupReadOnly') });
+                  }}
+                />
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <nav className={styles.sections} aria-label={t('sidebar.label')}>
           {sections.map((section) => {

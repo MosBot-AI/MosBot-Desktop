@@ -25,6 +25,7 @@ import type {
   ProtocolError,
   RemoteBot,
   RemoteChat,
+  RemoteGroup,
 } from '../../shared/protocol';
 import { createFixtureSeed, type FixtureSeed } from './fixtures';
 
@@ -82,6 +83,8 @@ export interface RemoteState {
   readonly modelReady: Readonly<Record<string, boolean | null>>;
   /** Bot Chat workspace per profile (artifact library root). */
   readonly workspaces: Readonly<Record<string, string | null>>;
+  /** Read-only hosted-room roster (M6). */
+  readonly groups: readonly RemoteGroup[];
 }
 
 export interface LiveRequest {
@@ -240,6 +243,7 @@ export type AppAction =
   | { type: 'connection-snapshot'; snapshot: ConnectionSnapshot | null }
   | { type: 'remote-loading' }
   | { type: 'remote-ready'; bots: readonly RemoteBot[] }
+  | { type: 'remote-groups'; groups: readonly RemoteGroup[] }
   | { type: 'remote-error'; error: ProtocolError }
   | { type: 'remote-select'; profile: string }
   | { type: 'remote-chat'; chat: RemoteChat }
@@ -468,6 +472,7 @@ export function createInitialState(seed: FixtureSeed, bootstrap: Bootstrap): App
       loadingOlder: false,
       modelReady: {},
       workspaces: {},
+      groups: [],
     },
     live: {
       profile: null,
@@ -888,6 +893,11 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
           error: null,
         },
       };
+    case 'remote-groups':
+      return {
+        ...state,
+        remote: { ...state.remote, groups: action.groups },
+      };
     case 'remote-error':
       return {
         ...state,
@@ -942,6 +952,7 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
           loadingOlder: false,
           modelReady: {},
           workspaces: {},
+          groups: [],
         },
         remoteOrg: { pinned: [], sections: [], unsortedCollapsed: false },
       };

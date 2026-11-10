@@ -624,3 +624,30 @@ describe('live request cancellation', () => {
     expect(state.live.receipts['srq-1']).toBe('deny');
   });
 });
+
+describe('remote group roster', () => {
+  it('stores the read-only hosted-room list', () => {
+    let state = build();
+    state = reduceAppState(state, {
+      type: 'remote-groups',
+      groups: [
+        {
+          roomId: 'room-1',
+          name: 'Design room',
+          memberCount: 2,
+          updatedAt: 123,
+          latestSeq: 9,
+        },
+      ],
+    });
+    expect(state.remote.groups).toEqual([
+      {
+        roomId: 'room-1',
+        name: 'Design room',
+        memberCount: 2,
+        updatedAt: 123,
+        latestSeq: 9,
+      },
+    ]);
+  });
+});
