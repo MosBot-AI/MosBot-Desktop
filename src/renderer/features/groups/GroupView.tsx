@@ -58,18 +58,23 @@ export function GroupView(): ReactElement {
   const [approvalBusy, setApprovalBusy] = useState<string | null>(null);
   const [approvalError, setApprovalError] = useState<string | null>(null);
   const [loadingEarlier, setLoadingEarlier] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const threadId = threadIdFor(events);
   const isCurrentRoom = (): boolean => appStore.getState().remote.selectedGroupId === roomId;
   const firstSeq = events.length === 0 ? 0 : (events[0]?.seq ?? 0);
   const canLoadEarlier = firstSeq > 1;
+  const approvals = (detail?.pendingActions ?? []).filter((action) => action.kind === 'approval');
+  const lastSeq = events.length === 0 ? 0 : (events[events.length - 1]?.seq ?? 0);
+  const lastSeqRef = useRef(0);
 
   useEffect(() => {
     const body = bodyRef.current;
-    if (body !== null) {
+    if (body !== null && lastSeq > lastSeqRef.current) {
       body.scrollTop = body.scrollHeight;
     }
-  }, [events.length]);
+    lastSeqRef.current = lastSeq;
+  }, [lastSeq]);
 
   return (
     <div className={styles.group}>
@@ -116,32 +121,35 @@ export function GroupView(): ReactElement {
         )}
       </header>
 
-      {(detail?.pendingActions ?? []).map((action) => (
-        <div key={`${action.memberId}-${action.requestId}`} className={styles.approval}>
-          <span>{t('group.approval', { member: action.memberId })}</span>
-          <button
-            type="button"
-            className={styles.approvalAllow}
-            disabled={approvalBusy !== null}
-            onClick={() => {
-              void decide(action, 'once');
-            }}
-          >
-            {t('group.approveOnce')}
-          </button>
-          <button
-            type="button"
-            className={styles.approvalDeny}
-            disabled={approvalBusy !== null}
-            onClick={() => {
-              void decide(action, 'deny');
-            }}
-          >
-            {t('group.deny')}
-          </button>
-          {approvalError === null ? null : <span className={styles.error}>{approvalError}</span>}
-        </div>
-      ))}
+      {approvals.map((action) => {
+        const member = (detail?.members ?? []).find((entry) => entry.memberId === action.memberId);
+        return (
+          <div key={`${action.memberId}-${action.requestId}`} className={styles.approval}>
+            <span>{t('group.approval', { member: member?.displayName ?? action.memberId })}</span>
+            <button
+              type="button"
+              className={styles.approvalAllow}
+              disabled={approvalBusy !== null}
+              onClick={() => {
+                void decide(action, 'once');
+              }}
+            >
+              {t('group.approveOnce')}
+            </button>
+            <button
+              type="button"
+              className={styles.approvalDeny}
+              disabled={approvalBusy !== null}
+              onClick={() => {
+                void decide(action, 'deny');
+              }}
+            >
+              {t('group.deny')}
+            </button>
+            {approvalError === null ? null : <span className={styles.error}>{approvalError}</span>}
+          </div>
+        );
+      })}
 
       <div className={styles.body} ref={bodyRef}>
         {canLoadEarlier ? (
@@ -156,6 +164,11 @@ export function GroupView(): ReactElement {
             {loadingEarlier ? t('group.loadingEarlier') : t('group.loadEarlier')}
           </button>
         ) : null}
+        {historyError === null ? null : (
+          <p className={styles.error} role="alert">
+            {historyError}
+          </p>
+        )}
         {loading ? <p className={styles.notice}>{t('group.loading')}</p> : null}
         {error === null ? null : (
           <p className={styles.error} role="alert">
@@ -223,20 +236,50 @@ export function GroupView(): ReactElement {
     </div>
   );
 
+  async function refreshAfterAction(): Promise<void> {
+    const dashboard = window.mosbot?.dashboard;
+    if (dashboard === undefined || roomId === null) {
+      return;
+    }
+    const lastSeen = appStore.getState().remote.groupEvents;
+    const since = lastSeen.length === 0 ? 0 : (lastSeen[lastSeen.length - 1]?.seq ?? 0);
+    const [state, log] = await Promise.all([
+      dashboard.chatGroupState(roomId),
+      dashboard.chatGroupLog(roomId, since, 100),
+    ]);
+    if (!isCurrentRoom()) {
+      return;
+    }
+    if (state.ok) {
+      dispatch({ type: 'group-detail', detail: state.data });
+    }
+    if (log.ok) {
+      if (log.data.events.length > 0) {
+        dispatch({ type: 'group-log-append', events: [...log.data.events] });
+      }
+      dispatch({ type: 'group-latest', latestSeq: log.data.latestSeq });
+    }
+  }
+
   async function loadEarlier(): Promise<void> {
     const dashboard = window.mosbot?.dashboard;
     if (dashboard === undefined || roomId === null || firstSeq <= 1) {
       return;
     }
     setLoadingEarlier(true);
-    const result = await dashboard.chatGroupLog(roomId, Math.max(0, firstSeq - 50), 50);
-    if (result.ok && isCurrentRoom()) {
-      dispatch({
-        type: 'group-log-prepend',
-        events: [...result.data.events].filter((event) => event.seq < firstSeq),
-      });
+    setHistoryError(null);
+    try {
+      const result = await dashboard.chatGroupLog(roomId, Math.max(0, firstSeq - 51), 50);
+      if (!result.ok) {
+        setHistoryError(t('group.loadEarlierError'));
+        return;
+      }
+      if (isCurrentRoom()) {
+        dispatch({ type: 'group-log-prepend', events: [...result.data.events] });
+      }
+    } finally {
+      setLoadingEarlier(false);
     }
-    setLoadingEarlier(false);
   }
 
   async function decide(
@@ -259,16 +302,7 @@ export function GroupView(): ReactElement {
       setApprovalBusy(null);
       return;
     }
-    const [state, log] = await Promise.all([
-      dashboard.chatGroupState(roomId),
-      dashboard.chatGroupLog(roomId, 0, 50),
-    ]);
-    if (state.ok) {
-      dispatch({ type: 'group-detail', detail: state.data });
-    }
-    if (log.ok) {
-      dispatch({ type: 'group-log', events: [...log.data.events] });
-    }
+    await refreshAfterAction();
     setApprovalBusy(null);
   }
 
@@ -290,16 +324,7 @@ export function GroupView(): ReactElement {
       return;
     }
     setStopNotice(t('group.stopped'));
-    const [detail, log] = await Promise.all([
-      dashboard.chatGroupState(roomId),
-      dashboard.chatGroupLog(roomId, 0, 50),
-    ]);
-    if (detail.ok) {
-      dispatch({ type: 'group-detail', detail: detail.data });
-    }
-    if (log.ok) {
-      dispatch({ type: 'group-log', events: [...log.data.events] });
-    }
+    await refreshAfterAction();
     setStopping(false);
   }
 
@@ -328,16 +353,7 @@ export function GroupView(): ReactElement {
       return;
     }
     setDraft('');
-    const [detail, log] = await Promise.all([
-      dashboard.chatGroupState(roomId),
-      dashboard.chatGroupLog(roomId, 0, 50),
-    ]);
-    if (detail.ok) {
-      dispatch({ type: 'group-detail', detail: detail.data });
-    }
-    if (log.ok) {
-      dispatch({ type: 'group-log', events: [...log.data.events] });
-    }
+    await refreshAfterAction();
     setSending(false);
   }
 }

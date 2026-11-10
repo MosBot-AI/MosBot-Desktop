@@ -932,6 +932,9 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
       };
 
     case 'select-group':
+      if (state.remote.selectedGroupId === action.group.roomId) {
+        return state;
+      }
       return {
         ...state,
         remote: {

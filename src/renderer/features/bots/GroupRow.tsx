@@ -6,16 +6,18 @@ import styles from './BotRoster.module.css';
 
 export interface GroupRowProps {
   readonly group: RemoteGroup;
+  readonly selected: boolean;
   readonly onSelect: (group: RemoteGroup) => void;
 }
 
 /** One read-only hosted-room line in the roster; group chat itself is the next slice. */
-export function GroupRow({ group, onSelect }: GroupRowProps): ReactElement {
+export function GroupRow({ group, selected, onSelect }: GroupRowProps): ReactElement {
   const t = useMessages();
   return (
     <button
       type="button"
-      className={styles.row}
+      className={`${styles.row} ${selected ? styles.rowSelected : ''}`.trim()}
+      aria-current={selected ? 'true' : undefined}
       onClick={() => {
         onSelect(group);
       }}

@@ -852,7 +852,10 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
                   memberId: String(record['member_id'] ?? ''),
                   requestId: String(record['request_id'] ?? ''),
                   taskId: String(record['task_id'] ?? ''),
-                  executionGeneration: Number(record['execution_generation'] ?? 0),
+                  executionGeneration: (() => {
+                    const generation = Number(record['execution_generation'] ?? 0);
+                    return Number.isFinite(generation) ? generation : 0;
+                  })(),
                 },
               ];
             });

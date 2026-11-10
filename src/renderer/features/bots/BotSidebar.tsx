@@ -184,7 +184,7 @@ export function BotSidebar(): ReactElement {
           }}
         />
 
-        {remote && groups.length > 0 ? (
+        {remote ? (
           <section className={styles.section}>
             <div className={styles.sectionHeaderRow}>
               <div className={styles.sectionHeader} aria-hidden="true">
@@ -204,15 +204,20 @@ export function BotSidebar(): ReactElement {
               </button>
             </div>
             <div className={styles.sectionBots}>
-              {groups.map((group) => (
-                <GroupRow
-                  key={group.roomId}
-                  group={group}
-                  onSelect={(group) => {
-                    dispatch({ type: 'select-group', group });
-                  }}
-                />
-              ))}
+              {groups.length === 0 ? (
+                <p className={styles.sectionEmpty}>{t('sidebar.groupsEmpty')}</p>
+              ) : (
+                groups.map((group) => (
+                  <GroupRow
+                    key={group.roomId}
+                    group={group}
+                    selected={group.roomId === state.remote.selectedGroupId}
+                    onSelect={(group) => {
+                      dispatch({ type: 'select-group', group });
+                    }}
+                  />
+                ))
+              )}
             </div>
           </section>
         ) : null}

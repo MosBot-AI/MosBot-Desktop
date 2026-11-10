@@ -108,13 +108,19 @@ export function registerChatIpc(options: {
   });
 
   handle<RemoteGroup>(DASHBOARD_CHANNELS.chatGroupCreate, (name, members) => {
-    if (!isBoundedString(name, 120)) {
+    if (typeof name !== 'string') {
+      return { ok: false, error: protocolError('invalid_url', 'A group name is required.') };
+    }
+    const groupName = name.trim();
+    if (!isBoundedString(groupName, 120)) {
       return { ok: false, error: protocolError('invalid_url', 'A group name is required.') };
     }
     if (!Array.isArray(members) || members.length < 2 || members.length > 6) {
       return { ok: false, error: protocolError('invalid_url', 'A group needs 2-6 members.') };
     }
     const normalized: RemoteGroupMemberInput[] = [];
+    const profiles = new Set<string>();
+    const handles = new Set<string>();
     for (const member of members) {
       if (!isPlainObject(member)) {
         return { ok: false, error: protocolError('invalid_url', 'A group member is not valid.') };
@@ -127,10 +133,22 @@ export function registerChatIpc(options: {
         !isBoundedString(memberId, MAX_STORED_ID_LENGTH) ||
         !isBoundedString(profile, MAX_PROFILE_LENGTH) ||
         !isBoundedString(handle, 64) ||
-        (displayName !== undefined && typeof displayName !== 'string')
+        (displayName !== undefined &&
+          (!isBoundedString(displayName, 80) || displayName.trim() === ''))
       ) {
         return { ok: false, error: protocolError('invalid_url', 'A group member is not valid.') };
       }
+      if (profiles.has(profile) || handles.has(handle)) {
+        return {
+          ok: false,
+          error: protocolError(
+            'invalid_url',
+            'Group members must have unique profiles and handles.',
+          ),
+        };
+      }
+      profiles.add(profile);
+      handles.add(handle);
       normalized.push({
         memberId,
         profile,
@@ -138,7 +156,7 @@ export function registerChatIpc(options: {
         ...(displayName === undefined ? {} : { displayName }),
       });
     }
-    return chat.groupCreate(name, normalized);
+    return chat.groupCreate(groupName, normalized);
   });
 
   handle<void>(DASHBOARD_CHANNELS.chatGroupDisband, (roomId) => {

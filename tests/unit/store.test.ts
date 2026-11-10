@@ -691,3 +691,32 @@ describe('group log polling', () => {
     expect(state.remote.groupEvents.map((event) => event.seq)).toEqual([0, 1, 2]);
   });
 });
+
+describe('group selection', () => {
+  it('does not reset the view when the same group is selected again', () => {
+    const group = {
+      roomId: 'room-1',
+      name: 'Design room',
+      memberCount: 2,
+      updatedAt: 1,
+      latestSeq: 3,
+    };
+    let state = build();
+    state = reduceAppState(state, { type: 'select-group', group });
+    state = reduceAppState(state, {
+      type: 'group-detail',
+      detail: {
+        roomId: 'room-1',
+        name: 'Design room',
+        memberCount: 2,
+        latestSeq: 3,
+        authorityEpoch: 1,
+        updatedAt: 1,
+        driverStatus: 'running',
+      },
+    });
+    const before = state;
+    state = reduceAppState(state, { type: 'select-group', group });
+    expect(state).toBe(before);
+  });
+});

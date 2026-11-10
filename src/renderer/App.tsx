@@ -328,8 +328,12 @@ export function App(): ReactElement {
       }
       running = true;
       try {
-        const events = appStore.getState().remote.groupEvents;
-        const since = events.length === 0 ? 0 : (events[events.length - 1]?.seq ?? 0);
+        const current = appStore.getState().remote;
+        const events = current.groupEvents;
+        const since =
+          events.length === 0
+            ? Math.max(0, (current.groupDetail?.latestSeq ?? 0) - 100)
+            : (events[events.length - 1]?.seq ?? 0);
         const [log, state] = await Promise.all([
           dashboard.chatGroupLog(selectedGroupId, since, 100),
           dashboard.chatGroupState(selectedGroupId),
