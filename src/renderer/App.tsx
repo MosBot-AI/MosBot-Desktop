@@ -283,17 +283,20 @@ export function App(): ReactElement {
     }
     let cancelled = false;
     void (async () => {
-      const [detail, log] = await Promise.all([
-        dashboard.chatGroupState(selectedGroupId),
-        dashboard.chatGroupLog(selectedGroupId, 0, 50),
-      ]);
+      const detail = await dashboard.chatGroupState(selectedGroupId);
       if (cancelled) {
         return;
       }
-      if (detail.ok) {
-        dispatch({ type: 'group-detail', detail: detail.data });
-      } else {
+      if (!detail.ok) {
         dispatch({ type: 'group-error', message: detail.error.message });
+        return;
+      }
+      dispatch({ type: 'group-detail', detail: detail.data });
+      // Open on the latest page instead of replaying the room from seq 0.
+      const since = Math.max(0, detail.data.latestSeq - 50);
+      const log = await dashboard.chatGroupLog(selectedGroupId, since, 50);
+      if (cancelled) {
+        return;
       }
       if (log.ok) {
         dispatch({ type: 'group-log', events: [...log.data.events] });

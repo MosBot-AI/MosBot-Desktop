@@ -22,7 +22,8 @@ comparison links stay local anchors until the first signed tag exists.
   polls `groups.log` and `groups.state` every 3 s (working/blocked status, error surfacing), Stop cancels
   room work, a simulated socket drop recovers the open group view, and an end-to-end test verified
   create → send → render → stop → disband; the group view shows member chips, Markdown messages and
-  approval banners (both allow once and deny verified). Group attachments and voice remain deployment-bound.
+  approval banners (both allow once and deny verified), and opens on the latest log page. Group attachments and
+  voice remain deployment-bound.
 - Artifact library: the workspace listing now understands the deployment's
   `mtime` (epoch seconds) instead of only `modified_at`, so files sort by real
   modification time; dangling symlinks (`broken_link`) show a "resource deleted"

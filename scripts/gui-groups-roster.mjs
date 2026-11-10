@@ -72,7 +72,10 @@ async function main() {
   await page.waitForFunction(
     () => {
       const state = window.__mosbotDiag?.state?.() ?? null;
-      return state?.remote?.groupDetail != null || state?.remote?.groupError != null;
+      return (
+        (state?.remote?.groupDetail != null && (state.remote.groupEvents ?? []).length > 0) ||
+        state?.remote?.groupError != null
+      );
     },
     undefined,
     { timeout: 30_000 },

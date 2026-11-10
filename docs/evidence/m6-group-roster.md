@@ -15,6 +15,7 @@
 - Sidebar renders a "Groups" section with one row per room (face, name, member count).
 - Clicking a group opens a view with room metadata (member count, member chips, latest seq, driver status), the latest 50 log events (message text rendered as Markdown where present) and a composer. The composer is wired to `groups.send` with a derived `thread_id` and a client event id.
 - The sidebar Groups section has a create button and a small create dialog (name + 2–6 local profiles); on success the roster refreshes and the new room opens.
+- The group view opens on the latest 50-event page (derived from the room's latest sequence) and then polls forward.
 - Pending group approvals appear as a banner with Allow once / Deny; resolving one calls `groups.approve` and refreshes the room state/log.
 - While the group view is open, the renderer polls `groups.log` and `groups.state` every 3 s from the last seen seq, de-duplicates by seq, updates the latest sequence, refreshes working/blocked driver state, auto-scrolls and surfaces poll errors (a later successful poll clears them); reducer coverage is in `tests/unit/store.test.ts`.
 
