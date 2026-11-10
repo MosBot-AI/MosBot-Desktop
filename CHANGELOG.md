@@ -17,7 +17,8 @@ comparison links stay local anchors until the first signed tag exists.
 
 - Group chat: the sidebar lists hosted rooms with a group avatar cluster and opens a conversation UI with member
   avatars/names and bubbles, right-aligned user messages, date separators, inline approval/retry cards, a send
-  composer, stop/disband actions, history loading, 3 s state/log polling and reconnect recovery. Group attachments
+  composer, stop/disband actions, history loading, a floating jump-to-latest button, 3 s state/log polling and
+  reconnect recovery. Group attachments
   and voice remain deployment-bound.
 - Artifact library: the workspace listing now understands the deployment's
   `mtime` (epoch seconds) instead of only `modified_at`, so files sort by real

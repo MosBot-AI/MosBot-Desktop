@@ -7,7 +7,7 @@ import type {
 } from '../../../shared/protocol';
 import { useMessages } from '../../app/i18n';
 import { appStore, useAppState, useDispatch } from '../../app/store';
-import { IconSend } from '../../components/icons';
+import { IconChevronDown, IconSend } from '../../components/icons';
 import { BotFace } from '../bots/face/BotFace';
 import { RichText } from '../chat/RichText';
 import { GroupAvatar } from './GroupAvatar';
@@ -118,6 +118,8 @@ export function GroupView(): ReactElement {
   const [disbandError, setDisbandError] = useState<string | null>(null);
   const [retryBusy, setRetryBusy] = useState<string | null>(null);
   const [retryError, setRetryError] = useState<string | null>(null);
+  const [atBottom, setAtBottom] = useState(true);
+  const [hasNew, setHasNew] = useState(false);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const threadId = threadIdFor(events);
   const isCurrentRoom = (): boolean => appStore.getState().remote.selectedGroupId === roomId;
@@ -147,10 +149,23 @@ export function GroupView(): ReactElement {
   useEffect(() => {
     const body = bodyRef.current;
     if (body !== null && lastSeq > lastSeqRef.current) {
-      body.scrollTop = body.scrollHeight;
+      if (atBottom) {
+        body.scrollTop = body.scrollHeight;
+      } else {
+        setHasNew(true);
+      }
     }
     lastSeqRef.current = lastSeq;
-  }, [lastSeq]);
+  }, [atBottom, lastSeq]);
+
+  const scrollToLatest = (): void => {
+    const body = bodyRef.current;
+    if (body !== null) {
+      body.scrollTop = body.scrollHeight;
+    }
+    setAtBottom(true);
+    setHasNew(false);
+  };
 
   let lastDay = '';
 
@@ -240,7 +255,18 @@ export function GroupView(): ReactElement {
         </div>
       ) : null}
 
-      <div className={styles.body} ref={bodyRef}>
+      <div
+        className={styles.body}
+        ref={bodyRef}
+        onScroll={(event) => {
+          const body = event.currentTarget;
+          const nearBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 40;
+          setAtBottom(nearBottom);
+          if (nearBottom) {
+            setHasNew(false);
+          }
+        }}
+      >
         {canLoadEarlier ? (
           <button
             type="button"
@@ -415,6 +441,18 @@ export function GroupView(): ReactElement {
           </div>
         ))}
       </div>
+
+      {hasNew ? (
+        <button
+          type="button"
+          className={styles.scrollDown}
+          aria-label={t('group.scrollToLatest')}
+          title={t('group.scrollToLatest')}
+          onClick={scrollToLatest}
+        >
+          <IconChevronDown size={16} />
+        </button>
+      ) : null}
 
       <footer className={styles.composer}>
         <div className={styles.composerBox}>
