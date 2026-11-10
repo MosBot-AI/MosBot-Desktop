@@ -2,9 +2,10 @@
 
 [简体中文](m6-group-chat-design-zh.md)
 
-- Status: **draft proposal; scope not approved and no implementation has started**
+- Status: **scope approved (2026-11-10): group chat is in the first release; the read-only roster slice is the first implementation step. Voice stays separate.**
+- Scope decision: group chat is in first-release scope; the first slice is a read-only group roster (`groups.list`), followed by state/log, send/receive, approvals/attachments and creation. Voice recording/transcription remains separate until a capable deployment/device is available.
 - Related: [capability probe](m6-capability-probe.md), [interface spec](../plans/01-bot-experience.md)
-- Recorded: 2026-11-09
+- Recorded: 2026-11-09 · scope decision 2026-11-10
 
 ## 1. Why this draft exists
 

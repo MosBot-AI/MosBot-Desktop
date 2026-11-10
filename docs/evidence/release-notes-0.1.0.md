@@ -3,7 +3,7 @@
 [简体中文](release-notes-0.1.0-zh.md)
 
 - Version: 0.1.0 · source commit `f2b86d6`
-- Status: **release candidate, not a final release.** Remaining work: clean install on a second Mac/new user, seven consecutive days of daily use, and the server-side gaps #15/#16/#17.
+- Status: **release candidate, not a final release.** On 2026-11-10 the user moved the M5 user acceptance items (second-Mac clean install, seven-day dogfooding) out of first-release scope. Remaining: the server-side gaps #15/#16/#17 and M1 #19; M6 group chat is now in first-release scope and implementation has started.
 - Date: 2026-11-09
 
 ## Artifact
@@ -28,7 +28,7 @@ The source after this commit includes probe-only diagnostics (`88415d0`); they d
 | Minimum macOS         | ⏳ not declared; M0b did not freeze a minimum version, so this release claims only the tested version |
 | Backend               | `192.168.2.171:9119`, v0.22.5 / `bf0203a794`, Dashboard API only                                      |
 | Signing               | internal ad-hoc; no Developer ID/notarization (known limitation)                                      |
-| Second Mac / new user | ⏳ not tested (Issue #12)                                                                             |
+| Second Mac / new user | Out of first-release scope by user decision (2026-11-10); not tested                                  |
 
 ## Included in this candidate
 
@@ -39,7 +39,7 @@ The source after this commit includes probe-only diagnostics (`88415d0`); they d
 - M3 Hermes workbench: profiles, sessions, Kanban reads/writes and stale-response isolation.
 - M4 attachments/artifacts and the computer viewer with control acquire/return.
 - M5 performance, soak, accessibility, local install/upgrade and the ad-hoc signed ZIP.
-- M6 group chat/voice: not included; probe results in `m6-capability-probe.md`.
+- M6 group chat is now in first-release scope; the read-only roster bridge (`groups.list`) has landed and the first UI slice is in progress. Voice recording/transcription remains separate until a capable deployment/device is available; probe results in `m6-capability-probe.md`.
 
 ## Install and upgrade
 
@@ -55,7 +55,8 @@ The source after this commit includes probe-only diagnostics (`88415d0`); they d
 - **Artifact source field**: `/api/files` has no source-message field, so the library cannot show which message produced an artifact (Issue #15).
 - **Plugin-disabled state** and **unconfigured-model environment** are not verified on the deployment (Issues #17 and #16).
 - **Distribution format**: ZIP only, no DMG.
-- **M6**: group chat is available at the protocol level on the deployment; voice wake is unavailable on this headless deployment. Neither is part of this candidate.
+- **M5 user acceptance**: second-Mac clean install and seven-day dogfooding were moved out of first-release scope by the user on 2026-11-10.
+- **M6**: group chat is in first-release scope and is being implemented; the read-only roster bridge has landed, while send/receive and voice are not yet part of this candidate. Voice wake is unavailable on this headless deployment.
 - A real pointer click after the notification-click fix has not been repeated; the exact IPC handler is covered by `scripts/gui-pending-open.mjs`.
 
 ## Verification summary

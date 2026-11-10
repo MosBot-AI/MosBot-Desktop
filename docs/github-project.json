@@ -117,7 +117,7 @@
     },
     "8": {
       "title": "M5 · Release and daily-use acceptance",
-      "state": "open",
+      "state": "closed",
       "milestone": "M5 · Release and daily-use acceptance",
       "labels": ["type:plan", "phase:m5", "priority:p0", "needs:user"],
       "itemId": "PVTI_lADOFIcP2s4BqyP2zhHFpjk",
@@ -146,22 +146,6 @@
       "labels": ["type:blocker", "phase:m5", "priority:p1", "needs:certificate"],
       "itemId": "PVTI_lADOFIcP2s4BqyP2zhHFppc",
       "url": "https://github.com/MosBot-AI/MosBot-Desktop/issues/11"
-    },
-    "12": {
-      "title": "Acceptance · Clean install on a second Mac or a new user",
-      "state": "open",
-      "milestone": "M5 · Release and daily-use acceptance",
-      "labels": ["type:acceptance", "phase:m5", "priority:p0", "needs:user"],
-      "itemId": "PVTI_lADOFIcP2s4BqyP2zhHFpq0",
-      "url": "https://github.com/MosBot-AI/MosBot-Desktop/issues/12"
-    },
-    "13": {
-      "title": "Acceptance · Seven consecutive days of dogfooding",
-      "state": "open",
-      "milestone": "M5 · Release and daily-use acceptance",
-      "labels": ["type:acceptance", "phase:m5", "priority:p0", "needs:user"],
-      "itemId": "PVTI_lADOFIcP2s4BqyP2zhHFps0",
-      "url": "https://github.com/MosBot-AI/MosBot-Desktop/issues/13"
     },
     "14": {
       "title": "Blocker · Computer non-preemptive lease: server patch deployment and re-verification",
