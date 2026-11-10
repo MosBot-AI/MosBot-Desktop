@@ -473,6 +473,10 @@ comparison links stay local anchors until the first signed tag exists.
   Bot Chat query all pass; replayed and expired tickets are rejected. A real turn
   (delta/stop/resume) is still unverified; see `docs/evidence/capabilities.md`.
 
+### Fixed
+
+- The group view now ignores late send/stop/approval/load-earlier responses after switching to another room.
+
 ## [0.1.0] - 2026-11-03
 
 ### Added

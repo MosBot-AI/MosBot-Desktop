@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useMessages } from '../../app/i18n';
-import { useAppState, useDispatch } from '../../app/store';
+import { appStore, useAppState, useDispatch } from '../../app/store';
 import { RichText } from '../chat/RichText';
 import type { RemoteGroupEvent } from '../../../shared/protocol';
 import styles from './GroupView.module.css';
@@ -60,6 +60,7 @@ export function GroupView(): ReactElement {
   const [loadingEarlier, setLoadingEarlier] = useState(false);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const threadId = threadIdFor(events);
+  const isCurrentRoom = (): boolean => appStore.getState().remote.selectedGroupId === roomId;
   const firstSeq = events.length === 0 ? 0 : (events[0]?.seq ?? 0);
   const canLoadEarlier = firstSeq > 1;
 
@@ -229,7 +230,7 @@ export function GroupView(): ReactElement {
     }
     setLoadingEarlier(true);
     const result = await dashboard.chatGroupLog(roomId, Math.max(0, firstSeq - 50), 50);
-    if (result.ok) {
+    if (result.ok && isCurrentRoom()) {
       dispatch({
         type: 'group-log-prepend',
         events: [...result.data.events].filter((event) => event.seq < firstSeq),
@@ -252,6 +253,10 @@ export function GroupView(): ReactElement {
     if (!result.ok) {
       setApprovalBusy(null);
       setApprovalError(t('group.approvalError'));
+      return;
+    }
+    if (!isCurrentRoom()) {
+      setApprovalBusy(null);
       return;
     }
     const [state, log] = await Promise.all([
@@ -278,6 +283,10 @@ export function GroupView(): ReactElement {
     if (!result.ok) {
       setStopping(false);
       setStopNotice(t('group.stopError'));
+      return;
+    }
+    if (!isCurrentRoom()) {
+      setStopping(false);
       return;
     }
     setStopNotice(t('group.stopped'));
@@ -312,6 +321,10 @@ export function GroupView(): ReactElement {
     if (!sent.ok) {
       setSending(false);
       setSendError(t('group.sendError'));
+      return;
+    }
+    if (!isCurrentRoom()) {
+      setSending(false);
       return;
     }
     setDraft('');

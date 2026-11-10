@@ -298,6 +298,10 @@ MosBot Desktop 的所有重要变更记录在此。格式遵循
   复用与过期 ticket 被拒绝。真实 turn（delta/停止/resume）仍未验证；详见
   `docs/evidence/capabilities.md`。
 
+### 修复
+
+- 群视图切换到其他房间后，会忽略迟到的发送/停止/审批/加载更早响应。
+
 ## [0.1.0] - 2026-11-03
 
 ### 新增
