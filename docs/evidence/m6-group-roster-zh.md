@@ -31,8 +31,15 @@
 - `vitest` 176 passed；typecheck/lint/format 全绿。
 - 报告（工作区忽略数据）：`docs/evidence/tmp/groups-roster-*.json`。
 
+## 部署能力限制
+
+- 部署未公布 `groups.attachment.*`（18 个 `groups.*` 方法）；群附件被服务端能力阻塞。
+- `groups.approve` / `groups.retry` 存在，但群日志/任务中尚未观察到群审批请求，审批 UI 暂时无法接线与验证。
+- 语音录音/转写在该无头部署仍不可用（`wake.status available=false`）。
+- 跟踪于 Issue #20。
+
 ## 下一步
 
 1. 群审批。
 2. 用真实断网加固错误/重连状态。
-3. 附件需要部署公布 `groups.attachment.*`；语音录音/转写保持独立，直到有具备能力的部署/设备。
+3. 附件需要部署公布 `groups.attachment.*`；审批需要可复现的群任务触发审批；语音录音/转写保持独立，直到有具备能力的部署/设备。

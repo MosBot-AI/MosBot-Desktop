@@ -31,8 +31,15 @@
 - `vitest` 176 passed; typecheck/lint/format green.
 - Report (ignored working data): `docs/evidence/tmp/groups-roster-*.json`.
 
+## Deployment capability limits
+
+- `groups.attachment.*` is not advertised by the deployment (18 `groups.*` methods); group attachments are blocked on the server side.
+- `groups.approve` / `groups.retry` exist, but no group approval request has been observed in the room log/tasks, so the approval UI cannot be wired or verified yet.
+- Voice recording/transcription remains unavailable on the headless deployment (`wake.status available=false`).
+- Tracked in Issue #20.
+
 ## Next
 
 1. Group approvals.
 2. Error/reconnect hardening with a real network drop.
-3. Attachments need a deployment that advertises `groups.attachment.*`; voice recording/transcription stays separate until a capable deployment/device is available.
+3. Attachments need a deployment that advertises `groups.attachment.*`; approvals need a reproducible group task that requests approval; voice recording/transcription stays separate until a capable deployment/device is available.

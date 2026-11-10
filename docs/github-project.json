@@ -186,6 +186,30 @@
       "labels": ["type:blocker", "phase:m1", "priority:p0", "needs:server"],
       "itemId": "PVTI_lADOFIcP2s4BqyP2zhHQUak",
       "url": "https://github.com/MosBot-AI/MosBot-Desktop/issues/19"
+    },
+    "20": {
+      "title": "Blocker · Group voice, attachments and approvals need deployment capabilities",
+      "state": "open",
+      "milestone": "M6 · Capability expansion",
+      "labels": ["type:blocker", "phase:m6", "priority:p1", "needs:server"],
+      "itemId": "PVTI_lADOFIcP2s4BqyP2zhHYb6s",
+      "url": "https://github.com/MosBot-AI/MosBot-Desktop/issues/20"
+    },
+    "13": {
+      "title": "Acceptance · Seven consecutive days of dogfooding",
+      "state": "closed",
+      "milestone": "M5 · Release and daily-use acceptance",
+      "labels": ["type:acceptance", "phase:m5", "priority:p0", "needs:user"],
+      "itemId": "",
+      "url": "https://github.com/MosBot-AI/MosBot-Desktop/issues/13"
+    },
+    "12": {
+      "title": "Acceptance · Clean install on a second Mac or a new user",
+      "state": "closed",
+      "milestone": "M5 · Release and daily-use acceptance",
+      "labels": ["type:acceptance", "phase:m5", "priority:p0", "needs:user"],
+      "itemId": "",
+      "url": "https://github.com/MosBot-AI/MosBot-Desktop/issues/12"
     }
   }
 }
