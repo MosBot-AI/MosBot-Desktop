@@ -3,7 +3,7 @@
 [English](m6-group-roster.md)
 
 - 卡片：M6（群聊自 2026-11-10 进入首版范围）
-- 状态：**只读名单、状态/日志视图、创建弹层、输入框、发送、3 秒日志/状态轮询、停止与错误呈现已端到端验证；审批/附件是下一步**
+- 状态：**只读名单、状态/日志视图、创建弹层、输入框、发送、3 秒日志/状态轮询、停止、错误呈现与模拟 socket 断开恢复已在真实服务验证；审批/附件是下一步**
 - 记录时间：2026-11-10
 - 目标服务：`192.168.2.171:9119`（v0.22.5 / `bf0203a794`）
 
@@ -26,11 +26,12 @@
 - 点击第一个房间渲染视图：标题 `Group Chat`、50 条日志事件、最新序号 86、驱动 `running`、输入框与发送按钮存在。
 - 专用群验证：`node scripts/gui-group-send.mjs` 用两个本地 profile 创建临时群，发送一条消息，在群日志中找到该消息后解散群。
 - 端到端 UI 验证：`node scripts/gui-group-create-send.mjs` 从弹层创建群、在输入框发送消息、由 3 秒轮询渲染出来、点击停止（`stopped=true`）并解散房间（`created=true`、`sent=true`、`rendered=true`、`disbanded=true`）。
+- 重连验证：`node scripts/gui-group-reconnect.mjs` 在群视图打开时断开 gateway socket；房间保持选中、detail/log 恢复、轮询错误清除（`recovered=true`）。重连状态太快未观察到（`sawReconnect=false`），因此这是模拟 socket 断开，不是真实断网。
 - `vitest` 176 passed；typecheck/lint/format 全绿。
 - 报告（工作区忽略数据）：`docs/evidence/tmp/groups-roster-*.json`。
 
 ## 下一步
 
 1. 群审批与附件。
-2. 用强制断网加固错误/重连状态。
+2. 用真实断网加固错误/重连状态。
 3. 语音录音/转写保持独立，直到有具备能力的部署/设备。

@@ -3,7 +3,7 @@
 [简体中文](m6-group-roster-zh.md)
 
 - Card: M6 (group chat in first-release scope since 2026-11-10)
-- Status: **read-only roster, state/log view, create dialog, composer, send, 3 s log/state polling, stop and error surfacing are verified end-to-end against the real service; approvals/attachments are next**
+- Status: **read-only roster, state/log view, create dialog, composer, send, 3 s log/state polling, stop, error surfacing and simulated socket-drop recovery are verified against the real service; approvals/attachments are next**
 - Recorded: 2026-11-10
 - Target service: `192.168.2.171:9119` (v0.22.5 / `bf0203a794`)
 
@@ -26,11 +26,12 @@
 - Clicking the first room rendered the view: heading `Group Chat`, 50 log events, latest seq 86, driver `running`, composer and send button present.
 - Dedicated-group verification: `node scripts/gui-group-send.mjs` created a temporary hosted room from two local profiles, sent one message, found it in the room log and disbanded the room.
 - End-to-end UI verification: `node scripts/gui-group-create-send.mjs` created a group from the dialog, sent a message from the composer, saw it rendered by the 3 s poll, clicked Stop (`stopped=true`) and disbanded the room (`created=true`, `sent=true`, `rendered=true`, `disbanded=true`).
+- Reconnect verification: `node scripts/gui-group-reconnect.mjs` dropped the gateway socket while a group view was open; the room stayed selected, detail/log recovered and the poll error cleared (`recovered=true`). The reconnecting state was too fast to observe (`sawReconnect=false`), so this is a simulated socket drop, not a real network outage.
 - `vitest` 176 passed; typecheck/lint/format green.
 - Report (ignored working data): `docs/evidence/tmp/groups-roster-*.json`.
 
 ## Next
 
 1. Group approvals and attachments.
-2. Error/reconnect hardening with a forced network drop.
+2. Error/reconnect hardening with a real network drop.
 3. Voice recording/transcription stays separate until a capable deployment/device is available.
