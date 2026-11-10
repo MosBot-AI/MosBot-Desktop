@@ -193,8 +193,8 @@ export function BotSidebar(): ReactElement {
                 <GroupRow
                   key={group.roomId}
                   group={group}
-                  onSelect={() => {
-                    dispatch({ type: 'set-notice', notice: t('sidebar.groupReadOnly') });
+                  onSelect={(group) => {
+                    dispatch({ type: 'select-group', group });
                   }}
                 />
               ))}

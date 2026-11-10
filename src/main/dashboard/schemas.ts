@@ -180,4 +180,32 @@ export const groupListSchema = z
   })
   .catchall(z.unknown());
 
+const groupStateRoomSchema = groupRowSchema.extend({
+  authority_epoch: z.number().optional(),
+});
+
+export const groupStateSchema = z
+  .object({
+    room: groupStateRoomSchema,
+    driver_status: z.unknown().optional(),
+  })
+  .catchall(z.unknown());
+
+const groupEventSchema = z
+  .object({
+    seq: z.number(),
+    kind: z.string(),
+    created_at: z.number().optional(),
+  })
+  .catchall(z.unknown());
+
+export const groupLogSchema = z
+  .object({
+    events: z.array(groupEventSchema),
+    cursor: z.number().optional(),
+    latest_seq: z.number().optional(),
+    has_more: z.boolean().optional(),
+  })
+  .catchall(z.unknown());
+
 export const emptySchema = z.unknown();

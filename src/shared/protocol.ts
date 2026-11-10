@@ -252,6 +252,29 @@ export interface RemoteGroup {
   readonly latestSeq: number;
 }
 
+export interface RemoteGroupState {
+  readonly roomId: string;
+  readonly name: string;
+  readonly memberCount: number;
+  readonly latestSeq: number;
+  readonly authorityEpoch: number;
+  readonly updatedAt: number;
+  readonly driverStatus: string | null;
+}
+
+export interface RemoteGroupEvent {
+  readonly seq: number;
+  readonly kind: string;
+  readonly createdAt: number;
+}
+
+export interface RemoteGroupLogPage {
+  readonly events: readonly RemoteGroupEvent[];
+  readonly cursor: number;
+  readonly latestSeq: number;
+  readonly hasMore: boolean;
+}
+
 export interface WorkbenchSession {
   readonly id: string;
   readonly title: string;

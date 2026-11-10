@@ -4,6 +4,8 @@ import type {
   ChatTurnStatus,
   DashboardChatEvent,
   RemoteGroup,
+  RemoteGroupLogPage,
+  RemoteGroupState,
   Result,
 } from '../../shared/protocol';
 import { protocolError } from '../../shared/protocol';
@@ -15,7 +17,7 @@ import {
   type RpcClient,
 } from './rpc';
 import { createStreamBatcher } from '../../shared/stream-batch';
-import { emptySchema, groupListSchema } from './schemas';
+import { emptySchema, groupListSchema, groupLogSchema, groupStateSchema } from './schemas';
 import type { TransportFetch } from './transport';
 
 export interface ChatManagerDeps {
@@ -47,6 +49,10 @@ export interface ChatManager {
   answer(requestId: string, result: Readonly<Record<string, unknown>>): Promise<Result<void>>;
   /** Read-only hosted-room list for the M6 group roster. */
   listGroups(): Promise<Result<readonly RemoteGroup[]>>;
+  /** Read-only room metadata/authority state. */
+  groupState(roomId: string): Promise<Result<RemoteGroupState>>;
+  /** Read-only monotonic room log delta. */
+  groupLog(roomId: string, sinceSeq: number, limit: number): Promise<Result<RemoteGroupLogPage>>;
   close(): void;
   state(): ChatState;
 }
@@ -668,6 +674,71 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
         emptySchema,
       );
       return result.ok ? { ok: true, data: undefined } : result;
+    },
+
+    async groupState(roomId) {
+      if (client === null) {
+        return {
+          ok: false,
+          error: protocolError('unauthorized', 'The chat session is not connected.'),
+        };
+      }
+      const result = await client.call('groups.state', { room_id: roomId }, groupStateSchema);
+      if (!result.ok) {
+        return result;
+      }
+      const room = result.data.room;
+      return {
+        ok: true,
+        data: {
+          roomId: room.room_id,
+          name: room.name,
+          memberCount: room.members?.length ?? 0,
+          latestSeq: room.latest_seq ?? 0,
+          authorityEpoch: room.authority_epoch ?? 0,
+          updatedAt: room.updated_at ?? 0,
+          driverStatus: (() => {
+            const driver = result.data.driver_status;
+            if (typeof driver === 'string') {
+              return driver;
+            }
+            if (driver !== null && typeof driver === 'object' && 'running' in driver) {
+              return (driver as { running?: unknown }).running === true ? 'running' : 'idle';
+            }
+            return null;
+          })(),
+        },
+      };
+    },
+
+    async groupLog(roomId, sinceSeq, limit) {
+      if (client === null) {
+        return {
+          ok: false,
+          error: protocolError('unauthorized', 'The chat session is not connected.'),
+        };
+      }
+      const result = await client.call(
+        'groups.log',
+        { room_id: roomId, since_seq: sinceSeq, limit },
+        groupLogSchema,
+      );
+      if (!result.ok) {
+        return result;
+      }
+      return {
+        ok: true,
+        data: {
+          events: result.data.events.map((event) => ({
+            seq: event.seq,
+            kind: event.kind,
+            createdAt: event.created_at ?? 0,
+          })),
+          cursor: result.data.cursor ?? sinceSeq,
+          latestSeq: result.data.latest_seq ?? sinceSeq,
+          hasMore: result.data.has_more === true,
+        },
+      };
     },
 
     async listGroups() {

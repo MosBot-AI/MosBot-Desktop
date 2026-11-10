@@ -29,6 +29,8 @@ import type {
   RemoteBot,
   RemoteChat,
   RemoteGroup,
+  RemoteGroupLogPage,
+  RemoteGroupState,
   Result,
 } from './protocol';
 
@@ -202,6 +204,14 @@ export interface MosBotDashboardBridge {
   chatAnswer(requestId: string, result: Readonly<Record<string, unknown>>): Promise<Result<void>>;
   /** Read-only hosted-room list for the M6 group roster. */
   chatListGroups(): Promise<Result<readonly RemoteGroup[]>>;
+  /** Read-only room metadata/authority state. */
+  chatGroupState(roomId: string): Promise<Result<RemoteGroupState>>;
+  /** Read-only monotonic room log delta. */
+  chatGroupLog(
+    roomId: string,
+    sinceSeq: number,
+    limit: number,
+  ): Promise<Result<RemoteGroupLogPage>>;
   /** Picks a file with the system dialog, stages it in the live session and returns its reference. */
   attachFile(): Promise<Result<{ name: string; refText: string }>>;
   /** Subscribes to live turn events; returns an unsubscribe function. */
@@ -277,6 +287,8 @@ export const DASHBOARD_CHANNELS = {
   chatStop: 'mosbot:dashboard:chatStop',
   chatAnswer: 'mosbot:dashboard:chatAnswer',
   chatListGroups: 'mosbot:dashboard:chatListGroups',
+  chatGroupState: 'mosbot:dashboard:chatGroupState',
+  chatGroupLog: 'mosbot:dashboard:chatGroupLog',
   chatAttachFile: 'mosbot:dashboard:chatAttachFile',
   chatEvent: 'mosbot:dashboard:chatEvent',
   pendingEvent: 'mosbot:dashboard:pendingEvent',

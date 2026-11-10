@@ -10,7 +10,14 @@ import { cpSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { _electron as electron } from 'playwright';
 
-const APP = path.resolve('out', `MosBot-${process.platform}-${process.arch}`, 'MosBot.app', 'Contents', 'MacOS', 'MosBot');
+const APP = path.resolve(
+  'out',
+  `MosBot-${process.platform}-${process.arch}`,
+  'MosBot.app',
+  'Contents',
+  'MacOS',
+  'MosBot',
+);
 const USER_DATA = path.resolve('.tmp/userdata-groups-roster');
 const OUT_DIR = path.resolve('docs/evidence/tmp');
 
@@ -58,12 +65,38 @@ async function main() {
   if (result.groups.length === 0 || result.rows.length !== result.groups.length) {
     throw new Error(`group roster did not render: ${JSON.stringify(result)}`);
   }
+  await page
+    .getByRole('button', { name: /位成员/ })
+    .first()
+    .click();
+  await page.waitForFunction(
+    () => {
+      const state = window.__mosbotDiag?.state?.() ?? null;
+      return state?.remote?.groupDetail != null || state?.remote?.groupError != null;
+    },
+    undefined,
+    { timeout: 30_000 },
+  );
+  const groupView = await page.evaluate(() => {
+    const state = window.__mosbotDiag?.state?.() ?? null;
+    return {
+      heading: document.querySelector('h2')?.textContent ?? null,
+      events: document.querySelectorAll('ol li').length,
+      detail: state?.remote?.groupDetail ?? null,
+      error: state?.remote?.groupError ?? null,
+      readOnly: (document.body.textContent ?? '').includes('只读'),
+    };
+  });
+  if (groupView.heading === null || !groupView.readOnly) {
+    throw new Error(`group view did not render: ${JSON.stringify(groupView)}`);
+  }
   await application.close();
 
   const report = {
     kind: 'real service · read-only group roster',
     generatedAt: new Date().toISOString(),
     ...result,
+    groupView,
   };
   const reportPath = path.join(
     OUT_DIR,

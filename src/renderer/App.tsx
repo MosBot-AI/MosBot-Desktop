@@ -12,6 +12,7 @@ import {
 } from './app/store';
 import { BotSidebar } from './features/bots/BotSidebar';
 import { ChatView } from './features/chat/ChatView';
+import { GroupView } from './features/groups/GroupView';
 import { ConnectionDialog } from './features/connection/ConnectionDialog';
 import { Workbench } from './features/workbench/Workbench';
 import { restoreConnectionOnStartup } from './features/connection/useConnection';
@@ -213,6 +214,7 @@ export function App(): ReactElement {
   // Once connected, replace the fixture roster with the real profiles.
   const connected = useAppState((state) => state.connectionUi.snapshot?.connected === true);
   const chatConnection = useAppState((state) => state.live.connection);
+  const selectedGroupId = useAppState((state) => state.remote.selectedGroupId);
   useEffect(() => {
     const dashboard = window.mosbot?.dashboard;
     if (dashboard === undefined) {
@@ -266,6 +268,43 @@ export function App(): ReactElement {
       cancelled = true;
     };
   }, [chatConnection, connected, dispatch]);
+
+  // M6 read-only group view: fetch room state and the latest log delta when a
+  // hosted room is selected.
+  useEffect(() => {
+    const dashboard = window.mosbot?.dashboard;
+    if (
+      dashboard === undefined ||
+      !connected ||
+      chatConnection !== 'connected' ||
+      selectedGroupId === null
+    ) {
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const [detail, log] = await Promise.all([
+        dashboard.chatGroupState(selectedGroupId),
+        dashboard.chatGroupLog(selectedGroupId, 0, 50),
+      ]);
+      if (cancelled) {
+        return;
+      }
+      if (detail.ok) {
+        dispatch({ type: 'group-detail', detail: detail.data });
+      } else {
+        dispatch({ type: 'group-error', message: detail.error.message });
+      }
+      if (log.ok) {
+        dispatch({ type: 'group-log', events: [...log.data.events] });
+      } else {
+        dispatch({ type: 'group-error', message: log.error.message });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [chatConnection, connected, selectedGroupId, dispatch]);
 
   // Pending requests discovered for Bots that are not open: badge + notification click.
   useEffect(() => {
@@ -459,7 +498,7 @@ export function App(): ReactElement {
       >
         <BotSidebar />
         <div className={styles.main}>
-          <ChatView />
+          {selectedGroupId === null ? <ChatView /> : <GroupView />}
           <InspectorPanel />
         </div>
       </div>

@@ -5,6 +5,8 @@ import {
   type ChatOpenResult,
   type DashboardChatEvent,
   type RemoteGroup,
+  type RemoteGroupLogPage,
+  type RemoteGroupState,
   type Result,
 } from '../../shared/protocol';
 import type { ChatManager } from './chat';
@@ -79,6 +81,26 @@ export function registerChatIpc(options: {
   handle<void>(DASHBOARD_CHANNELS.chatStop, () => chat.stop());
 
   handle<readonly RemoteGroup[]>(DASHBOARD_CHANNELS.chatListGroups, () => chat.listGroups());
+
+  handle<RemoteGroupState>(DASHBOARD_CHANNELS.chatGroupState, (roomId) => {
+    if (!isBoundedString(roomId, MAX_STORED_ID_LENGTH)) {
+      return { ok: false, error: protocolError('invalid_url', 'A room id is required.') };
+    }
+    return chat.groupState(roomId);
+  });
+
+  handle<RemoteGroupLogPage>(DASHBOARD_CHANNELS.chatGroupLog, (roomId, sinceSeq, limit) => {
+    if (!isBoundedString(roomId, MAX_STORED_ID_LENGTH)) {
+      return { ok: false, error: protocolError('invalid_url', 'A room id is required.') };
+    }
+    if (typeof sinceSeq !== 'number' || !Number.isFinite(sinceSeq) || sinceSeq < 0) {
+      return { ok: false, error: protocolError('invalid_url', 'The log cursor is not valid.') };
+    }
+    if (typeof limit !== 'number' || !Number.isFinite(limit) || limit < 1 || limit > 500) {
+      return { ok: false, error: protocolError('invalid_url', 'The log limit is not valid.') };
+    }
+    return chat.groupLog(roomId, sinceSeq, limit);
+  });
 
   handle<void>(DASHBOARD_CHANNELS.chatAnswer, (requestId, result) => {
     if (!isBoundedString(requestId, MAX_STORED_ID_LENGTH)) {

@@ -26,6 +26,8 @@ import type {
   RemoteBot,
   RemoteChat,
   RemoteGroup,
+  RemoteGroupEvent,
+  RemoteGroupState,
 } from '../../shared/protocol';
 import { createFixtureSeed, type FixtureSeed } from './fixtures';
 
@@ -85,6 +87,12 @@ export interface RemoteState {
   readonly workspaces: Readonly<Record<string, string | null>>;
   /** Read-only hosted-room roster (M6). */
   readonly groups: readonly RemoteGroup[];
+  /** Selected hosted room and its read-only detail/log. */
+  readonly selectedGroupId: string | null;
+  readonly groupDetail: RemoteGroupState | null;
+  readonly groupEvents: readonly RemoteGroupEvent[];
+  readonly groupLoading: boolean;
+  readonly groupError: string | null;
 }
 
 export interface LiveRequest {
@@ -244,6 +252,12 @@ export type AppAction =
   | { type: 'remote-loading' }
   | { type: 'remote-ready'; bots: readonly RemoteBot[] }
   | { type: 'remote-groups'; groups: readonly RemoteGroup[] }
+  | { type: 'select-group'; group: RemoteGroup }
+  | { type: 'group-loading' }
+  | { type: 'group-detail'; detail: RemoteGroupState }
+  | { type: 'group-log'; events: readonly RemoteGroupEvent[] }
+  | { type: 'group-error'; message: string }
+  | { type: 'group-clear' }
   | { type: 'remote-error'; error: ProtocolError }
   | { type: 'remote-select'; profile: string }
   | { type: 'remote-chat'; chat: RemoteChat }
@@ -473,6 +487,11 @@ export function createInitialState(seed: FixtureSeed, bootstrap: Bootstrap): App
       modelReady: {},
       workspaces: {},
       groups: [],
+      selectedGroupId: null,
+      groupDetail: null,
+      groupEvents: [],
+      groupLoading: false,
+      groupError: null,
     },
     live: {
       profile: null,
@@ -518,7 +537,17 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         selectedBotId: action.botId,
-        remote: remote ? { ...state.remote, selectedProfile: action.botId } : state.remote,
+        remote: remote
+          ? {
+              ...state.remote,
+              selectedProfile: action.botId,
+              selectedGroupId: null,
+              groupDetail: null,
+              groupEvents: [],
+              groupLoading: false,
+              groupError: null,
+            }
+          : state.remote,
         bots: remote ? state.bots : patchBot(state.bots, action.botId, { unread: 0 }),
         search: { ...state.search, open: false, query: '', activeIndex: 0 },
         pinnedMenuOpen: false,
@@ -898,6 +927,50 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
         ...state,
         remote: { ...state.remote, groups: action.groups },
       };
+
+    case 'select-group':
+      return {
+        ...state,
+        remote: {
+          ...state.remote,
+          selectedGroupId: action.group.roomId,
+          groupDetail: null,
+          groupEvents: [],
+          groupLoading: true,
+          groupError: null,
+        },
+      };
+    case 'group-loading':
+      return { ...state, remote: { ...state.remote, groupLoading: true, groupError: null } };
+    case 'group-detail':
+      return {
+        ...state,
+        remote: {
+          ...state.remote,
+          groupDetail: action.detail,
+          groupLoading: false,
+          groupError: null,
+        },
+      };
+    case 'group-log':
+      return { ...state, remote: { ...state.remote, groupEvents: action.events } };
+    case 'group-error':
+      return {
+        ...state,
+        remote: { ...state.remote, groupLoading: false, groupError: action.message },
+      };
+    case 'group-clear':
+      return {
+        ...state,
+        remote: {
+          ...state.remote,
+          selectedGroupId: null,
+          groupDetail: null,
+          groupEvents: [],
+          groupLoading: false,
+          groupError: null,
+        },
+      };
     case 'remote-error':
       return {
         ...state,
@@ -953,6 +1026,11 @@ export function reduceAppState(state: AppState, action: AppAction): AppState {
           modelReady: {},
           workspaces: {},
           groups: [],
+          selectedGroupId: null,
+          groupDetail: null,
+          groupEvents: [],
+          groupLoading: false,
+          groupError: null,
         },
         remoteOrg: { pinned: [], sections: [], unsortedCollapsed: false },
       };

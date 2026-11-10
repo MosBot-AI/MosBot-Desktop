@@ -83,6 +83,27 @@ function createFakeGateway(options: GatewayOptions, replay?: FakeReplay): FakeGa
         next_offset: null,
       };
     }
+    if (method === 'groups.state') {
+      return {
+        room: {
+          room_id: 'room-1',
+          name: 'Design room',
+          members: [{ id: 'member-1' }, { id: 'member-2' }],
+          updated_at: 123,
+          latest_seq: 9,
+          authority_epoch: 3,
+        },
+        driver_status: 'running',
+      };
+    }
+    if (method === 'groups.log') {
+      return {
+        events: [{ seq: 1, kind: 'room.created', created_at: 100 }],
+        cursor: 1,
+        latest_seq: 9,
+        has_more: true,
+      };
+    }
     if (method === 'session.events.since' && replay !== undefined) {
       return {
         events: replay.events,
@@ -860,6 +881,29 @@ describe('chat manager groups', () => {
           latestSeq: 9,
         },
       ],
+    });
+    const state = await manager.groupState('room-1');
+    expect(state).toEqual({
+      ok: true,
+      data: {
+        roomId: 'room-1',
+        name: 'Design room',
+        memberCount: 2,
+        latestSeq: 9,
+        authorityEpoch: 3,
+        updatedAt: 123,
+        driverStatus: 'running',
+      },
+    });
+    const log = await manager.groupLog('room-1', 0, 50);
+    expect(log).toEqual({
+      ok: true,
+      data: {
+        events: [{ seq: 1, kind: 'room.created', createdAt: 100 }],
+        cursor: 1,
+        latestSeq: 9,
+        hasMore: true,
+      },
     });
     manager.close();
   });
