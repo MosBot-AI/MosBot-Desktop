@@ -122,6 +122,7 @@ export function GroupView(): ReactElement {
   const [hasNew, setHasNew] = useState(false);
   const [copiedSeq, setCopiedSeq] = useState<number | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const threadId = threadIdFor(events);
   const isCurrentRoom = (): boolean => appStore.getState().remote.selectedGroupId === roomId;
   const firstSeq = events.length === 0 ? 0 : (events[0]?.seq ?? 0);
@@ -369,6 +370,15 @@ export function GroupView(): ReactElement {
                           type="button"
                           className={styles.messageAction}
                           onClick={() => {
+                            replyTo(display);
+                          }}
+                        >
+                          {t('group.reply')}
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.messageAction}
+                          onClick={() => {
                             void copy(event);
                           }}
                         >
@@ -480,6 +490,7 @@ export function GroupView(): ReactElement {
       <footer className={styles.composer}>
         <div className={styles.composerBox}>
           <textarea
+            ref={inputRef}
             className={styles.input}
             value={draft}
             placeholder={t('group.composerPlaceholder', {
@@ -556,6 +567,12 @@ export function GroupView(): ReactElement {
       // Clipboard access can be denied; keep the message selectable instead.
     }
   }
+
+  const replyTo = (display: string): void => {
+    const mention = `@${display} `;
+    setDraft((current) => (current.startsWith(mention) ? current : `${mention}${current}`));
+    inputRef.current?.focus();
+  };
 
   async function disband(): Promise<void> {
     const dashboard = window.mosbot?.dashboard;
