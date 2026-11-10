@@ -55,6 +55,8 @@ export function GroupView(): ReactElement {
   const [sendError, setSendError] = useState<string | null>(null);
   const [stopping, setStopping] = useState(false);
   const [stopNotice, setStopNotice] = useState<string | null>(null);
+  const [approvalBusy, setApprovalBusy] = useState<string | null>(null);
+  const [approvalError, setApprovalError] = useState<string | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const threadId = threadIdFor(events);
 
@@ -109,6 +111,33 @@ export function GroupView(): ReactElement {
           </div>
         )}
       </header>
+
+      {(detail?.pendingActions ?? []).map((action) => (
+        <div key={`${action.memberId}-${action.requestId}`} className={styles.approval}>
+          <span>{t('group.approval', { member: action.memberId })}</span>
+          <button
+            type="button"
+            className={styles.approvalAllow}
+            disabled={approvalBusy !== null}
+            onClick={() => {
+              void decide(action, 'once');
+            }}
+          >
+            {t('group.approveOnce')}
+          </button>
+          <button
+            type="button"
+            className={styles.approvalDeny}
+            disabled={approvalBusy !== null}
+            onClick={() => {
+              void decide(action, 'deny');
+            }}
+          >
+            {t('group.deny')}
+          </button>
+          {approvalError === null ? null : <span className={styles.error}>{approvalError}</span>}
+        </div>
+      ))}
 
       <div className={styles.body} ref={bodyRef}>
         {loading ? <p className={styles.notice}>{t('group.loading')}</p> : null}
@@ -177,6 +206,35 @@ export function GroupView(): ReactElement {
       </footer>
     </div>
   );
+
+  async function decide(
+    action: NonNullable<NonNullable<typeof detail>['pendingActions']>[number],
+    choice: 'once' | 'deny',
+  ): Promise<void> {
+    const dashboard = window.mosbot?.dashboard;
+    if (dashboard === undefined || roomId === null) {
+      return;
+    }
+    setApprovalBusy(action.requestId);
+    setApprovalError(null);
+    const result = await dashboard.chatGroupApprove(roomId, action, choice);
+    if (!result.ok) {
+      setApprovalBusy(null);
+      setApprovalError(t('group.approvalError'));
+      return;
+    }
+    const [state, log] = await Promise.all([
+      dashboard.chatGroupState(roomId),
+      dashboard.chatGroupLog(roomId, 0, 50),
+    ]);
+    if (state.ok) {
+      dispatch({ type: 'group-detail', detail: state.data });
+    }
+    if (log.ok) {
+      dispatch({ type: 'group-log', events: [...log.data.events] });
+    }
+    setApprovalBusy(null);
+  }
 
   async function stop(): Promise<void> {
     const dashboard = window.mosbot?.dashboard;

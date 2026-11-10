@@ -6,6 +6,7 @@ import type {
   RemoteGroup,
   RemoteGroupLogPage,
   RemoteGroupMemberInput,
+  RemoteGroupPendingAction,
   RemoteGroupState,
   Result,
 } from '../../shared/protocol';
@@ -66,6 +67,12 @@ export interface ChatManager {
   groupDisband(roomId: string): Promise<Result<void>>;
   /** Cancels queued or running work in a hosted room. */
   groupStop(roomId: string): Promise<Result<void>>;
+  /** Resolves one pending group approval. */
+  groupApprove(
+    roomId: string,
+    action: RemoteGroupPendingAction,
+    choice: 'once' | 'deny',
+  ): Promise<Result<void>>;
   close(): void;
   state(): ChatState;
 }
@@ -726,6 +733,28 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
       };
     },
 
+    async groupApprove(roomId, action, choice) {
+      if (client === null) {
+        return {
+          ok: false,
+          error: protocolError('unauthorized', 'The chat session is not connected.'),
+        };
+      }
+      const result = await client.call(
+        'groups.approve',
+        {
+          room_id: roomId,
+          member_id: action.memberId,
+          task_id: action.taskId,
+          execution_generation: action.executionGeneration,
+          choice,
+          request_id: action.requestId,
+        },
+        emptySchema,
+      );
+      return result.ok ? { ok: true, data: undefined } : result;
+    },
+
     async groupStop(roomId) {
       if (client === null) {
         return {
@@ -802,6 +831,31 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
               return (driver as { running?: unknown }).running === true ? 'running' : 'idle';
             }
             return null;
+          })(),
+          pendingActions: (() => {
+            const driver = result.data.driver_status;
+            if (driver === null || typeof driver !== 'object' || !('pending_actions' in driver)) {
+              return [] as readonly RemoteGroupPendingAction[];
+            }
+            const raw = (driver as { pending_actions?: unknown }).pending_actions;
+            if (!Array.isArray(raw)) {
+              return [] as readonly RemoteGroupPendingAction[];
+            }
+            return raw.flatMap((entry): RemoteGroupPendingAction[] => {
+              if (entry === null || typeof entry !== 'object') {
+                return [];
+              }
+              const record = entry as Record<string, unknown>;
+              return [
+                {
+                  kind: String(record['kind'] ?? ''),
+                  memberId: String(record['member_id'] ?? ''),
+                  requestId: String(record['request_id'] ?? ''),
+                  taskId: String(record['task_id'] ?? ''),
+                  executionGeneration: Number(record['execution_generation'] ?? 0),
+                },
+              ];
+            });
           })(),
           working:
             typeof result.data.driver_status === 'object' &&

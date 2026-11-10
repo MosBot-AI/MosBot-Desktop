@@ -157,3 +157,36 @@
   padding: 2px 8px;
   font-size: 12px;
 }
+
+.approval {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-sunken);
+  font-size: 13px;
+}
+
+.approvalAllow,
+.approvalDeny {
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 3px 10px;
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.approvalAllow {
+  background: var(--accent-brand);
+  color: var(--accent-brand-ink);
+}
+
+.approvalAllow:disabled,
+.approvalDeny:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

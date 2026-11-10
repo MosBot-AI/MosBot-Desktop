@@ -7,6 +7,7 @@ import {
   type RemoteGroup,
   type RemoteGroupLogPage,
   type RemoteGroupMemberInput,
+  type RemoteGroupPendingAction,
   type RemoteGroupState,
   type Result,
 } from '../../shared/protocol';
@@ -152,6 +153,41 @@ export function registerChatIpc(options: {
       return { ok: false, error: protocolError('invalid_url', 'A room id is required.') };
     }
     return chat.groupStop(roomId);
+  });
+
+  handle<void>(DASHBOARD_CHANNELS.chatGroupApprove, (roomId, action, choice) => {
+    if (!isBoundedString(roomId, MAX_STORED_ID_LENGTH)) {
+      return { ok: false, error: protocolError('invalid_url', 'A room id is required.') };
+    }
+    if (!isPlainObject(action)) {
+      return { ok: false, error: protocolError('invalid_url', 'An approval action is required.') };
+    }
+    const memberId = action['memberId'];
+    const taskId = action['taskId'];
+    const requestId = action['requestId'];
+    const executionGeneration = action['executionGeneration'];
+    if (
+      !isBoundedString(memberId, MAX_STORED_ID_LENGTH) ||
+      !isBoundedString(taskId, MAX_STORED_ID_LENGTH) ||
+      !isBoundedString(requestId, MAX_STORED_ID_LENGTH) ||
+      typeof executionGeneration !== 'number' ||
+      !Number.isInteger(executionGeneration) ||
+      executionGeneration < 0 ||
+      (choice !== 'once' && choice !== 'deny')
+    ) {
+      return {
+        ok: false,
+        error: protocolError('invalid_url', 'The approval action is not valid.'),
+      };
+    }
+    const normalized: RemoteGroupPendingAction = {
+      kind: String(action['kind'] ?? ''),
+      memberId,
+      taskId,
+      requestId,
+      executionGeneration,
+    };
+    return chat.groupApprove(roomId, normalized, choice);
   });
 
   handle<RemoteGroupLogPage>(DASHBOARD_CHANNELS.chatGroupLog, (roomId, sinceSeq, limit) => {

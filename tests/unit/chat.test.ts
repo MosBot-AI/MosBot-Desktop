@@ -133,6 +133,9 @@ function createFakeGateway(options: GatewayOptions, replay?: FakeReplay): FakeGa
     if (method === 'groups.stop') {
       return { cancelled: 0 };
     }
+    if (method === 'groups.approve') {
+      return { approved: true, result: { status: 'denied' } };
+    }
     if (method === 'session.events.since' && replay !== undefined) {
       return {
         events: replay.events,
@@ -926,6 +929,7 @@ describe('chat manager groups', () => {
         authorityEpoch: 3,
         updatedAt: 123,
         driverStatus: 'running',
+        pendingActions: [],
         working: false,
         blocked: false,
       },
@@ -955,6 +959,18 @@ describe('chat manager groups', () => {
     expect(disbanded.ok).toBe(true);
     const stopped = await manager.groupStop('new-room');
     expect(stopped.ok).toBe(true);
+    const approved = await manager.groupApprove(
+      'new-room',
+      {
+        kind: 'approval',
+        memberId: 'member-1',
+        requestId: 'request-1',
+        taskId: 'task-1',
+        executionGeneration: 1,
+      },
+      'deny',
+    );
+    expect(approved.ok).toBe(true);
     manager.close();
   });
 });

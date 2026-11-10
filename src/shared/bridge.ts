@@ -31,6 +31,7 @@ import type {
   RemoteGroup,
   RemoteGroupLogPage,
   RemoteGroupMemberInput,
+  RemoteGroupPendingAction,
   RemoteGroupState,
   Result,
 } from './protocol';
@@ -229,6 +230,12 @@ export interface MosBotDashboardBridge {
   chatGroupDisband(roomId: string): Promise<Result<void>>;
   /** Cancels queued or running work in a hosted room. */
   chatGroupStop(roomId: string): Promise<Result<void>>;
+  /** Resolves one pending group approval. */
+  chatGroupApprove(
+    roomId: string,
+    action: RemoteGroupPendingAction,
+    choice: 'once' | 'deny',
+  ): Promise<Result<void>>;
   /** Picks a file with the system dialog, stages it in the live session and returns its reference. */
   attachFile(): Promise<Result<{ name: string; refText: string }>>;
   /** Subscribes to live turn events; returns an unsubscribe function. */
@@ -310,6 +317,7 @@ export const DASHBOARD_CHANNELS = {
   chatGroupCreate: 'mosbot:dashboard:chatGroupCreate',
   chatGroupDisband: 'mosbot:dashboard:chatGroupDisband',
   chatGroupStop: 'mosbot:dashboard:chatGroupStop',
+  chatGroupApprove: 'mosbot:dashboard:chatGroupApprove',
   chatAttachFile: 'mosbot:dashboard:chatAttachFile',
   chatEvent: 'mosbot:dashboard:chatEvent',
   pendingEvent: 'mosbot:dashboard:pendingEvent',

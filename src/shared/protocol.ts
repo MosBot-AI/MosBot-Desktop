@@ -265,6 +265,14 @@ export interface RemoteGroupMember {
   readonly displayName: string;
 }
 
+export interface RemoteGroupPendingAction {
+  readonly kind: string;
+  readonly memberId: string;
+  readonly requestId: string;
+  readonly taskId: string;
+  readonly executionGeneration: number;
+}
+
 export interface RemoteGroupState {
   readonly roomId: string;
   readonly name: string;
@@ -274,6 +282,7 @@ export interface RemoteGroupState {
   readonly updatedAt: number;
   readonly driverStatus: string | null;
   readonly members?: readonly RemoteGroupMember[];
+  readonly pendingActions?: readonly RemoteGroupPendingAction[];
   readonly working?: boolean;
   readonly blocked?: boolean;
 }
