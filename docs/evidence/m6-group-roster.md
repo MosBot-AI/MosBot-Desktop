@@ -3,7 +3,7 @@
 [简体中文](m6-group-roster-zh.md)
 
 - Card: M6 (group chat in first-release scope since 2026-11-10)
-- Status: **group conversation UI (member avatars/names, bubbles, date separators, inline request cards), roster/create/disband, send, 3 s polling, history, stop, approvals (deny and allow once) and simulated reconnect are verified against the real service; voice and attachments are unavailable on this deployment**
+- Status: **conversation UI implemented after the 2026-11-10 design rejection (member avatars/names, bubbles, date separators, inline request cards); verified against the real service and awaiting user review. Voice and attachments remain unavailable on this deployment**
 - Recorded: 2026-11-10
 - Target service: `192.168.2.171:9119` (v0.22.5 / `bf0203a794`)
 
