@@ -86,6 +86,35 @@
   -webkit-app-region: no-drag;
 }
 
+.headerButton,
+.headerDanger {
+  height: 28px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.headerButton:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.headerDanger {
+  border-color: color-mix(in srgb, var(--accent-danger) 45%, var(--border-subtle));
+  color: var(--accent-danger);
+}
+
+.headerButton:disabled,
+.headerDanger:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .confirmBar {
   display: flex;
   flex: none;
