@@ -224,3 +224,9 @@
   opacity: 0.5;
   cursor: default;
 }
+
+.eventAuthor {
+  color: var(--text-secondary);
+  margin-right: 8px;
+  font-size: 12px;
+}

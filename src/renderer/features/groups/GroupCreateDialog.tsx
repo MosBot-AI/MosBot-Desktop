@@ -18,6 +18,7 @@ export function GroupCreateDialog({ open, onClose }: GroupCreateDialogProps): Re
   const bots = useAppState((state) => state.remote.bots);
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const nameRef = useRef<HTMLInputElement | null>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
   const [name, setName] = useState('');
   const [selected, setSelected] = useState<readonly string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -27,11 +28,20 @@ export function GroupCreateDialog({ open, onClose }: GroupCreateDialogProps): Re
     if (!open) {
       return;
     }
+    const active = document.activeElement;
+    openerRef.current = active instanceof HTMLElement ? active : null;
     setName('');
     setSelected([]);
     setBusy(false);
     setError(null);
     nameRef.current?.focus({ preventScroll: true });
+    return () => {
+      const opener = openerRef.current;
+      if (opener !== null && opener.isConnected) {
+        opener.focus({ preventScroll: true });
+      }
+      openerRef.current = null;
+    };
   }, [open]);
 
   useEffect(() => {
@@ -42,6 +52,31 @@ export function GroupCreateDialog({ open, onClose }: GroupCreateDialogProps): Re
       if (event.key === 'Escape') {
         event.preventDefault();
         onClose();
+        return;
+      }
+      if (event.key !== 'Tab') {
+        return;
+      }
+      const dialog = dialogRef.current;
+      if (dialog === null) {
+        return;
+      }
+      const focusable = [
+        ...dialog.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ];
+      if (focusable.length === 0) {
+        return;
+      }
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
       }
     };
     document.addEventListener('keydown', onKeyDown);

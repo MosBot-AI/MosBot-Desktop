@@ -87,29 +87,33 @@ async function main() {
       events: document.querySelectorAll('ol li').length,
       detail: state?.remote?.groupDetail ?? null,
       error: state?.remote?.groupError ?? null,
-      readOnly: (document.body.textContent ?? '').includes('只读'),
       composer: document.querySelector('textarea') !== null,
       sendButton: [...document.querySelectorAll('button')].some((button) =>
         (button.textContent ?? '').includes('发送'),
       ),
     };
   });
-  if (groupView.heading === null || !groupView.readOnly) {
+  if (groupView.heading === null || !groupView.composer || !groupView.sendButton) {
     throw new Error(`group view did not render: ${JSON.stringify(groupView)}`);
   }
   const eventsBefore = groupView.events;
+  const rawBefore = await page.evaluate(
+    () => window.__mosbotDiag?.state?.()?.remote?.groupEvents?.length ?? 0,
+  );
   const earlier = page.getByRole('button', { name: '加载更早消息' });
   let loadedEarlier = false;
   let eventsAfter = eventsBefore;
+  let rawAfter = rawBefore;
   if ((await earlier.count()) > 0) {
     await earlier.click();
     await page.waitForFunction(
       (before) => (window.__mosbotDiag?.state?.()?.remote?.groupEvents ?? []).length > before,
-      eventsBefore,
+      rawBefore,
       { timeout: 30_000 },
     );
     loadedEarlier = true;
-    eventsAfter = await page.evaluate(
+    eventsAfter = await page.evaluate(() => document.querySelectorAll('ol li').length);
+    rawAfter = await page.evaluate(
       () => window.__mosbotDiag?.state?.()?.remote?.groupEvents?.length ?? 0,
     );
   }
@@ -122,6 +126,7 @@ async function main() {
     groupView,
     loadedEarlier,
     eventsAfter,
+    rawAfter,
   };
   const reportPath = path.join(
     OUT_DIR,

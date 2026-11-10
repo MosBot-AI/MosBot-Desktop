@@ -31,6 +31,17 @@ function eventText(event: RemoteGroupEvent): string {
   return event.kind;
 }
 
+function eventAuthor(
+  event: RemoteGroupEvent,
+  members: readonly { memberId: string; displayName: string }[],
+): string | null {
+  const memberId = payloadRecord(event)?.['member_id'];
+  if (typeof memberId !== 'string' || memberId === '') {
+    return null;
+  }
+  return members.find((member) => member.memberId === memberId)?.displayName ?? memberId;
+}
+
 function timeLabel(seconds: number): string {
   if (seconds <= 0) {
     return '';
@@ -68,7 +79,16 @@ export function GroupView(): ReactElement {
   const firstSeq = events.length === 0 ? 0 : (events[0]?.seq ?? 0);
   const canLoadEarlier = firstSeq > 1;
   const approvals = (detail?.pendingActions ?? []).filter((action) => action.kind === 'approval');
+  const visibleEvents = events.filter((event) => event.kind !== 'turn.settled');
   const lastSeq = events.length === 0 ? 0 : (events[events.length - 1]?.seq ?? 0);
+  const driverLabel =
+    detail?.driverStatus === undefined || detail.driverStatus === null
+      ? null
+      : detail.driverStatus === 'running'
+        ? t('group.driverRunning')
+        : detail.driverStatus === 'idle'
+          ? t('group.driverIdle')
+          : detail.driverStatus;
   const lastSeqRef = useRef(0);
 
   useEffect(() => {
@@ -93,14 +113,13 @@ export function GroupView(): ReactElement {
         </button>
         <div className={styles.heading}>
           <h2 className={styles.name}>{detail?.name ?? t('group.title')}</h2>
-          <span className={styles.readOnly}>{t('group.readOnly')}</span>
         </div>
         {detail === null ? null : (
           <div className={styles.meta}>
             <span>{t('sidebar.groupMembers', { count: detail.memberCount })}</span>
             <span>{t('group.latestSeq', { seq: detail.latestSeq })}</span>
-            {detail.driverStatus === null ? null : (
-              <span>{t('group.driver', { status: detail.driverStatus })}</span>
+            {driverLabel === null ? null : (
+              <span>{t('group.driver', { status: driverLabel })}</span>
             )}
             {detail.working === true ? <span>{t('group.working')}</span> : null}
             {detail.blocked === true ? <span>{t('group.blocked')}</span> : null}
@@ -216,24 +235,36 @@ export function GroupView(): ReactElement {
             {t('group.error')}
           </p>
         )}
-        {!loading && error === null && events.length === 0 ? (
+        {!loading && error === null && visibleEvents.length === 0 ? (
           <p className={styles.notice}>{t('group.eventsEmpty')}</p>
         ) : null}
-        {events.length === 0 ? null : (
+        {visibleEvents.length === 0 ? null : (
           <ol className={styles.events}>
-            {events.map((event) => (
-              <li key={`${event.seq}-${event.kind}`} className={styles.event}>
-                <span className={styles.eventSeq}>#{event.seq}</span>
-                <span className={styles.eventKind}>
-                  {event.kind.startsWith('message.') ? (
-                    <RichText text={eventText(event)} />
-                  ) : (
-                    event.kind
-                  )}
-                </span>
-                <span className={styles.eventTime}>{timeLabel(event.createdAt)}</span>
-              </li>
-            ))}
+            {visibleEvents.map((event) => {
+              const author = eventAuthor(event, detail?.members ?? []);
+              return (
+                <li key={`${event.seq}-${event.kind}`} className={styles.event}>
+                  <span className={styles.eventSeq}>#{event.seq}</span>
+                  <span className={styles.eventKind}>
+                    {event.kind.startsWith('message.') ? (
+                      <>
+                        {author === null ? null : (
+                          <span className={styles.eventAuthor}>{author}</span>
+                        )}
+                        <RichText text={eventText(event)} />
+                      </>
+                    ) : event.kind === 'room.activity' ? (
+                      t('group.roomActivity', {
+                        status: String(payloadRecord(event)?.['status'] ?? event.kind),
+                      })
+                    ) : (
+                      event.kind
+                    )}
+                  </span>
+                  <span className={styles.eventTime}>{timeLabel(event.createdAt)}</span>
+                </li>
+              );
+            })}
           </ol>
         )}
       </div>
