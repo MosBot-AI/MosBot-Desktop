@@ -785,6 +785,11 @@ export function createChatManager(deps: ChatManagerDeps): ChatManager {
           roomId: room.room_id,
           name: room.name,
           memberCount: room.members?.length ?? 0,
+          members: (room.members ?? []).map((member) => ({
+            memberId: member.member_id,
+            profile: member.profile,
+            displayName: member.display_name ?? member.profile,
+          })),
           latestSeq: room.latest_seq ?? 0,
           authorityEpoch: room.authority_epoch ?? 0,
           updatedAt: room.updated_at ?? 0,

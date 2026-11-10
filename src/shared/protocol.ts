@@ -259,6 +259,12 @@ export interface RemoteGroupMemberInput {
   readonly displayName?: string;
 }
 
+export interface RemoteGroupMember {
+  readonly memberId: string;
+  readonly profile: string;
+  readonly displayName: string;
+}
+
 export interface RemoteGroupState {
   readonly roomId: string;
   readonly name: string;
@@ -267,6 +273,7 @@ export interface RemoteGroupState {
   readonly authorityEpoch: number;
   readonly updatedAt: number;
   readonly driverStatus: string | null;
+  readonly members?: readonly RemoteGroupMember[];
   readonly working?: boolean;
   readonly blocked?: boolean;
 }

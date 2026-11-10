@@ -162,11 +162,19 @@ export const clientCapabilitiesSchema = z
 /** `{error: "session_expired"}` body of a rejected native refresh. */
 export const sessionExpiredSchema = z.object({ error: z.string() });
 
+const groupMemberSchema = z
+  .object({
+    member_id: z.string(),
+    profile: z.string(),
+    display_name: z.string().optional(),
+  })
+  .catchall(z.unknown());
+
 const groupRowSchema = z
   .object({
     room_id: z.string(),
     name: z.string(),
-    members: z.array(z.unknown()).optional(),
+    members: z.array(groupMemberSchema).optional(),
     updated_at: z.number().optional(),
     latest_seq: z.number().optional(),
   })

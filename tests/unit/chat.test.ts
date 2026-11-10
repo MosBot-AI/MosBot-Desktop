@@ -75,7 +75,10 @@ function createFakeGateway(options: GatewayOptions, replay?: FakeReplay): FakeGa
           {
             room_id: 'room-1',
             name: 'Design room',
-            members: [{ id: 'member-1' }, { id: 'member-2' }],
+            members: [
+              { member_id: 'member-1', profile: 'bot-1', display_name: 'Member One' },
+              { member_id: 'member-2', profile: 'bot-2', display_name: 'Member Two' },
+            ],
             updated_at: 123,
             latest_seq: 9,
           },
@@ -88,7 +91,10 @@ function createFakeGateway(options: GatewayOptions, replay?: FakeReplay): FakeGa
         room: {
           room_id: 'room-1',
           name: 'Design room',
-          members: [{ id: 'member-1' }, { id: 'member-2' }],
+          members: [
+            { member_id: 'member-1', profile: 'bot-1', display_name: 'Member One' },
+            { member_id: 'member-2', profile: 'bot-2', display_name: 'Member Two' },
+          ],
           updated_at: 123,
           latest_seq: 9,
           authority_epoch: 3,
@@ -112,7 +118,10 @@ function createFakeGateway(options: GatewayOptions, replay?: FakeReplay): FakeGa
         room: {
           room_id: 'new-room',
           name: 'Probe group',
-          members: [{ id: 'probe-a' }, { id: 'probe-b' }],
+          members: [
+            { member_id: 'probe-a', profile: 'bot-1', display_name: 'Probe A' },
+            { member_id: 'probe-b', profile: 'bot-2', display_name: 'Probe B' },
+          ],
           updated_at: 1,
           latest_seq: 0,
         },
@@ -909,6 +918,10 @@ describe('chat manager groups', () => {
         roomId: 'room-1',
         name: 'Design room',
         memberCount: 2,
+        members: [
+          { memberId: 'member-1', profile: 'bot-1', displayName: 'Member One' },
+          { memberId: 'member-2', profile: 'bot-2', displayName: 'Member Two' },
+        ],
         latestSeq: 9,
         authorityEpoch: 3,
         updatedAt: 123,

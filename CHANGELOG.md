@@ -21,7 +21,8 @@ comparison links stay local anchors until the first signed tag exists.
   `groups.send`; the sidebar create dialog creates a group from 2–6 local profiles, the group view sends and
   polls `groups.log` and `groups.state` every 3 s (working/blocked status, error surfacing), Stop cancels
   room work, a simulated socket drop recovers the open group view, and an end-to-end test verified
-  create → send → render → stop → disband.
+  create → send → render → stop → disband; the group view shows member chips and Markdown messages.
+  Group attachments are unavailable because the deployment does not advertise `groups.attachment.*`.
 - Artifact library: the workspace listing now understands the deployment's
   `mtime` (epoch seconds) instead of only `modified_at`, so files sort by real
   modification time; dangling symlinks (`broken_link`) show a "resource deleted"

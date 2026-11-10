@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useMessages } from '../../app/i18n';
 import { useAppState, useDispatch } from '../../app/store';
+import { RichText } from '../chat/RichText';
 import type { RemoteGroupEvent } from '../../../shared/protocol';
 import styles from './GroupView.module.css';
 
@@ -89,6 +90,11 @@ export function GroupView(): ReactElement {
             )}
             {detail.working === true ? <span>{t('group.working')}</span> : null}
             {detail.blocked === true ? <span>{t('group.blocked')}</span> : null}
+            {(detail.members ?? []).map((member) => (
+              <span key={member.memberId} className={styles.member}>
+                {member.displayName}
+              </span>
+            ))}
             <button
               type="button"
               className={styles.stop}
@@ -119,7 +125,13 @@ export function GroupView(): ReactElement {
             {events.map((event) => (
               <li key={`${event.seq}-${event.kind}`} className={styles.event}>
                 <span className={styles.eventSeq}>#{event.seq}</span>
-                <span className={styles.eventKind}>{eventText(event)}</span>
+                <span className={styles.eventKind}>
+                  {event.kind.startsWith('message.') ? (
+                    <RichText text={eventText(event)} />
+                  ) : (
+                    event.kind
+                  )}
+                </span>
                 <span className={styles.eventTime}>{timeLabel(event.createdAt)}</span>
               </li>
             ))}
